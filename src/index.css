@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* Ledger Slate tokens — ported from the gadgetwise-prototype identity */
+@theme {
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-surface2: #f1f3f6;
+  --color-ink: #0f1722;
+  --color-ink2: #3e4c61;
+  --color-ink3: #64748b;
+  --color-primary: #1d5ba4;
+  --color-primary-dark: #164a86;
+  --color-primary-soft: #e7eff8;
+  --color-primary-wash: #f3f7fb;
+  --color-warm: #9a5b10;
+  --color-warm-dark: #7c4708;
+  --color-warm-soft: #f9f1e2;
+  --color-star: #b07c28;
+  --color-gold-hair: #d9a441;
+  --color-success: #1f7a44;
+  --color-success-soft: #e3f2e9;
+  --color-warning: #96631f;
+  --color-warning-soft: #faf0dc;
+  --color-danger: #b3372e;
+  --color-danger-soft: #f9e9e7;
+  --color-line: #e3e7ed;
+  --color-line-strong: #cdd4de;
+  --color-hero: #14213a;
+  --color-on-hero: #f4f6fa;
+  --color-on-hero2: #b9c3d6;
+
+  --font-display: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Spline Sans Mono", "Consolas", monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { letter-spacing: -0.015em; }
+}
+
+@layer components {
+  .mono { font-family: var(--font-mono); }
+
+  /* v4 note: @apply can't reference custom classes, so each variant repeats the base utilities */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors;
+  }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-primary text-white hover:bg-primary-dark; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-white text-primary border border-line-strong hover:border-primary hover:bg-primary-wash; }
+  .btn-amber { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-warm text-white hover:bg-warm-dark; }
+  .btn-hero { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-gold-hair text-hero hover:brightness-105; }
+  .btn-hero-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors border border-white/35 text-on-hero hover:bg-white/10; }
+
+  .chip {
+    @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium;
+  }
+  .chip-tag { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-warm-soft text-warm-dark; }
+  .chip-good { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-success-soft text-success; }
+  .chip-bad { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-danger-soft text-danger; }
+  .chip-neutral { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-surface2 text-ink2; }
+  .chip-blue { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-primary-soft text-primary-dark; }
+
+  .card {
+    @apply bg-surface border border-line rounded-lg;
+    box-shadow: 0 1px 2px rgba(15, 23, 34, 0.05);
+  }
+
+  .field {
+    @apply w-full rounded-sm border border-line-strong bg-white px-3 py-2.5 text-sm text-ink outline-none;
+  }
+  .field:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+  }
+
+  /* Performance-to-Cost badge — the site's signature metric */
+  .oidx {
+    @apply inline-flex flex-col items-center rounded-sm border border-line-strong bg-white px-2.5 py-1.5;
+  }
+  .oidx b {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.02rem;
+    color: var(--color-primary-dark);
+    line-height: 1;
+  }
+  .oidx span {
+    white-space: nowrap;
+    font-size: 0.52rem;
+    letter-spacing: 0.09em;
+    font-weight: 600;
+    color: var(--color-ink3);
+  }
+
+  .section { @apply mx-auto max-w-6xl px-5 py-12; }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-warm;
+  }
+}
