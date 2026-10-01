@@ -12,7 +12,7 @@ function Detail({ id, compare, onCompare }) {
   if (!g) {
     return (
       <section className="section">
-        <h1 className="text-2xl font-bold">Gadget not found</h1>
+        <h1>Gadget not found</h1>
         <a href="#/gadgets" className="btn-primary mt-4">Back to catalog</a>
       </section>
     );
@@ -46,7 +46,7 @@ function Detail({ id, compare, onCompare }) {
         </div>
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
-          <h1 className="mt-1 text-3xl font-bold">{g.model}</h1>
+          <h1 className="mt-1">{g.model}</h1>
           <p className="mt-1 text-lg text-ink2">{g.tagline}</p>
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <div>
@@ -70,11 +70,11 @@ function Detail({ id, compare, onCompare }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-10 flex flex-wrap gap-1 border-b border-line" role="tablist">
+      <div className="mt-10 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
         {TABS.map((t) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-semibold ${tab === t ? "border-b-2 border-primary text-primary-dark" : "text-ink3 hover:text-ink"}`}>
+            className={`shrink-0 whitespace-nowrap px-2.5 py-2.5 text-xs font-semibold sm:px-4 sm:text-sm ${tab === t ? "border-b-2 border-primary text-primary-dark" : "text-ink3 hover:text-ink"}`}>
             {t}
           </button>
         ))}
@@ -228,9 +228,9 @@ function Detail({ id, compare, onCompare }) {
           {GW.gadgetsInCategory(g.category).filter((x) => x.id !== g.id).map((x) => (
             <a key={x.id} href={`#/g/${x.id}`} className="card flex items-center gap-3 p-4 hover:border-primary">
               <Img gadget={x} className="h-14 w-20 shrink-0" imgClass="p-1" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="truncate font-semibold">{displayName(x)}</div>
-                <div className="mono text-sm text-primary-dark">{money(x.price)}</div>
+                <div className="mono truncate text-sm text-primary-dark">{money(x.price)}</div>
               </div>
               <Oidx g={x} />
             </a>
@@ -276,7 +276,7 @@ function Compare({ compare, onCompare }) {
   return (
     <section className="section">
       <div className="eyebrow">Compare</div>
-      <h1 className="mt-2 text-3xl font-bold">Side-by-side comparison</h1>
+      <h1 className="mt-2">Side-by-side comparison</h1>
       <p className="mt-2 text-ink2">Pick up to 4 gadgets. Same formulas as every other page.</p>
 
       {list.length === 0 ? (

@@ -92,6 +92,7 @@ function Scatter() {
       <line x1={L} y1={H - B} x2={W - R} y2={H - B} stroke="#CDD4DE" />
       <line x1={L} y1={T} x2={L} y2={H - B} stroke="#CDD4DE" />
       <text x={L} y={T + 2} fontSize="11" fill="#64748B">Performance to Cost ↑</text>
+      <text x={W - R} y={H - B - 6} textAnchor="end" fontSize="11" fill="#64748B">Price →</text>
       {list.map((g) => {
         const on = front.has(g.id);
         return (
@@ -123,7 +124,7 @@ function Home({ compare, onCompare }) {
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">Student-first gadget guide</div>
-            <h1 className="mt-3 text-4xl font-bold leading-[1.08] lg:text-[2.75rem]">
+            <h1 className="mt-3">
               Buy the gadget that costs less to own — not just less to buy.
             </h1>
             <p className="mt-4 max-w-xl text-lg text-on-hero2">
@@ -149,7 +150,7 @@ function Home({ compare, onCompare }) {
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-5 py-6 sm:grid-cols-4">
           {[
             ["Gadgets tracked", GW.community.gadgetsTracked],
-            ["Student reviews", GW.community.reviewsWritten],
+            ["Student reviews", GW.community.reviewsWritten.toLocaleString()],
             ["Issues reported", GW.community.issuesReported],
             ["Average rating", `${GW.community.avgRating}★`],
           ].map(([label, v]) => (
@@ -200,14 +201,14 @@ function Home({ compare, onCompare }) {
           <h2 className="mt-2 text-2xl font-bold">Lowest monthly cost across the catalog</h2>
           <div className="mt-6 divide-y divide-line rounded-lg border border-line bg-surface">
             {cheapest.map((g, i) => (
-              <a key={g.id} href={`#/g/${g.id}`} className="flex items-center gap-4 p-4 hover:bg-primary-wash">
+              <a key={g.id} href={`#/g/${g.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-4 hover:bg-primary-wash sm:flex-nowrap sm:gap-4">
                 <span className="mono w-6 text-sm text-ink3">{String(i + 1).padStart(2, "0")}</span>
                 <Img gadget={g} className="h-12 w-16 shrink-0" imgClass="p-1" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-semibold">{g.brand} {g.model}</div>
-                  <div className="text-xs text-ink3">{GW.getCategory(g.category).name}</div>
+                  <div className="truncate text-xs text-ink3">{GW.getCategory(g.category).name}</div>
                 </div>
-                <div className="text-right">
+                <div className="w-full shrink-0 text-right sm:w-auto">
                   <div className="mono font-semibold text-primary-dark">{money(GW.monthlyCost(g))}/mo</div>
                   <div className="mono text-xs text-ink3">{money(g.price)} upfront</div>
                 </div>
@@ -296,7 +297,7 @@ function Catalog({ route, compare, onCompare }) {
   return (
     <section className="section">
       <div className="eyebrow">Catalog</div>
-      <h1 className="mt-2 text-3xl font-bold">{cat ? GW.getCategory(cat).name : "All gadgets"}</h1>
+      <h1 className="mt-2">{cat ? GW.getCategory(cat).name : "All gadgets"}</h1>
       <p className="mt-2 text-ink2">
         {list.length} gadget{list.length === 1 ? "" : "s"} · specs and prices are illustrative demo data ·
         Performance to Cost index on every card

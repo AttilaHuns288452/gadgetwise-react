@@ -70,7 +70,7 @@ export default function Quiz() {
   return (
     <section className="section">
       <div className="eyebrow">Recommendation tool</div>
-      <h1 className="mt-2 text-3xl font-bold">Find the right gadget for how you actually study</h1>
+      <h1 className="mt-2">Find the right gadget for how you actually study</h1>
       <p className="mt-2 max-w-2xl text-ink2">
         Five questions, transparent weights. The score on every result is fully explained — nothing is a
         black box.
