@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { GW, money, ownIndex, frontier } from "./lib.js";
-import { GadgetCard, Img, Oidx, Stars } from "./ui.jsx";
+import { Link } from "react-router-dom";
+import { GW, money, ownIndex, frontier, recommend } from "../lib.js";
+import { Img, Oidx } from "../components/ui.jsx";
 
 /* ============================ HOME ============================ */
 
@@ -33,7 +33,7 @@ function MiniPareto() {
 function HeroShowcase() {
   const g = GW.getGadget("apple-macbook-air-m1");
   return (
-    <a href={`#/g/${g.id}`} className="card block overflow-hidden !rounded-lg text-ink" aria-label={`View the ${g.brand} ${g.model} detail page`}>
+    <Link to={`/g/${g.id}`} className="card block overflow-hidden !rounded-lg text-ink" aria-label={`View the ${g.brand} ${g.model} detail page`}>
       <Img gadget={g} className="h-52 bg-white" imgClass="p-6" eager />
       <div className="space-y-3 border-t border-line p-5">
         <div className="flex items-start justify-between gap-3">
@@ -53,7 +53,7 @@ function HeroShowcase() {
         <MiniPareto />
         <div className="text-xs text-ink3">Amber dots sit on the best-value frontier — cheaper and better indexed than anything else.</div>
       </div>
-    </a>
+    </Link>
   );
 }
 
@@ -96,13 +96,13 @@ function Scatter() {
       {list.map((g) => {
         const on = front.has(g.id);
         return (
-          <a key={g.id} href={`#/g/${g.id}`}>
+          <Link key={g.id} to={`/g/${g.id}`}>
             <circle cx={px(g.price)} cy={py(ownIndex(g))} r={on ? 8 : 6.5}
               fill={on ? "#9A5B10" : "#1D5BA4"} fillOpacity=".9" stroke="#fff" strokeWidth="1.5"
               style={{ cursor: "pointer" }}>
               <title>{`${g.brand} ${g.model} — ${money(g.price)} · Index ${ownIndex(g)}${on ? " · on best-value frontier" : ""}`}</title>
             </circle>
-          </a>
+          </Link>
         );
       })}
     </svg>
@@ -132,8 +132,8 @@ function Home({ compare, onCompare }) {
               36 months. Every point in the score is accounted for — no black-box rankings.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#/gadgets" className="btn-hero">Browse gadgets</a>
-              <a href="#/recommend" className="btn-hero-ghost">Find my recommendation</a>
+              <Link to="/gadgets" className="btn-hero">Browse gadgets</Link>
+              <Link to="/recommend" className="btn-hero-ghost">Find my recommendation</Link>
             </div>
             <ul className="mt-8 space-y-2 text-sm text-on-hero2">
               <li>• Transparent 100-point scoring — see exactly why a gadget ranks where it does</li>
@@ -168,14 +168,14 @@ function Home({ compare, onCompare }) {
         <h2 className="mt-2 text-2xl font-bold">Every category, scored the same way</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {GW.categories.map((c) => (
-            <a key={c.id} href={`#/gadgets?cat=${c.id}`} className="card block p-5 transition-colors hover:border-primary">
+            <Link key={c.id} to={`/gadgets?cat=${c.id}`} className="card block p-5 transition-colors hover:border-primary">
               <div className="flex items-baseline justify-between">
                 <h3 className="font-semibold">{c.name}</h3>
                 <span className="mono text-sm text-ink3">{GW.gadgetsInCategory(c.id).length} tracked</span>
               </div>
               <p className="mt-2 text-sm text-ink2">{c.blurb}</p>
               <div className="mt-3 text-sm font-semibold text-primary">View gadgets →</div>
-            </a>
+            </Link>
           ))}
         </div>
       </section>
@@ -201,7 +201,7 @@ function Home({ compare, onCompare }) {
           <h2 className="mt-2 text-2xl font-bold">Lowest monthly cost across the catalog</h2>
           <div className="mx-auto mt-6 max-w-3xl divide-y divide-line rounded-lg border border-line bg-surface">
             {cheapest.map((g, i) => (
-              <a key={g.id} href={`#/g/${g.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-4 hover:bg-primary-wash sm:flex-nowrap sm:gap-4">
+              <Link key={g.id} to={`/g/${g.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-4 hover:bg-primary-wash sm:flex-nowrap sm:gap-4">
                 <span className="mono w-6 text-sm text-ink3">{String(i + 1).padStart(2, "0")}</span>
                 <Img gadget={g} className="h-12 w-16 shrink-0" imgClass="p-1" />
                 <div className="min-w-0 flex-1">
@@ -213,7 +213,7 @@ function Home({ compare, onCompare }) {
                   <div className="mono text-xs text-ink3">{money(g.price)} upfront</div>
                 </div>
                 <Oidx g={g} />
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -261,7 +261,7 @@ function Home({ compare, onCompare }) {
             <h2 className="text-xl font-bold">Not sure where to start?</h2>
             <p className="mt-1 text-ink2">Answer five short questions and get a ranked shortlist with the full score breakdown.</p>
           </div>
-          <a href="#/recommend" className="btn-primary whitespace-nowrap">Find my recommendation</a>
+          <Link to="/recommend" className="btn-primary whitespace-nowrap">Find my recommendation</Link>
         </div>
       </section>
     </>
@@ -270,80 +270,4 @@ function Home({ compare, onCompare }) {
 
 /* ============================ CATALOG ============================ */
 
-function Catalog({ route, compare, onCompare }) {
-  const params = new URLSearchParams(route.split("?")[1] || "");
-  const [q, setQ] = useState(params.get("q") || "");
-  const cat = params.get("cat") || "";
-  const [sort, setSort] = useState("index");
-
-  const list = useMemo(() => {
-    let out = GW.gadgets.filter((g) => (!cat || g.category === cat));
-    if (q.trim()) {
-      const needle = q.trim().toLowerCase();
-      out = out.filter((g) =>
-        [g.brand, g.model, g.category, g.tagline, ...g.strengths].join(" ").toLowerCase().includes(needle)
-      );
-    }
-    const by = {
-      index: (a, b) => ownIndex(b) - ownIndex(a),
-      priceUp: (a, b) => a.price - b.price,
-      priceDown: (a, b) => b.price - a.price,
-      rating: (a, b) => b.rating - a.rating,
-      monthly: (a, b) => GW.monthlyCost(a) - GW.monthlyCost(b),
-    }[sort];
-    return [...out].sort(by);
-  }, [q, cat, sort]);
-
-  return (
-    <section className="section">
-      <div className="eyebrow">Catalog</div>
-      <h1 className="mt-2">{cat ? GW.getCategory(cat).name : "All gadgets"}</h1>
-      <p className="mt-2 text-ink2">
-        {list.length} gadget{list.length === 1 ? "" : "s"} · specs and prices are illustrative demo data ·
-        Performance to Cost index on every card
-      </p>
-
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search gadgets, brands, categories…"
-          aria-label="Search gadgets"
-          className="field min-w-[12rem] flex-1"
-        />
-        <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort gadgets" className="field max-w-[14rem]">
-          <option value="index">Best Performance to Cost</option>
-          <option value="monthly">Lowest cost per month</option>
-          <option value="priceUp">Price: low to high</option>
-          <option value="priceDown">Price: high to low</option>
-          <option value="rating">Highest rated</option>
-        </select>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <a href="#/gadgets" className={`chip !px-3 !py-1.5 ${!cat ? "bg-primary text-white" : "chip-neutral hover:border-primary"}`}>All</a>
-        {GW.categories.map((c) => (
-          <a key={c.id} href={`#/gadgets?cat=${c.id}`}
-            className={`chip !px-3 !py-1.5 ${cat === c.id ? "bg-primary text-white" : "chip-neutral hover:border-primary"}`}>
-            {c.name}
-          </a>
-        ))}
-      </div>
-
-      {list.length === 0 ? (
-        <div className="card mt-8 p-10 text-center text-ink2">
-          No gadgets match “{q}”. Try a different search or clear the filters.
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((g) => (
-            <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export { Home, Catalog, Scatter };
+export default Home;

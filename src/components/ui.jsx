@@ -1,4 +1,4 @@
-import { money, ownIndex, GW } from "./lib.js";
+import { money, ownIndex, GW } from "../lib.js";
 
 /* Some models already start with the brand ("Acer Aspire 5") — avoid "Acer Acer Aspire 5" */
 export const displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.brand} ${g.model}`);

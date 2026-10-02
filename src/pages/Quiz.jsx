@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { GW, money, recommend, FACTOR_META } from "./lib.js";
-import { Img, Oidx, displayName } from "./ui.jsx";
+import { Link } from "react-router-dom";
+import { GW, money, recommend, FACTOR_META } from "../lib.js";
+import { Img, Oidx, displayName } from "../components/ui.jsx";
 
 const STEP_META = [
   ["What are you looking for?", "Pick a gadget type"],
@@ -208,9 +209,9 @@ export default function Quiz() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-2">
                         <span className="mono text-xs text-ink3">#{i + 1}</span>
-                        <a href={`#/g/${r.gadget.id}`} className="text-lg font-semibold hover:text-primary">
+                        <Link to={`/g/${r.gadget.id}`} className="text-lg font-semibold hover:text-primary">
                           {displayName(r.gadget)}
-                        </a>
+                        </Link>
                         <Oidx g={r.gadget} />
                       </div>
                       <div className="mt-1 text-sm text-ink3">
@@ -268,7 +269,7 @@ export default function Quiz() {
             {step === 5 && (
               <>
                 <button type="button" onClick={() => setStep(1)} className="btn-primary">Start over</button>
-                <a href="#/gadgets" className="btn-ghost">Browse instead</a>
+                <Link to="/gadgets" className="btn-ghost">Browse instead</Link>
               </>
             )}
           </div>

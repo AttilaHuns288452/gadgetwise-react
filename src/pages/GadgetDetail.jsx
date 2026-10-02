@@ -1,19 +1,21 @@
 import { useState } from "react";
-import { GW, money, ownIndex, ownIndexParts, frontier } from "./lib.js";
-import { Bar, Img, Oidx, Stars, displayName } from "./ui.jsx";
+import { Link, useParams } from "react-router-dom";
+import { GW, money, ownIndexParts, frontier, recommend } from "../lib.js";
+import { Img, Bar, Oidx, Stars, displayName } from "../components/ui.jsx";
 
 /* ============================ DETAIL ============================ */
 
 const TABS = ["Overview", "Value & Ownership", "Reviews", "Issues"];
 
-function Detail({ id, compare, onCompare }) {
+function GadgetDetail({ compare, onCompare }) {
+  const { id } = useParams();
   const [tab, setTab] = useState(TABS[0]);
   const g = GW.getGadget(id);
   if (!g) {
     return (
       <section className="section">
         <h1>Gadget not found</h1>
-        <a href="#/gadgets" className="btn-primary mt-4">Back to catalog</a>
+        <Link to="/gadgets" className="btn-primary mt-4">Back to catalog</Link>
       </section>
     );
   }
@@ -33,9 +35,9 @@ function Detail({ id, compare, onCompare }) {
   return (
     <section className="section">
       <nav className="text-sm text-ink3" aria-label="Breadcrumb">
-        <a href="#/gadgets" className="hover:text-primary">Catalog</a>
+        <Link to="/gadgets" className="hover:text-primary">Catalog</Link>
         {" / "}
-        <a href={`#/gadgets?cat=${g.category}`} className="hover:text-primary">{GW.getCategory(g.category).name}</a>
+        <Link to={`/gadgets?cat=${g.category}`} className="hover:text-primary">{GW.getCategory(g.category).name}</Link>
         {" / "}
         <span className="text-ink2">{g.model}</span>
       </nav>
@@ -63,8 +65,8 @@ function Detail({ id, compare, onCompare }) {
               className={compare.has(g.id) ? "btn-primary" : "btn-ghost"}>
               {compare.has(g.id) ? "✓ In compare list" : "Add to compare"}
             </button>
-            <a href="#/compare" className="btn-ghost">Open compare</a>
-            <a href="#/recommend" className="btn-ghost">Score it for my needs</a>
+            <Link to="/compare" className="btn-ghost">Open compare</Link>
+            <Link to="/recommend" className="btn-ghost">Score it for my needs</Link>
           </div>
         </div>
       </div>
@@ -226,14 +228,14 @@ function Detail({ id, compare, onCompare }) {
         <h2 className="text-xl font-bold">More in {GW.getCategory(g.category).name}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {GW.gadgetsInCategory(g.category).filter((x) => x.id !== g.id).map((x) => (
-            <a key={x.id} href={`#/g/${x.id}`} className="card flex items-center gap-3 p-4 hover:border-primary">
+            <Link key={x.id} to={`/g/${x.id}`} className="card flex items-center gap-3 p-4 hover:border-primary">
               <Img gadget={x} className="h-14 w-16 shrink-0 sm:w-20" imgClass="p-1" />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold leading-snug">{displayName(x)}</div>
                 <div className="mono truncate text-sm text-primary-dark">{money(x.price)}</div>
               </div>
               <Oidx g={x} className="max-w-[84px]" />
-            </a>
+            </Link>
           ))}
         </div>
       </div>
@@ -243,92 +245,4 @@ function Detail({ id, compare, onCompare }) {
 
 /* ============================ COMPARE ============================ */
 
-function Compare({ compare, onCompare }) {
-  const list = GW.gadgetsByIds([...compare]);
-  const bestMonthly = list.length ? Math.min(...list.map(GW.monthlyCost)) : null;
-  const bestIdx = list.length ? Math.max(...list.map(ownIndex)) : null;
-
-  const rows = [
-    ["Price", (g) => <span className="mono">{money(g.price)}</span>],
-    ["Cost per month", (g) => (
-      <span className="mono">
-        {money(GW.monthlyCost(g))}
-        {GW.monthlyCost(g) === bestMonthly && list.length > 1 && <span className="chip-good ml-2">Lowest</span>}
-      </span>
-    )],
-    ["Performance to Cost", (g) => (
-      <span className="mono">
-        {ownIndex(g)}
-        {ownIndex(g) === bestIdx && list.length > 1 && <span className="chip-good ml-2">Highest</span>}
-      </span>
-    )],
-    ["Rating", (g) => <Stars rating={g.rating} count={g.reviewCount} />],
-    ["Battery life", (g) => <span className="mono">{g.battery} h</span>],
-    ["Warranty", (g) => <span className="mono">{g.value.warrantyYears} y</span>],
-    ["Repairability", (g) => g.value.repairabilityLabel],
-    ["Performance", (g) => <span className="mono">{g.scored.performance} / 10</span>],
-    ["Display", (g) => <span className="mono">{g.scored.display} / 10</span>],
-    ["Storage", (g) => <span className="mono">{g.scored.storage} / 10</span>],
-    ["Strengths", (g) => g.strengths.join(" · ")],
-    ["Weaknesses", (g) => g.weaknesses.join(" · ")],
-  ];
-
-  return (
-    <section className="section">
-      <div className="eyebrow">Compare</div>
-      <h1 className="mt-2">Side-by-side comparison</h1>
-      <p className="mt-2 text-ink2">Pick up to 4 gadgets. Same formulas as every other page.</p>
-
-      {list.length === 0 ? (
-        <div className="card mx-auto mt-8 max-w-2xl p-10 text-center">
-          <p className="text-ink2">Nothing to compare yet.</p>
-          <a href="#/gadgets" className="btn-primary mt-4">Browse gadgets</a>
-        </div>
-      ) : (
-        <>
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <thead>
-                <tr>
-                  <th className="w-40 border-b border-line py-3 text-left align-bottom text-ink3">Spec</th>
-                  {list.map((g) => (
-                    <th key={g.id} className="border-b border-line px-4 py-3 text-left align-bottom">
-                      <div className="flex items-start gap-3">
-                        <Img gadget={g} className="h-16 w-20 shrink-0" imgClass="p-1" />
-                        <div>
-                          <a href={`#/g/${g.id}`} className="font-semibold hover:text-primary">{displayName(g)}</a>
-                          <div>
-                            <button type="button" onClick={() => onCompare(g.id)}
-                              className="mt-1 text-xs font-medium text-danger hover:underline">
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(([label, render]) => (
-                  <tr key={label} className="border-b border-line">
-                    <td className="py-3 pr-4 text-ink3">{label}</td>
-                    {list.map((g) => (
-                      <td key={g.id} className="px-4 py-3 text-ink2">{render(g)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-6 flex gap-3">
-            <a href="#/gadgets" className="btn-ghost">Add another gadget</a>
-            <button type="button" onClick={() => list.forEach((g) => onCompare(g.id))} className="btn-ghost">Clear all</button>
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-export { Detail, Compare };
+export default GadgetDetail;

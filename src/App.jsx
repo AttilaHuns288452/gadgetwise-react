@@ -1,20 +1,11 @@
-import { useEffect, useState } from "react";
-import { Home, Catalog } from "./views.jsx";
-import { Detail, Compare } from "./detail.jsx";
-import Quiz from "./quiz.jsx";
-
-function useHashRoute() {
-  const [route, setRoute] = useState(() => location.hash.replace(/^#/, "") || "/");
-  useEffect(() => {
-    const onHash = () => {
-      setRoute(location.hash.replace(/^#/, "") || "/");
-      window.scrollTo(0, 0);
-    };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-  return route;
-}
+import { useState } from "react";
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import Home from "./pages/Home.jsx";
+import Catalog from "./pages/Catalog.jsx";
+import GadgetDetail from "./pages/GadgetDetail.jsx";
+import Compare from "./pages/Compare.jsx";
+import Quiz from "./pages/Quiz.jsx";
 
 const NAV = [
   ["/", "Home"],
@@ -23,43 +14,52 @@ const NAV = [
   ["/recommend", "Recommendation tool"],
 ];
 
+// scroll back to the top whenever the route changes
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
-  const route = useHashRoute();
-  const [compare, setCompare] = useState(() => new Set());
+  const navigate = useNavigate();
+  const [compare, setCompare] = useState(new Set());
   const [q, setQ] = useState("");
 
   const onCompare = (id) =>
     setCompare((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else if (next.size >= 4) return prev; // cap at 4, same as the prototype
+      else if (next.size >= 4) return prev; // max 4 gadgets in compare
       else next.add(id);
       return next;
     });
 
-  const path = route.split("?")[0];
-
   return (
     <div className="flex min-h-screen flex-col">
+      <ScrollToTop />
       <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3">
-          <a href="#/" className="flex items-baseline gap-2">
+          <Link to="/" className="flex items-baseline gap-2">
             <span className="text-lg font-bold tracking-tight">Gadget<span className="text-primary">Wise</span></span>
             <span className="hidden text-xs text-ink3 sm:inline">Smart picks for students</span>
-          </a>
+          </Link>
           <nav className="flex flex-wrap gap-1 text-sm font-medium" aria-label="Main">
             {NAV.map(([href, label]) => (
-              <a key={href} href={`#${href}`}
-                className={`rounded-sm px-3 py-1.5 ${path === href ? "bg-primary-soft text-primary-dark" : "text-ink2 hover:text-primary"}`}>
+              <NavLink key={href} to={href} end={href === "/"}
+                className={({ isActive }) =>
+                  `rounded-sm px-3 py-1.5 ${isActive ? "bg-primary-soft text-primary-dark" : "text-ink2 hover:text-primary"}`}>
                 {label}
-              </a>
+              </NavLink>
             ))}
           </nav>
           <form
             className="ml-auto flex items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              location.hash = `#/gadgets?q=${encodeURIComponent(q)}`;
+              navigate(`/gadgets?q=${encodeURIComponent(q)}`);
             }}
           >
             <input
@@ -78,18 +78,20 @@ export default function App() {
             <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2 text-sm">
               <span className="mono font-semibold text-primary-dark">{compare.size}/4</span>
               <span className="text-ink2">in compare</span>
-              <a href="#/compare" className="font-semibold text-primary hover:underline">Open compare →</a>
+              <Link to="/compare" className="font-semibold text-primary hover:underline">Open compare →</Link>
             </div>
           </div>
         )}
       </header>
 
       <main className="flex-1">
-        {path === "/" && <Home compare={compare} onCompare={onCompare} />}
-        {path === "/gadgets" && <Catalog route={route} compare={compare} onCompare={onCompare} />}
-        {path.startsWith("/g/") && <Detail id={decodeURIComponent(path.slice(3))} compare={compare} onCompare={onCompare} />}
-        {path === "/compare" && <Compare compare={compare} onCompare={onCompare} />}
-        {path === "/recommend" && <Quiz />}
+        <Routes>
+          <Route path="/" element={<Home compare={compare} onCompare={onCompare} />} />
+          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} />} />
+          <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
+          <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
+          <Route path="/recommend" element={<Quiz />} />
+        </Routes>
       </main>
 
       <footer className="border-t border-line bg-surface">
@@ -105,9 +107,9 @@ export default function App() {
             <div>
               <div className="font-semibold text-ink2">Explore</div>
               <ul className="mt-2 space-y-1 text-ink3">
-                <li><a href="#/gadgets" className="hover:text-primary">Catalog</a></li>
-                <li><a href="#/recommend" className="hover:text-primary">Recommendation tool</a></li>
-                <li><a href="#/compare" className="hover:text-primary">Compare</a></li>
+                <li><Link to="/gadgets" className="hover:text-primary">Catalog</Link></li>
+                <li><Link to="/recommend" className="hover:text-primary">Recommendation tool</Link></li>
+                <li><Link to="/compare" className="hover:text-primary">Compare</Link></li>
               </ul>
             </div>
             <div>
