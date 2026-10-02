@@ -34,7 +34,7 @@ function HeroShowcase() {
   const g = GW.getGadget("apple-macbook-air-m1");
   return (
     <a href={`#/g/${g.id}`} className="card block overflow-hidden !rounded-lg text-ink" aria-label={`View the ${g.brand} ${g.model} detail page`}>
-      <Img gadget={g} className="h-52 bg-white" imgClass="p-6" />
+      <Img gadget={g} className="h-52 bg-white" imgClass="p-6" eager />
       <div className="space-y-3 border-t border-line p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -121,7 +121,7 @@ function Home({ compare, onCompare }) {
     <>
       {/* Hero */}
       <section className="border-t border-gold-hair bg-hero text-on-hero">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">Student-first gadget guide</div>
             <h1 className="mt-3">
@@ -155,7 +155,7 @@ function Home({ compare, onCompare }) {
             ["Average rating", `${GW.community.avgRating}★`],
           ].map(([label, v]) => (
             <div key={label}>
-              <div className="mono text-2xl font-semibold text-primary-dark">{v}</div>
+              <div className="mono text-3xl font-semibold text-primary-dark">{v}</div>
               <div className="text-sm text-ink3">{label}</div>
             </div>
           ))}
@@ -199,7 +199,7 @@ function Home({ compare, onCompare }) {
         <div className="border-t border-line pt-10">
           <div className="eyebrow">Cheapest to own</div>
           <h2 className="mt-2 text-2xl font-bold">Lowest monthly cost across the catalog</h2>
-          <div className="mt-6 divide-y divide-line rounded-lg border border-line bg-surface">
+          <div className="mx-auto mt-6 max-w-3xl divide-y divide-line rounded-lg border border-line bg-surface">
             {cheapest.map((g, i) => (
               <a key={g.id} href={`#/g/${g.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-4 hover:bg-primary-wash sm:flex-nowrap sm:gap-4">
                 <span className="mono w-6 text-sm text-ink3">{String(i + 1).padStart(2, "0")}</span>
@@ -310,7 +310,7 @@ function Catalog({ route, compare, onCompare }) {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search gadgets, brands, categories…"
           aria-label="Search gadgets"
-          className="field max-w-sm"
+          className="field min-w-[12rem] flex-1"
         />
         <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort gadgets" className="field max-w-[14rem]">
           <option value="index">Best Performance to Cost</option>

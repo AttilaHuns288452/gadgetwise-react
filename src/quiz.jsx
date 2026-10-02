@@ -77,7 +77,7 @@ export default function Quiz() {
       </p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
-        <div className="card h-fit p-3"><Stepper step={step} answers={answers} /></div>
+        <div className="card p-3 lg:self-stretch"><Stepper step={step} answers={answers} /></div>
 
         <div>
           {step === 1 && (
@@ -86,7 +86,7 @@ export default function Quiz() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {[{ id: "any", name: "Not sure yet — show me everything", blurb: "Rank the whole catalog." }, ...GW.categories].map((c) => (
                   <button key={c.id} type="button" onClick={() => { setCat(c.id); setStep(2); }}
-                    className={`rounded-sm border p-4 text-left transition-colors ${
+                    className={`rounded-sm border p-4 text-left transition-colors sm:[&:last-child:nth-child(odd)]:col-span-2 ${
                       cat === c.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
                     <div className="font-semibold">{c.name}</div>
                     <div className="mt-1 text-sm text-ink3">{c.blurb || ""}</div>
@@ -102,13 +102,13 @@ export default function Quiz() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {GW.budgetBands.map((b) => (
                   <button key={b.id} type="button" onClick={() => { setBandId(b.id); setStep(3); }}
-                    className={`rounded-sm border p-4 text-left transition-colors ${
+                    className={`rounded-sm border p-4 text-left transition-colors sm:[&:last-child:nth-child(odd)]:col-span-2 ${
                       bandId === b.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
                     <div className="mono font-semibold">{b.label}</div>
                   </button>
                 ))}
                 <button type="button" onClick={() => { setBandId("custom"); }}
-                  className={`rounded-sm border p-4 text-left transition-colors ${
+                  className={`rounded-sm border p-4 text-left transition-colors sm:[&:last-child:nth-child(odd)]:col-span-2 ${
                     bandId === "custom" ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
                   <div className="mono font-semibold">Custom range</div>
                   <div className="mt-2 flex gap-2">

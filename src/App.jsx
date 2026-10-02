@@ -93,7 +93,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-line bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-start justify-between gap-6 px-5 py-8 text-sm">
+        <div className="mx-auto grid max-w-6xl gap-x-10 gap-y-8 px-5 py-8 text-sm sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
           <div>
             <div className="font-bold">Gadget<span className="text-primary">Wise</span></div>
             <p className="mt-2 max-w-md text-ink3">
@@ -101,7 +101,7 @@ export default function App() {
               Commons assets; specs, prices, scores and reviews are illustrative demo data.
             </p>
           </div>
-          <div className="flex gap-10">
+          <div className="contents">
             <div>
               <div className="font-semibold text-ink2">Explore</div>
               <ul className="mt-2 space-y-1 text-ink3">

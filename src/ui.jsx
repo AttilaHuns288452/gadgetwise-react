@@ -4,7 +4,7 @@ import { money, ownIndex, GW } from "./lib.js";
 export const displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.brand} ${g.model}`);
 
 /* Image with a never-blank fallback (Wikimedia hotlinks can fail) */
-export function Img({ gadget, className = "", imgClass = "" }) {
+export function Img({ gadget, className = "", imgClass = "", eager = false }) {
   const ph =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
@@ -15,7 +15,7 @@ export function Img({ gadget, className = "", imgClass = "" }) {
       <img
         src={gadget.image}
         alt={`${gadget.brand} ${gadget.model}`}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
         onError={(e) => {
           if (e.currentTarget.src !== ph) e.currentTarget.src = ph;
         }}

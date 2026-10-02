@@ -91,7 +91,9 @@
   /* Performance-to-Cost badge — the site's signature metric */
   .oidx {
     @apply inline-flex flex-col items-center rounded-sm border border-line-strong bg-white px-2.5 py-1.5;
-    max-width: 84px; /* bounds the "PERFORMANCE TO COST" word so narrow rows never overflow */
+  }
+  @media (max-width: 640px) {
+    .oidx { max-width: 84px; } /* bounds the label so narrow rows never overflow */
   }
   .oidx b {
     font-family: var(--font-mono);
