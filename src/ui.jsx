@@ -35,9 +35,9 @@ export function Stars({ rating, count }) {
   );
 }
 
-export function Oidx({ g, size = "md" }) {
+export function Oidx({ g, size = "md", className = "" }) {
   return (
-    <span className={`oidx ${size === "lg" ? "scale-110 origin-left" : ""}`} title="Performance to Cost — battery 25 + student rating 25 + value 30 (price vs category median) + warranty 20">
+    <span className={`oidx ${size === "lg" ? "scale-110 origin-left" : ""} ${className}`} title="Performance to Cost — battery 25 + student rating 25 + value 30 (price vs category median) + warranty 20">
       <b>{ownIndex(g)}</b>
       <span>PERFORMANCE TO COST</span>
     </span>

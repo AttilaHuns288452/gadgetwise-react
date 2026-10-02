@@ -224,7 +224,7 @@ function Detail({ id, compare, onCompare }) {
       {/* Related */}
       <div className="mt-12">
         <h2 className="text-xl font-bold">More in {GW.getCategory(g.category).name}</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {GW.gadgetsInCategory(g.category).filter((x) => x.id !== g.id).map((x) => (
             <a key={x.id} href={`#/g/${x.id}`} className="card flex items-center gap-3 p-4 hover:border-primary">
               <Img gadget={x} className="h-14 w-20 shrink-0" imgClass="p-1" />
@@ -232,7 +232,7 @@ function Detail({ id, compare, onCompare }) {
                 <div className="font-semibold leading-snug">{displayName(x)}</div>
                 <div className="mono truncate text-sm text-primary-dark">{money(x.price)}</div>
               </div>
-              <Oidx g={x} />
+              <Oidx g={x} className="max-w-[88px]" />
             </a>
           ))}
         </div>

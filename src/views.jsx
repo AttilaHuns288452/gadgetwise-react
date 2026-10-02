@@ -205,8 +205,8 @@ function Home({ compare, onCompare }) {
                 <span className="mono w-6 text-sm text-ink3">{String(i + 1).padStart(2, "0")}</span>
                 <Img gadget={g} className="h-12 w-16 shrink-0" imgClass="p-1" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold">{g.brand} {g.model}</div>
-                  <div className="truncate text-xs text-ink3">{GW.getCategory(g.category).name}</div>
+                  <div className="font-semibold leading-snug">{g.brand} {g.model}</div>
+                  <div className="text-xs text-ink3">{GW.getCategory(g.category).name}</div>
                 </div>
                 <div className="w-full shrink-0 text-right sm:w-auto">
                   <div className="mono font-semibold text-primary-dark">{money(GW.monthlyCost(g))}/mo</div>
