@@ -3,6 +3,10 @@
    All product records are fictional, created for this prototype.
    None of the brands, models, reviews, users, or figures are
    real-world verified data. Prices are realistic PHP samples.
+
+   This file is the fake data layer. When a real backend exists,
+   replace these arrays with fetch() calls returning the same
+   object shapes. No component imports data from anywhere else.
    ============================================================ */
 
 const GW = {};
