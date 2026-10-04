@@ -6,8 +6,8 @@ export const displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.
 
 /* Image with a never-blank fallback (Wikimedia hotlinks can fail) */
 export function Img({ gadget, className = "", imgClass = "", eager = false, frame = "4 / 3" }) {
-  // cover fills the frame; portrait product shots (all 3:4) get a 3:4 frame so
-  // cover is an exact fit and the product never loses its top or bottom
+  // every frame keeps its caller's aspect so grid rows stay aligned;
+  // portrait product shots fit height (cover would cut the product's top and bottom)
   const [ar, setAr] = useState(null);
   const ph =
     "data:image/svg+xml;utf8," +
@@ -17,7 +17,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
   return (
     <div
       className={`overflow-hidden bg-white ${className}`}
-      style={{ aspectRatio: ar != null && ar < 1 ? "3 / 4" : frame }}
+      style={{ aspectRatio: frame }}
     >
       <img
         src={gadget.image}
@@ -27,7 +27,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
         onError={(e) => {
           if (e.currentTarget.src !== ph) e.currentTarget.src = ph;
         }}
-        className={`h-full w-full object-cover ${imgClass}`}
+        className={`h-full w-full ${ar != null && ar < 1 ? "object-contain" : "object-cover"} ${imgClass}`}
       />
     </div>
   );

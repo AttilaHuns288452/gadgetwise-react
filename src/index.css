@@ -37,13 +37,13 @@
   --radius-lg: 12px;
 
   /* type scale: sized for 1080p desktops (site read "zoomed out" at 1920) */
-  --text-xs: 0.875rem;
-  --text-sm: 1rem;
-  --text-base: 1.125rem;
-  --text-lg: 1.375rem;
-  --text-xl: 1.625rem;
-  --text-2xl: 2rem;
-  --text-3xl: 2.5rem;
+  --text-xs: 0.9375rem;
+  --text-sm: 1.0625rem;
+  --text-base: 1.1875rem;
+  --text-lg: 1.5rem;
+  --text-xl: 1.875rem;
+  --text-2xl: 2.375rem;
+  --text-3xl: 3rem;
 }
 
 @layer base {
@@ -56,9 +56,9 @@
   }
   h1, h2, h3 { letter-spacing: -0.015em; }
   /* type contract (css/styles.css in the prototype), display sizes raised 2026-10 for 1080p */
-  h1 { font-size: clamp(2.15rem, 4vw, 3.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.14; }
-  h2 { font-size: clamp(1.55rem, 2.8vw, 2.15rem); font-weight: 700; line-height: 1.18; }
-  h3 { font-size: 1.3rem; font-weight: 700; line-height: 1.18; }
+  h1 { font-size: clamp(2.25rem, 5vw, 4.5rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; }
+  h2 { font-size: clamp(1.75rem, 3.2vw, 2.75rem); font-weight: 700; line-height: 1.15; }
+  h3 { font-size: 1.55rem; font-weight: 700; line-height: 1.2; }
 }
 
 @layer components {
@@ -66,22 +66,22 @@
 
   /* v4 note: @apply can't reference custom classes, so each variant repeats the base utilities */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors;
   }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-primary text-white hover:bg-primary-dark; }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-white text-primary border border-line-strong hover:border-primary hover:bg-primary-wash; }
-  .btn-amber { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-warm text-white hover:bg-warm-dark; }
-  .btn-hero { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors bg-gold-hair text-hero hover:brightness-105; }
-  .btn-hero-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors border border-white/35 text-on-hero hover:bg-white/10; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-primary text-white hover:bg-primary-dark; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-white text-primary border border-line-strong hover:border-primary hover:bg-primary-wash; }
+  .btn-amber { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-warm text-white hover:bg-warm-dark; }
+  .btn-hero { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-gold-hair text-hero hover:brightness-105; }
+  .btn-hero-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors border border-white/35 text-on-hero hover:bg-white/10; }
 
   .chip {
-    @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium;
+    @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium;
   }
-  .chip-tag { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-warm-soft text-warm-dark; }
-  .chip-good { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-success-soft text-success; }
-  .chip-bad { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-danger-soft text-danger; }
-  .chip-neutral { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-surface2 text-ink2; }
-  .chip-blue { @apply inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium bg-primary-soft text-primary-dark; }
+  .chip-tag { @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium bg-warm-soft text-warm-dark; }
+  .chip-good { @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium bg-success-soft text-success; }
+  .chip-bad { @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium bg-danger-soft text-danger; }
+  .chip-neutral { @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium bg-surface2 text-ink2; }
+  .chip-blue { @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium bg-primary-soft text-primary-dark; }
 
   .card {
     @apply bg-surface border border-line rounded-lg;
@@ -91,7 +91,7 @@
   }
 
   .field {
-    @apply w-full rounded-sm border border-line-strong bg-white px-3 py-2.5 text-sm text-ink outline-none;
+    @apply w-full rounded-sm border border-line-strong bg-white px-4 py-3.5 text-base text-ink outline-none;
   }
   .field:focus {
     border-color: var(--color-primary);
@@ -100,7 +100,7 @@
 
   /* Performance-to-Cost badge — the site's signature metric */
   .oidx {
-    @apply inline-flex flex-col items-center rounded-sm border border-line-strong bg-white px-2.5 py-1.5;
+    @apply inline-flex flex-col items-center rounded-sm border border-line-strong bg-white px-3.5 py-2.5;
   }
   @media (max-width: 640px) {
     .oidx { max-width: 84px; } /* bounds the label so narrow rows never overflow */
@@ -108,13 +108,13 @@
   .oidx b {
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 1.15rem;
+    font-size: 2rem;
     color: var(--color-primary-dark);
     line-height: 1;
   }
   .oidx span {
     /* no nowrap — the label must wrap to 2 lines on narrow cards; nowrap made min-content 134px and overflowed mobile */
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     letter-spacing: 0.09em;
     font-weight: 600;
     color: var(--color-ink3);
@@ -122,7 +122,7 @@
     text-align: center;
   }
 
-  .section { @apply mx-auto max-w-[1440px] px-5 py-12; }
+  .section { @apply mx-auto max-w-[1600px] px-5 py-12; }
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.14em] text-warm;
   }

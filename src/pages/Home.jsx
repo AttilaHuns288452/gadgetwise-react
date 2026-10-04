@@ -40,7 +40,7 @@ function HeroShowcase() {
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
             <div className="text-lg font-semibold">{g.model}</div>
-            <div className="mono mt-1 text-[1.6rem] font-semibold text-ink">{money(g.price)}</div>
+            <div className="mono mt-1 text-[2.1rem] font-semibold text-ink">{money(g.price)}</div>
             <div className="text-xs text-ink3">≈ {money(GW.monthlyCost(g))}/month · 36-month window</div>
           </div>
           <Oidx g={g} />
@@ -121,13 +121,13 @@ function Home({ compare, onCompare }) {
     <>
       {/* Hero */}
       <section className="border-t border-gold-hair bg-hero text-on-hero">
-        <div className="mx-auto grid max-w-[1440px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
+        <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">Student-first gadget guide</div>
             <h1 className="mt-3">
               Buy the gadget that costs less to own — not just less to buy.
             </h1>
-            <p className="mt-4 max-w-xl text-lg text-on-hero2">
+            <p className="mt-4 max-w-2xl text-lg text-on-hero2">
               GadgetWise ranks real gadgets by budget fit, academic use, and what they cost per month over
               36 months. Every point in the score is accounted for — no black-box rankings.
             </p>
@@ -135,7 +135,7 @@ function Home({ compare, onCompare }) {
               <Link to="/gadgets" className="btn-hero">Browse gadgets</Link>
               <Link to="/recommend" className="btn-hero-ghost">Find my recommendation</Link>
             </div>
-            <ul className="mt-8 space-y-3.5 text-base text-on-hero2">
+            <ul className="mt-7 space-y-3.5 text-lg text-on-hero2">
               <li>• Transparent 100-point scoring — see exactly why a gadget ranks where it does</li>
               <li>• Performance to Cost index on every product</li>
               <li>• Reviews written by students, for students</li>
@@ -148,7 +148,7 @@ function Home({ compare, onCompare }) {
 
       {/* Trust strip */}
       <div className="border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-6 px-5 py-6 sm:grid-cols-4 sm:divide-x sm:divide-line">
+        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-6 px-5 py-6 sm:grid-cols-4 sm:divide-x sm:divide-line">
           {[
             ["Gadgets tracked", GW.community.gadgetsTracked],
             ["Student reviews", GW.community.reviewsWritten.toLocaleString()],
@@ -235,7 +235,7 @@ function Home({ compare, onCompare }) {
 
       {/* Flow band */}
       <section className="bg-hero text-on-hero">
-        <div className="mx-auto max-w-[1440px] px-5 xl:px-10 py-12">
+        <div className="mx-auto max-w-[1600px] px-5 py-12">
           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">How the ranking works</div>
           <h2 className="mt-2 text-2xl font-bold">100 points, fully accounted for</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
