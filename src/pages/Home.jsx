@@ -92,7 +92,7 @@ function Home({ compare, onCompare }) {
     <>
       {/* Hero */}
       <section className="border-t border-gold-hair bg-hero text-on-hero">
-        <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-6 lg:px-12 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-12">
+        <div className="mx-auto grid max-w-[1800px] items-center gap-10 px-6 lg:px-12 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-12">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">Student-first gadget guide</div>
             <h1 className="mt-3">
@@ -118,7 +118,7 @@ function Home({ compare, onCompare }) {
 
       {/* Trust strip */}
       <div className="border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-6 px-6 lg:px-12 pt-12 pb-10 sm:grid-cols-4 sm:divide-x sm:divide-line lg:pt-24">
+        <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-6 px-6 lg:px-12 pt-12 pb-10 sm:grid-cols-4 sm:divide-x sm:divide-line lg:pt-24">
           {[
             ["Gadgets tracked", GW.community.gadgetsTracked],
             ["Student reviews", GW.community.reviewsWritten.toLocaleString()],
@@ -205,7 +205,7 @@ function Home({ compare, onCompare }) {
 
       {/* Flow band */}
       <section className="bg-hero text-on-hero">
-        <div className="mx-auto max-w-[1600px] px-6 lg:px-12 py-12">
+        <div className="mx-auto max-w-[1800px] px-6 lg:px-12 py-12">
           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">How the ranking works</div>
           <h2 className="mt-2 text-2xl font-bold">100 points, fully accounted for</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
