@@ -3,37 +3,11 @@ import { GW, money, ownIndex, frontier, recommend } from "../lib.js";
 import { Img, Oidx } from "../components/ui.jsx";
 
 
-function MiniPareto() {
-  // tiny scatter for the hero card — whole catalog so the plot fills; same frontier rule
-  const list = GW.gadgets;
-  const front = frontier(list);
-  const pMax = Math.max(...list.map((g) => g.price)) * 1.08;
-  const sMin = Math.min(...list.map(ownIndex)) - 4;
-  const sMax = Math.max(...list.map(ownIndex)) + 4;
-  const px = (p) => 20 + (p / pMax) * 280;
-  const py = (s) => 138 - ((s - sMin) / (sMax - sMin)) * 118;
-  return (
-    <svg viewBox="0 0 320 158" className="w-full" role="img" aria-label="Laptop price vs Performance to Cost">
-      <line x1="20" y1="138" x2="305" y2="138" stroke="#E3E7ED" />
-      <line x1="20" y1="18" x2="20" y2="138" stroke="#E3E7ED" />
-      {list.map((g) => {
-        const on = front.has(g.id);
-        return (
-          <circle key={g.id} cx={px(g.price)} cy={py(ownIndex(g))} r={on ? 7 : 5}
-            fill={on ? "#9A5B10" : "#1D5BA4"} fillOpacity=".9" stroke="#fff" strokeWidth="1.5">
-            <title>{`${g.brand} ${g.model} — ${money(g.price)} · Index ${ownIndex(g)}${on ? " · best-value frontier" : ""}`}</title>
-          </circle>
-        );
-      })}
-    </svg>
-  );
-}
-
 function HeroShowcase() {
   const g = GW.getGadget("apple-macbook-air-m1");
   return (
     <Link to={`/g/${g.id}`} className="card block overflow-hidden !rounded-lg text-ink" aria-label={`View the ${g.brand} ${g.model} detail page`}>
-      <Img gadget={g} className="bg-white" frame="3 / 2" eager />
+      <Img gadget={g} frame="3 / 2" eager />
       <div className="space-y-3 border-t border-line p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -49,8 +23,6 @@ function HeroShowcase() {
           <span className="chip-good">Best value in Laptops</span>
           <span className="chip-bad">Premium price</span>
         </div>
-        <MiniPareto />
-        <div className="text-xs text-ink3">Amber dots sit on the best-value frontier — cheaper and better indexed than anything else.</div>
       </div>
     </Link>
   );
@@ -120,7 +92,7 @@ function Home({ compare, onCompare }) {
     <>
       {/* Hero */}
       <section className="border-t border-gold-hair bg-hero text-on-hero">
-        <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
+        <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-6 lg:px-12 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-12">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">Student-first gadget guide</div>
             <h1 className="mt-3">
@@ -134,11 +106,10 @@ function Home({ compare, onCompare }) {
               <Link to="/gadgets" className="btn-hero">Browse gadgets</Link>
               <Link to="/recommend" className="btn-hero-ghost">Find my recommendation</Link>
             </div>
-            <ul className="mt-7 space-y-3.5 text-lg text-on-hero2">
+            <ul className="mt-6 space-y-2.5 text-lg text-on-hero2 [&>li]:pl-[1.15em] [&>li]:[text-indent:-1.15em]">
               <li>• Transparent 100-point scoring — see exactly why a gadget ranks where it does</li>
               <li>• Performance to Cost index on every product</li>
               <li>• Reviews written by students, for students</li>
-              <li>• {GW.community.gadgetsTracked} gadgets tracked · {GW.community.reviewsWritten.toLocaleString()} student reviews in the community</li>
             </ul>
           </div>
           <HeroShowcase />
@@ -147,7 +118,7 @@ function Home({ compare, onCompare }) {
 
       {/* Trust strip */}
       <div className="border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-6 px-5 py-6 sm:grid-cols-4 sm:divide-x sm:divide-line">
+        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-6 px-6 lg:px-12 pt-12 pb-10 sm:grid-cols-4 sm:divide-x sm:divide-line lg:pt-24">
           {[
             ["Gadgets tracked", GW.community.gadgetsTracked],
             ["Student reviews", GW.community.reviewsWritten.toLocaleString()],
@@ -234,7 +205,7 @@ function Home({ compare, onCompare }) {
 
       {/* Flow band */}
       <section className="bg-hero text-on-hero">
-        <div className="mx-auto max-w-[1600px] px-5 py-12">
+        <div className="mx-auto max-w-[1600px] px-6 lg:px-12 py-12">
           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-hair">How the ranking works</div>
           <h2 className="mt-2 text-2xl font-bold">100 points, fully accounted for</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

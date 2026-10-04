@@ -30,7 +30,7 @@ function Catalog({ compare, onCompare }) {
   return (
     <section className="section">
       <div className="eyebrow">Catalog</div>
-      <h1 className="mt-2">{cat ? GW.getCategory(cat).name : "All gadgets"}</h1>
+      <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">{cat ? GW.getCategory(cat).name : "All gadgets"}</h1>
       <p className="mt-2 text-ink2">
         {list.length} gadget{list.length === 1 ? "" : "s"} · specs and prices are illustrative demo data ·
         Performance to Cost index on every card
@@ -69,7 +69,7 @@ function Catalog({ compare, onCompare }) {
           No gadgets match “{q}”. Try a different search or clear the filters.
         </div>
       ) : (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {list.map((g) => (
             <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
           ))}

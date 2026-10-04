@@ -16,7 +16,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
     );
   return (
     <div
-      className={`overflow-hidden bg-white ${className}`}
+      className={`overflow-hidden bg-[#E8ECF3] p-2 ${className}`}
       style={{ aspectRatio: frame }}
     >
       <img
@@ -27,7 +27,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
         onError={(e) => {
           if (e.currentTarget.src !== ph) e.currentTarget.src = ph;
         }}
-        className={`h-full w-full ${ar != null && ar < 1 ? "object-contain" : "object-cover"} ${imgClass}`}
+        className={`h-full w-full rounded-md ${ar != null && ar < 1 ? "object-contain" : "object-cover"} ${imgClass}`}
       />
     </div>
   );
