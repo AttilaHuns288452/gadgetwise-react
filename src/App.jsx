@@ -41,7 +41,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
       <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3">
           <Link to="/" className="flex items-baseline gap-2">
             <span className="text-lg font-bold tracking-tight">Gadget<span className="text-primary">Wise</span></span>
             <span className="hidden text-xs text-ink3 sm:inline">Smart picks for students</span>
@@ -75,7 +75,7 @@ export default function App() {
         </div>
         {compare.size > 0 && (
           <div className="border-t border-line bg-primary-wash">
-            <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2 text-sm">
+            <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-5 py-2 text-sm">
               <span className="mono font-semibold text-primary-dark">{compare.size}/4</span>
               <span className="text-ink2">in compare</span>
               <Link to="/compare" className="font-semibold text-primary hover:underline">Open compare →</Link>
@@ -95,7 +95,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl gap-x-10 gap-y-8 px-5 py-8 text-sm sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
+        <div className="mx-auto grid max-w-[1440px] gap-x-10 gap-y-8 px-5 py-8 text-sm sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
           <div>
             <div className="font-bold">Gadget<span className="text-primary">Wise</span></div>
             <p className="mt-2 max-w-md text-ink3">

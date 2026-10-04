@@ -44,7 +44,7 @@ function GadgetDetail({ compare, onCompare }) {
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <Img gadget={g} className="card h-80" imgClass="p-8" eager />
+          <Img gadget={g} className="card" eager />
         </div>
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>

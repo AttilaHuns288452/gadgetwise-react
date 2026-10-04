@@ -1,25 +1,33 @@
+import { useState } from "react";
 import { money, ownIndex, GW } from "../lib.js";
 
 /* Some models already start with the brand ("Acer Aspire 5") — avoid "Acer Acer Aspire 5" */
 export const displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.brand} ${g.model}`);
 
 /* Image with a never-blank fallback (Wikimedia hotlinks can fail) */
-export function Img({ gadget, className = "", imgClass = "", eager = false }) {
+export function Img({ gadget, className = "", imgClass = "", eager = false, frame = "4 / 3" }) {
+  // cover fills the frame; portrait product shots (all 3:4) get a 3:4 frame so
+  // cover is an exact fit and the product never loses its top or bottom
+  const [ar, setAr] = useState(null);
   const ph =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#F1F3F6"/><text x="200" y="155" text-anchor="middle" font-family="Arial" font-size="18" fill="#64748B">${gadget.category}</text></svg>`
     );
   return (
-    <div className={`overflow-hidden bg-surface2 ${className}`}>
+    <div
+      className={`overflow-hidden bg-white ${className}`}
+      style={{ aspectRatio: ar != null && ar < 1 ? "3 / 4" : frame }}
+    >
       <img
         src={gadget.image}
         alt={`${gadget.brand} ${gadget.model}`}
         loading={eager ? "eager" : "lazy"}
+        onLoad={(e) => setAr(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
         onError={(e) => {
           if (e.currentTarget.src !== ph) e.currentTarget.src = ph;
         }}
-        className={`h-full w-full object-contain ${imgClass}`}
+        className={`h-full w-full object-cover ${imgClass}`}
       />
     </div>
   );
@@ -63,7 +71,7 @@ export function GadgetCard({ g, compare, onCompare }) {
   return (
     <article className="card flex flex-col overflow-hidden transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,34,.05),0_8px_24px_rgba(15,23,34,.08)]">
       <a href={`#/g/${g.id}`} className="block">
-        <Img gadget={g} className="h-44" imgClass="p-4" />
+        <Img gadget={g} />
       </a>
       <div className="flex flex-1 flex-col gap-2 border-t border-line p-4">
         <div className="flex items-start justify-between gap-2">
