@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { GW, money, ownIndex, frontier, recommend } from "../lib.js";
 import { Img, Oidx } from "../components/ui.jsx";
 
-/* ============================ HOME ============================ */
 
 function MiniPareto() {
   // tiny scatter for the hero card — whole catalog so the plot fills; same frontier rule
@@ -269,6 +268,5 @@ function Home({ compare, onCompare }) {
   );
 }
 
-/* ============================ CATALOG ============================ */
 
 export default Home;

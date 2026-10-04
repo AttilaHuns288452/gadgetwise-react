@@ -1,17 +1,13 @@
-/* ============================================================
-   GadgetWise — mock dataset (CC 116 prototype)
+/* GadgetWise — mock dataset (CC 116 prototype)
    All product records are fictional, created for this prototype.
    None of the brands, models, reviews, users, or figures are
    real-world verified data. Prices are realistic PHP samples.
-
    This file is the fake data layer. When a real backend exists,
    replace these arrays with fetch() calls returning the same
-   object shapes. No component imports data from anywhere else.
-   ============================================================ */
+   object shapes. No component imports data from anywhere else. */
 
 const GW = {};
 
-/* ---------- Categories ---------- */
 GW.categories = [
   { id: "smartphones", name: "Smartphones",   blurb: "Everyday drivers, campus workhorses, and camera-first picks.", file: "ph-smartphone" },
   { id: "laptops",     name: "Laptops",       blurb: "From note-taking ultrabooks to programming and editing rigs.", file: "ph-laptop" },
@@ -21,32 +17,27 @@ GW.categories = [
   { id: "smartwatches",name: "Smartwatches",  blurb: "Trackers and watchfaces that survive a student schedule.",  file: "ph-watch" }
 ];
 
-/* ============================================================
-   Data provenance (every field classifies as one of):
+/* Data provenance (every field classifies as one of):
    RAW (marketplace/product source): name, brand, category, price,
-     image, specs, specList, releaseYear
+   image, specs, specList, releaseYear
    GW-EDITORIAL (manually maintained catalog values - NOT from any API):
-     scored{performance,display,camera,storage}, value{warrantyYears,
-     lifespanYears, repairabilityLabel}, durab/repair (1-5 editorial),
-     strengths/weaknesses/goodFor/notIdeal, issue, uses
+   scored{performance,display,camera,storage}, value{warrantyYears,
+   lifespanYears, repairabilityLabel}, durab/repair (1-5 editorial),
+   strengths/weaknesses/goodFor/notIdeal, issue, uses
    GW-CALCULATED (deterministic formulas at runtime): Performance to
-     Cost index, monthly cost, recommendation factor scores
+   Cost index, monthly cost, recommendation factor scores
    USER-GENERATED: rating, reviewCount, reviews[]
    Missing-data policy: a missing spec renders as "Not specified" -
-   never inferred, never imputed.
-   ============================================================ */
-/* ---------- Scored factors (0–10 each; used by the recommendation engine) ----------
+   never inferred, never imputed. */
+/* Scored factors (0–10 each; used by the recommendation engine)
    performance, battery, durability, portability, display, camera, storage,
-   repairability  — normalized so every factor can be combined fairly.      */
-/* ponytail: the catalog IS the 10 real products below (GW.realGadgetEntries).
-   The alias assignment happens after the array literal so both names point at
-   one array. Swap back to a literal array here if mock data ever returns. */
+   repairability  — normalized so every factor can be combined fairly. */
+/* The catalog is GW.realGadgetEntries below; the alias assignment happens
+   after the array literal so both names point at one array. */
 
-/* ============================================================
-   Real-product catalog — ported from the fac3629 prototype.
+/* Real-product catalog — ported from the fac3629 prototype.
    Real brands and Wikimedia Commons photos; specs, prices and
-   scores remain illustrative demo data.
-   ============================================================ */
+   scores remain illustrative demo data. */
 const WISH_IMGS = {"laptop1":"https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/MacBook_Air_M1.png/960px-MacBook_Air_M1.png","laptop2":"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Acer_Aspire_A515-51.jpg/960px-Acer_Aspire_A515-51.jpg","laptop3":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Asus_Vivobook_15.jpg/960px-Asus_Vivobook_15.jpg","tablet1":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/IPad_9th_Generation_2024.jpg/960px-IPad_9th_Generation_2024.jpg","tablet2":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Xiaomi_Pad_7.jpg/960px-Xiaomi_Pad_7.jpg","phone1":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Redmi_Note_11_front.jpg/960px-Redmi_Note_11_front.jpg","phone2":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Back_of_the_Samsung_Galaxy_S23.jpg/960px-Back_of_the_Samsung_Galaxy_S23.jpg","head1":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/JBL_Synchros_E50BT.jpg/960px-JBL_Synchros_E50BT.jpg","power1":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Anker_power_bank_lit.jpg/960px-Anker_power_bank_lit.jpg","watch1":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Amazfit_Bip_Inside.jpg/960px-Amazfit_Bip_Inside.jpg"};
 
 GW.realGadgetEntries = [
@@ -1268,9 +1259,7 @@ GW.realGadgetEntries = [
   ]
  }
 ];
-/* ---------- end GW.realGadgetEntries (GW.gadgets aliases this array) ---------- */
 
-/* ---------- Batch 2: 10 more real products (same structure, verified Commons photos) ---------- */
 GW.realGadgetEntries.push(
 {
  id:  "lenovo-ideapad-slim-3",
@@ -1719,7 +1708,6 @@ GW.realGadgetEntries.push(
 
 GW.gadgets = GW.realGadgetEntries;
 
-/* ---------- Registered users (admin view) ---------- */
 GW.users = [
   { id: "u1", name: "Andrea Villanueva", email: "andrea.villanueva@student.edu.ph", registered: "2025-06-12", status: "active",   reviews: 6, role: "student" },
   { id: "u2", name: "Jomar Tolentino",   email: "jomar.t@student.edu.ph",         registered: "2025-07-03", status: "active",   reviews: 4, role: "student" },
@@ -1731,7 +1719,6 @@ GW.users = [
   { id: "u8", name: "Dennis Lim",        email: "dennis.lim@student.edu.ph",      registered: "2026-02-05", status: "suspended",reviews: 0, role: "student" }
 ];
 
-/* ---------- Pending review queue (admin moderation) ---------- */
 GW.pendingReviews = [
   { id: "pr1", gadget: "samsung-galaxy-s23",       user: "Miguel Cruz",    rating: 5, date: "2026-09-01", status: "pending", text: "Third month with this as my main org-camera phone. Shutter lag is gone compared to my old phone, and editing straight on device is fast. Only complaint is smudges — clean it hourly or it looks greasy in photos of the phone itself." },
   { id: "pr2", gadget: "anker-powercore-20100", user: "Rina Prado",  rating: 4, date: "2026-09-03", status: "pending", text: "Bought this for thesis fieldwork in the province. Two full days of drone controller + phone charging. Gauge stayed accurate. Minus one star because the rubber shell collects lint like crazy." },
@@ -1742,7 +1729,6 @@ GW.pendingReviews = [
   { id: "pr7", gadget: "apple-ipad-9", user: "Andrea Villanueva", rating: 5, date: "2026-09-10", status: "pending", text: "Bought after the recommendation tool scored it 91 for graphic design. It was right. Drawing for 4+ hours, no lag, no heat. Save up for the official keyboard though — third-party ones feel mushy." }
 ];
 
-/* ---------- Admin dashboard metrics (mock) ---------- */
 GW.adminMetrics = {
   totalUsers: 2438,
   totalGadgets: GW.gadgets.length,
@@ -1774,7 +1760,6 @@ GW.adminMetrics = {
   ]
 };
 
-/* ---------- Recommendation engine inputs ---------- */
 GW.budgetBands = [
   { id: "under-10k", label: "Under ₱10,000",       min: 0,     max: 10000 },
   { id: "10-20k",    label: "₱10,000 – ₱20,000",   min: 10000, max: 20000 },
@@ -1815,7 +1800,6 @@ GW.priorityFactors = [
   { id: "budget",        label: "Budget discipline", base: 0, hint: "How strictly to stay under your ceiling" }
 ];
 
-/* ---------- Community trust stats (home page) ---------- */
 GW.community = {
   gadgetsTracked: GW.gadgets.length,
   reviewsWritten: GW.gadgets.reduce((n, g) => n + g.reviewCount, 0),
@@ -1841,14 +1825,11 @@ GW.seedRecommendationHistory = [
     top: { id: "apple-ipad-9", score: 91 } }
 ];
 
-/* ---------- Lookups ---------- */
 GW.getGadget = function (id) { return GW.gadgets.find(g => g.id === id) || null; };
 GW.getCategory = function (id) { return GW.categories.find(c => c.id === id) || null; };
 GW.gadgetsInCategory = function (catId) { return GW.gadgets.filter(g => g.category === catId); };
 GW.gadgetsByIds = function (ids) { return ids.map(GW.getGadget).filter(Boolean); };
 
-/* Cost per month — the ONE formula:
-   price / (lifespan years × 12). Displayed everywhere as an estimate. */
 /* Cost per month (spec 18): price spread over a 36-month usage window —
    a fixed, documented assumption for ALL gadgets (comparable within
    category), not a per-product lifespan invention. */

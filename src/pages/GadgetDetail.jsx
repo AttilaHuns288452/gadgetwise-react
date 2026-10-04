@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndexParts, frontier, recommend } from "../lib.js";
 import { Img, Bar, Oidx, Stars, displayName } from "../components/ui.jsx";
 
-/* ============================ DETAIL ============================ */
 
 const TABS = ["Overview", "Value & Ownership", "Reviews", "Issues"];
 
@@ -243,6 +242,5 @@ function GadgetDetail({ compare, onCompare }) {
   );
 }
 
-/* ============================ COMPARE ============================ */
 
 export default GadgetDetail;

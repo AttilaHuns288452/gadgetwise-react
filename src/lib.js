@@ -2,7 +2,6 @@
    (js/app.js ownIndex/frontier, js/recommendations.js scoring engine). */
 import GW from "./data.js";
 
-/* ---------------- formatting ---------------- */
 const peso = "\u20B1";
 export function money(n) {
   const rounded = Math.round(n * 100) / 100;
@@ -13,7 +12,7 @@ export function money(n) {
   });
 }
 
-/* ---------------- Performance to Cost index ----------------
+/* Performance to Cost index
    battery 25 (catalog battery spec) + student rating 25 + value 30
    (price vs category median monthly cost) + warranty 20. */
 export function ownIndex(g) {
@@ -49,10 +48,8 @@ export function frontier(gadgets) {
   );
 }
 
-/* ============================================================
-   Transparent weighted scoring engine (no ML). Score out of 100:
-     Budget Fit 20 · Academic Suitability 25 · Priorities 50 · Community 5
-   ============================================================ */
+/* Transparent weighted scoring engine (no ML). Score out of 100:
+   Budget Fit 20 · Academic Suitability 25 · Priorities 50 · Community 5 */
 function clamp01(x) {
   return Math.max(0, Math.min(1, x));
 }
