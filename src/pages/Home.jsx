@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { GW, money, ownIndex, frontier, recommend } from "../lib.js";
-import { Img, Oidx } from "../components/ui.jsx";
+import { Img, Oidx, Stars, displayName } from "../components/ui.jsx";
 
 
 function HeroShowcase() {
@@ -169,23 +169,97 @@ function Home({ compare, onCompare }) {
       <section className="section pt-0">
         <div className="border-t border-line pt-10">
           <div className="eyebrow">Cheapest to own</div>
-          <h2 className="mt-2 text-2xl font-bold">Lowest monthly cost across the catalog</h2>
-          <div className="mx-auto mt-6 max-w-3xl divide-y divide-line rounded-lg border border-line bg-surface">
-            {cheapest.map((g, i) => (
-              <Link key={g.id} to={`/g/${g.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-4 hover:bg-primary-wash sm:flex-nowrap sm:gap-4">
-                <span className="mono w-6 text-sm text-ink3">{String(i + 1).padStart(2, "0")}</span>
-                <Img gadget={g} className="h-12 w-16 shrink-0" imgClass="p-1" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold leading-snug">{g.brand} {g.model}</div>
-                  <div className="text-xs text-ink3">{GW.getCategory(g.category).name}</div>
+          <h2 className="mt-2 text-2xl font-bold text-balance">Lowest monthly cost across the catalog</h2>
+          <p className="mt-2 max-w-3xl text-sm text-ink2 text-pretty">
+            Ranked by estimated monthly cost over a 36-month window. The Performance to Cost index
+            (0&ndash;100, higher is better) shows what the price actually buys.
+          </p>
+          <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+            <div>
+              {/* column labels — stated once, not repeated per row */}
+              <div className="hidden grid-cols-[2.75rem_5.5rem_minmax(0,1fr)_9.5rem_11.5rem_5.25rem] gap-x-5 border-b border-l-[3px] border-l-transparent border-line px-5 pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink3 lg:grid">
+                <span>Rank</span>
+                <span aria-hidden="true">&nbsp;</span>
+                <span>Product</span>
+                <span>Student rating</span>
+                <span className="text-right">Est. monthly</span>
+                <span className="text-right">Score</span>
+              </div>
+              <ol className="mt-4 space-y-3 lg:mt-3">
+                {cheapest.map((g, i) => (
+                  <li key={g.id}>
+                    <Link
+                      to={`/g/${g.id}`}
+                      aria-label={`${displayName(g)} — ${money(GW.monthlyCost(g))} per month, ${money(g.price)} upfront, Performance to Cost ${ownIndex(g)} of 100`}
+                      className={`group grid grid-cols-[2rem_3.5rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 rounded-lg border border-line bg-surface px-5 py-4 transition-colors hover:border-primary hover:bg-primary-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:grid-cols-[2.75rem_5.5rem_minmax(0,1fr)_9.5rem_11.5rem_5.25rem] lg:items-center lg:gap-x-5 ${i === 0 ? "border-l-[3px] border-l-warm" : ""}`}
+                    >
+                      <span className={`mono row-start-1 text-lg font-semibold leading-none transition-colors ${i === 0 ? "text-warm" : "text-ink3 group-hover:text-primary"}`}>
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <Img gadget={g} className="row-start-1 h-14 w-14 shrink-0 sm:h-16 sm:w-20 lg:h-[4.125rem] lg:w-[5.5rem]" imgClass="p-1" />
+                      <div className="row-start-1 col-start-3 min-w-0 lg:col-start-3">
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                          <span className="text-base font-semibold leading-snug text-ink transition-colors group-hover:text-primary lg:text-lg">{displayName(g)}</span>
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-ink3">
+                          <span>{GW.getCategory(g.category).name}</span>
+                          <span className="whitespace-nowrap"><span className="mono tabular-nums">{money(g.price)}</span> upfront</span>
+                        </div>
+                      </div>
+                      <div className="col-start-3 row-start-2 lg:col-start-4 lg:row-start-1">
+                        <Stars rating={g.rating} count={g.reviewCount} />
+                      </div>
+                      <div className="col-start-3 row-start-3 lg:col-start-5 lg:row-start-1 lg:text-right">
+                        <span className="mono inline-flex flex-wrap items-baseline text-2xl font-semibold tabular-nums text-primary-dark">
+                          {money(GW.monthlyCost(g))}<span className="text-sm font-medium text-ink3">/mo</span>
+                        </span>
+                      </div>
+                      <Oidx g={g} compact className="col-start-3 row-start-4 justify-self-start lg:col-start-6 lg:row-start-1 lg:justify-self-end" />
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            {/* Score explainer — what the number means, at the point of confusion */}
+            <aside className="card mt-8 flex flex-col p-6 lg:mt-0 lg:self-stretch lg:justify-between">
+              <div className="eyebrow">How it&rsquo;s scored</div>
+              <h3 className="mt-2 text-lg font-semibold">What the Performance to Cost index measures</h3>
+              <p className="mt-2 text-sm text-ink2 text-pretty">
+                Every gadget earns up to 100 points from four factors. Higher is better &mdash;
+                the full breakdown sits on each detail page.
+              </p>
+              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.12em] text-ink3">Weight of each factor</div>
+              <div className="mt-3 space-y-3.5">
+                {[
+                  ["Value vs category median", 30],
+                  ["Battery for a school day", 25],
+                  ["Student rating", 25],
+                  ["Warranty & repairability", 20],
+                ].map(([label, pts]) => (
+                  <div key={label}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="text-ink2">{label}</span>
+                      <span className="tabular-nums text-ink3"><span className="mono font-semibold text-ink">{pts}</span> pts</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface2">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${(pts / 30) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-baseline justify-between gap-3 border-t border-line pt-2.5 text-sm">
+                  <span className="font-semibold text-ink">Total</span>
+                  <span className="tabular-nums text-ink3"><span className="mono font-semibold text-ink">100</span> pts</span>
                 </div>
-                <div className="w-full shrink-0 text-right sm:w-auto">
-                  <div className="mono font-semibold text-primary-dark">{money(GW.monthlyCost(g))}/mo</div>
-                  <div className="mono text-xs text-ink3">{money(g.price)} upfront</div>
-                </div>
-                <Oidx g={g} />
-              </Link>
-            ))}
+              </div>
+              <p className="mt-auto border-t border-line pt-4 text-sm text-ink2 text-pretty">
+                This list ranks by cost to own. The index tells you what the price buys beyond the
+                sticker &mdash; so a slightly pricier pick can still be the smarter one.
+              </p>
+            </aside>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink2">
+            <span>Showing the 5 cheapest of {GW.gadgets.length} tracked gadgets.</span>
+            <Link to="/gadgets" className="font-semibold text-primary hover:text-primary-dark">Browse the full catalog &rarr;</Link>
           </div>
         </div>
       </section>
@@ -232,7 +306,7 @@ function Home({ compare, onCompare }) {
             <h2 className="text-xl font-bold">Not sure where to start?</h2>
             <p className="mt-1 text-ink2">Answer five short questions and get a ranked shortlist with the full score breakdown.</p>
           </div>
-          <Link to="/recommend" className="btn-primary whitespace-nowrap">Find my recommendation</Link>
+          <Link to="/recommend" className="btn-primary sm:whitespace-nowrap">Find my recommendation</Link>
         </div>
       </section>
     </>

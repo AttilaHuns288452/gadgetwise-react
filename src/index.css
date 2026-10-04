@@ -30,7 +30,7 @@
   --color-on-hero2: #b9c3d6;
 
   --font-display: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Spline Sans Mono", "Consolas", monospace;
+  --font-mono: "Spline Sans Mono", "Noto Sans Mono", "DejaVu Sans Mono", "Consolas", monospace;
 
   --radius-sm: 4px;
   --radius-md: 8px;

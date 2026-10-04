@@ -34,4 +34,13 @@ for (const res of r.results) {
 assert.ok(r.results.every((res) => res.gadget.price <= 21000), "stretch limit violated");
 assert.ok(money(46999) === "\u20B146,999", `money format off: ${money(46999)}`);
 
+// admin console seed data: every referenced gadget id resolves, states are sane
+assert.ok(GW.admin.moderation.length > 0, "no moderation rows");
+assert.ok(GW.admin.moderation.every((r) => typeof r.gadget === "string" && r.gadget.length > 2), "moderation rows missing gadget names");
+assert.ok(GW.admin.moderation.filter((r) => r.status === "pending").length === 7, "expected 7 pending rows");
+for (const [id] of [...GW.admin.topViewed, ...GW.admin.mostCompared, ...GW.admin.mostRecommended]) {
+  assert.ok(GW.getGadget(id), `admin stats reference unknown gadget ${id}`);
+}
+assert.ok(GW.users.length === 8, "expected 8 seeded users");
+
 console.log(`check.js OK — ${GW.gadgets.length} gadgets, frontier ${front.size}, ${r.results.length} ranked for the ₱10-20k general-use case`);

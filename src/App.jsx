@@ -6,12 +6,18 @@ import Catalog from "./pages/Catalog.jsx";
 import GadgetDetail from "./pages/GadgetDetail.jsx";
 import Compare from "./pages/Compare.jsx";
 import Quiz from "./pages/Quiz.jsx";
+import Admin from "./pages/Admin.jsx";
 
 const NAV = [
   ["/", "Home"],
   ["/gadgets", "Gadgets"],
   ["/compare", "Compare"],
   ["/recommend", "Recommendation tool"],
+];
+
+const ADMIN_TABS = [
+  ["dashboard", "Dashboard"], ["reports", "Reports"], ["gadgets", "Gadgets"],
+  ["categories", "Categories"], ["reviews", "Reviews"], ["users", "Users"],
 ];
 
 // scroll back to the top whenever the route changes
@@ -27,6 +33,15 @@ export default function App() {
   const navigate = useNavigate();
   const [compare, setCompare] = useState(new Set());
   const [q, setQ] = useState("");
+  const [dev, setDev] = useState(() => localStorage.getItem("gw-dev") === "1");
+  const { search, pathname } = useLocation();
+  const activeTab =
+    pathname === "/admin" ? new URLSearchParams(search).get("tab") || "dashboard" : null;
+  const toggleDev = () =>
+    setDev((prev) => {
+      localStorage.setItem("gw-dev", prev ? "0" : "1");
+      return !prev;
+    });
 
   const onCompare = (id) =>
     setCompare((prev) => {
@@ -66,13 +81,40 @@ export default function App() {
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search gadgets…"
+              placeholder="Search…"
               aria-label="Search gadgets"
-              className="field !w-44 !py-1.5 sm:!w-56"
+              className="field !w-36 !py-1.5 sm:!w-56"
             />
             <button type="submit" className="btn-primary !px-3 !py-1.5">Go</button>
+            <button
+              type="button"
+              onClick={toggleDev}
+              aria-pressed={dev}
+              title="Toggle the staff-console tabs (dev only)"
+              className={`rounded-sm border px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] ${dev ? "border-gold-hair bg-gold-hair/15 text-gold-hair" : "border-line text-ink3 hover:border-gold-hair hover:text-gold-hair"}`}
+            >
+              Dev
+            </button>
           </form>
         </div>
+        {dev && (
+          <div className="border-t border-line bg-hero">
+            <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-6 lg:px-12 py-2">
+              <span className="mr-2 shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-gold-hair">Admin</span>
+              {ADMIN_TABS.map(([key, label]) => (
+                <Link
+                  key={key}
+                  to={`/admin?tab=${key}`}
+                  className={`shrink-0 rounded-sm px-3 py-1.5 text-sm font-medium hover:bg-white/10 hover:text-on-hero ${
+                    key === activeTab ? "bg-white/15 text-on-hero" : "text-on-hero2"
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         {compare.size > 0 && (
           <div className="border-t border-line bg-primary-wash">
             <div className="mx-auto flex max-w-[1904px] items-center gap-3 px-6 lg:px-12 py-2 text-sm">
@@ -91,6 +133,7 @@ export default function App() {
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
           <Route path="/recommend" element={<Quiz />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>
 

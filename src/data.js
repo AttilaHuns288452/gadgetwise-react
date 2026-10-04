@@ -1844,4 +1844,36 @@ GW.categoryMedianMonthly = function (catId) {
   return list.length % 2 ? list[mid] : (list[mid - 1] + list[mid]) / 2;
 };
 
+/* Staff console seed data (mock). View/compare/recommend figures are
+   invented demo stats; gadget/category names resolve from the catalog. */
+GW.admin = {
+  topViewed: [
+    ["apple-macbook-air-m1", 4820], ["samsung-galaxy-s23", 4310], ["acer-aspire-5-a515", 3960],
+    ["asus-vivobook-15", 3544], ["apple-ipad-9", 3102], ["xiaomi-pad-7", 2478],
+    ["redmi-note-11", 2211], ["anker-powercore-20100", 1980]
+  ],
+  mostCompared: [
+    ["apple-macbook-air-m1", 1840], ["acer-aspire-5-a515", 1615], ["xiaomi-pad-7", 1204],
+    ["asus-vivobook-15", 1178], ["samsung-galaxy-s23", 1102], ["redmi-note-11", 864]
+  ],
+  mostRecommended: [
+    ["acer-aspire-5-a515", 942], ["apple-macbook-air-m1", 901], ["redmi-note-11", 776],
+    ["apple-ipad-9", 523], ["anker-powercore-20100", 468], ["samsung-galaxy-s23", 401]
+  ],
+  viewsByCategory: [
+    ["Smartphones", 34], ["Laptops", 31], ["Tablets", 13],
+    ["Headphones", 10], ["Power Banks", 7], ["Smartwatches", 5]
+  ],
+  weeklyViews: [3120, 3480, 3260, 3890, 4210, 4650, 5020, 5480]
+};
+
+/* Every seeded review as a moderation row. ponytail: the first 7 land in
+   pending and every 9th is rejected — deterministic demo states, not policy. */
+GW.admin.moderation = GW.gadgets.flatMap((g) =>
+  g.reviews.map((r) => ({
+    id: r.id, gadget: `${g.brand} ${g.model}`, gadgetSlug: g.id, user: r.user, date: r.date,
+    rating: r.rating, text: r.text, status: "approved"
+  }))
+).map((row, i) => (i < 7 ? { ...row, status: "pending" } : i % 9 === 0 ? { ...row, status: "rejected" } : row));
+
 export default GW;

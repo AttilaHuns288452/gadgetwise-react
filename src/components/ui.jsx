@@ -35,17 +35,42 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
 
 export function Stars({ rating, count }) {
   return (
-    <span className="inline-flex items-center gap-1 text-sm">
-      <span className="text-star" aria-hidden="true">{"★".repeat(Math.round(rating))}{"☆".repeat(5 - Math.round(rating))}</span>
-      <span className="mono text-ink2">{rating.toFixed(1)}</span>
-      {count != null && <span className="text-ink3">({count})</span>}
+    <span className="inline-flex items-baseline gap-1.5 text-sm">
+      <span className="inline-flex gap-[1px]" aria-hidden="true">
+        {Array.from({ length: 5 }, (_, i) => {
+          const fill = Math.min(1, Math.max(0, rating - i)); // partial star per decimal
+          return (
+            <span key={i} className="relative inline-block leading-none">
+              <span className="text-line-strong">★</span>
+              <span className="absolute inset-0 overflow-hidden text-star" style={{ width: `${fill * 100}%` }}>★</span>
+            </span>
+          );
+        })}
+      </span>
+      <span className="mono tabular-nums text-ink2">{rating.toFixed(1)}</span>
+      {count != null && <span className="tabular-nums text-ink3">({count})</span>}
     </span>
   );
 }
 
-export function Oidx({ g, size = "md", className = "" }) {
+export function Oidx({ g, size = "md", compact = false, className = "" }) {
+  const tip = "Performance to Cost — battery 25 + student rating 25 + value 30 (price vs category median) + warranty 20";
+  if (compact) {
+    const score = ownIndex(g);
+    return (
+      <span className={`inline-flex w-20 shrink-0 flex-col items-center gap-1.5 rounded-sm border border-line bg-transparent px-2 py-2 ${className}`} title={tip} aria-label={`Performance to Cost ${score} of 100`}>
+        <span className="flex items-baseline gap-0.5">
+          <b className="mono text-xl font-semibold leading-none text-ink">{score}</b>
+          <span className="text-xs text-ink3">/100</span>
+        </span>
+        <span className="h-[3px] w-full overflow-hidden rounded-full bg-line-strong" aria-hidden="true">
+          <span className="block h-full rounded-full bg-primary" style={{ width: `${score}%` }} />
+        </span>
+      </span>
+    );
+  }
   return (
-    <span className={`oidx ${size === "lg" ? "scale-110 origin-left" : ""} ${className}`} title="Performance to Cost — battery 25 + student rating 25 + value 30 (price vs category median) + warranty 20">
+    <span className={`oidx ${size === "lg" ? "scale-110 origin-left" : ""} ${className}`} title={tip}>
       <b>{ownIndex(g)}</b>
       <span>PERFORMANCE TO COST</span>
     </span>
