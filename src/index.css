@@ -122,7 +122,7 @@
     text-align: center;
   }
 
-  .section { @apply mx-auto max-w-[1800px] px-6 lg:px-12 py-12; }
+  .section { @apply mx-auto max-w-[1904px] px-6 lg:px-12 py-12; }
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.14em] text-warm;
   }
