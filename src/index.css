@@ -56,9 +56,9 @@
   }
   h1, h2, h3 { letter-spacing: -0.015em; }
   /* type contract (css/styles.css in the prototype), display sizes raised 2026-10 for 1080p */
-  h1 { font-size: clamp(2.25rem, 4.2vw, 4.5rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
-  h2 { font-size: clamp(1.75rem, 3.2vw, 2.75rem); font-weight: 700; line-height: 1.15; }
-  h3 { font-size: 1.55rem; font-weight: 700; line-height: 1.2; }
+  h1 { font-size: clamp(2.5rem, 4.6vw, 5.25rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
+  h2 { font-size: clamp(2rem, 3.6vw, 3.5rem); font-weight: 700; line-height: 1.15; }
+  h3 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
 }
 
 @layer components {
@@ -127,4 +127,18 @@
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.14em] text-warm;
   }
+}
+
+/* ponytail: desktop type scale bump via theme vars so every utility follows; mobile keeps the tight scale that passes 320px QA */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs: 1.0625rem;
+    --text-sm: 1.25rem;
+    --text-base: 1.4375rem;
+    --text-lg: 1.8125rem;
+    --text-xl: 2.25rem;
+    --text-2xl: 2.875rem;
+    --text-3xl: 3.625rem;
+  }
+  .oidx b { font-size: 2.25rem; }
 }

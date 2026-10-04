@@ -136,7 +136,7 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[200px_1fr]">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
         <nav className="lg:sticky lg:top-24 lg:self-start" aria-label="Admin">
           <ol className="flex gap-1 overflow-x-auto pb-2 lg:block lg:space-y-5 lg:overflow-visible lg:pb-0">
             {TABS.map(([section, label, items]) => (

@@ -191,7 +191,7 @@ function Home({ compare, onCompare }) {
                     <Link
                       to={`/g/${g.id}`}
                       aria-label={`${displayName(g)} — ${money(GW.monthlyCost(g))} per month, ${money(g.price)} upfront, Performance to Cost ${ownIndex(g)} of 100`}
-                      className={`group grid grid-cols-[2rem_3.5rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 rounded-lg border border-line bg-surface px-5 py-4 transition-colors hover:border-primary hover:bg-primary-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:grid-cols-[2.75rem_5.5rem_minmax(0,1fr)_9.5rem_11.5rem_5.25rem] lg:items-center lg:gap-x-5 ${i === 0 ? "border-l-[3px] border-l-warm" : ""}`}
+                      className={`group grid grid-cols-[2rem_3.5rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 rounded-lg border border-line bg-surface px-5 py-4 transition-colors hover:border-primary hover:bg-primary-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:grid-cols-[2.75rem_5.5rem_minmax(0,1fr)_11rem_14rem_5.5rem] lg:items-center lg:gap-x-5 ${i === 0 ? "border-l-[3px] border-l-warm" : ""}`}
                     >
                       <span className={`mono row-start-1 text-lg font-semibold leading-none transition-colors ${i === 0 ? "text-warm" : "text-ink3 group-hover:text-primary"}`}>
                         {String(i + 1).padStart(2, "0")}

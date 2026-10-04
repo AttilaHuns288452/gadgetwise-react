@@ -56,22 +56,22 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
       <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1904px] flex-wrap items-center gap-x-6 gap-y-3 px-6 lg:px-12 py-4">
+        <div className="mx-auto flex max-w-[1904px] flex-wrap items-center gap-x-6 gap-y-3 px-6 lg:px-12 py-5">
           <Link to="/" className="flex items-baseline gap-2">
-            <span className="text-lg font-bold tracking-tight">Gadget<span className="text-primary">Wise</span></span>
-            <span className="hidden text-xs text-ink3 sm:inline">Smart picks for students</span>
+            <span className="text-xl font-bold tracking-tight">Gadget<span className="text-primary">Wise</span></span>
+            <span className="hidden text-sm text-ink3 sm:inline">Smart picks for students</span>
           </Link>
-          <nav className="flex flex-wrap gap-1 text-sm font-medium" aria-label="Main">
+          <nav className="flex flex-wrap gap-1 text-base font-medium" aria-label="Main">
             {NAV.map(([href, label]) => (
               <NavLink key={href} to={href} end={href === "/"}
                 className={({ isActive }) =>
-                  `rounded-sm px-3 py-1.5 ${isActive ? "bg-primary-soft text-primary-dark" : "text-ink2 hover:text-primary"}`}>
+                  `rounded-sm px-3.5 py-2 ${isActive ? "bg-primary-soft text-primary-dark" : "text-ink2 hover:text-primary"}`}>
                 {label}
               </NavLink>
             ))}
           </nav>
           <form
-            className="ml-auto flex items-center gap-2"
+            className="ml-auto flex flex-wrap items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
               navigate(`/gadgets?q=${encodeURIComponent(q)}`);
@@ -83,15 +83,15 @@ export default function App() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search…"
               aria-label="Search gadgets"
-              className="field !w-36 !py-1.5 sm:!w-56"
+              className="field !w-36 !py-2.5 sm:!w-60"
             />
-            <button type="submit" className="btn-primary !px-3 !py-1.5">Go</button>
+            <button type="submit" className="btn-primary !px-3 !py-2.5 sm:!px-4">Go</button>
             <button
               type="button"
               onClick={toggleDev}
               aria-pressed={dev}
               title="Toggle the staff-console tabs (dev only)"
-              className={`rounded-sm border px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] ${dev ? "border-gold-hair bg-gold-hair/15 text-gold-hair" : "border-line text-ink3 hover:border-gold-hair hover:text-gold-hair"}`}
+              className={`rounded-sm border px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] sm:px-3 sm:py-2 sm:text-sm ${dev ? "border-gold-hair bg-gold-hair/15 text-gold-hair" : "border-line text-ink3 hover:border-gold-hair hover:text-gold-hair"}`}
             >
               Dev
             </button>
@@ -100,12 +100,12 @@ export default function App() {
         {dev && (
           <div className="border-t border-line bg-hero">
             <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-6 lg:px-12 py-2">
-              <span className="mr-2 shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-gold-hair">Admin</span>
+              <span className="mr-2 shrink-0 text-sm font-bold uppercase tracking-[0.14em] text-gold-hair">Admin</span>
               {ADMIN_TABS.map(([key, label]) => (
                 <Link
                   key={key}
                   to={`/admin?tab=${key}`}
-                  className={`shrink-0 rounded-sm px-3 py-1.5 text-sm font-medium hover:bg-white/10 hover:text-on-hero ${
+                  className={`shrink-0 rounded-sm px-3.5 py-2 text-base font-medium hover:bg-white/10 hover:text-on-hero ${
                     key === activeTab ? "bg-white/15 text-on-hero" : "text-on-hero2"
                   }`}
                 >
@@ -117,7 +117,7 @@ export default function App() {
         )}
         {compare.size > 0 && (
           <div className="border-t border-line bg-primary-wash">
-            <div className="mx-auto flex max-w-[1904px] items-center gap-3 px-6 lg:px-12 py-2 text-sm">
+            <div className="mx-auto flex max-w-[1904px] items-center gap-3 px-6 lg:px-12 py-2 text-base">
               <span className="mono font-semibold text-primary-dark">{compare.size}/4</span>
               <span className="text-ink2">in compare</span>
               <Link to="/compare" className="font-semibold text-primary hover:underline">Open compare →</Link>
