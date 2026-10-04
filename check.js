@@ -37,6 +37,10 @@ assert.ok(money(46999) === "\u20B146,999", `money format off: ${money(46999)}`);
 // admin console seed data: every referenced gadget id resolves, states are sane
 assert.ok(GW.admin.moderation.length > 0, "no moderation rows");
 assert.ok(GW.admin.moderation.every((r) => typeof r.gadget === "string" && r.gadget.length > 2), "moderation rows missing gadget names");
+assert.ok(
+  GW.admin.moderation.every((r) => r.gadget === GW.displayName(GW.getGadget(r.gadgetSlug))),
+  "moderation gadget names must match the canonical displayName (brand doubling)",
+);
 assert.ok(GW.admin.moderation.filter((r) => r.status === "pending").length === 7, "expected 7 pending rows");
 for (const [id] of [...GW.admin.topViewed, ...GW.admin.mostCompared, ...GW.admin.mostRecommended]) {
   assert.ok(GW.getGadget(id), `admin stats reference unknown gadget ${id}`);

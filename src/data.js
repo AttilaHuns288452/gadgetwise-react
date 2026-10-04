@@ -1867,12 +1867,16 @@ GW.admin = {
   weeklyViews: [3120, 3480, 3260, 3890, 4210, 4650, 5020, 5480]
 };
 
+/* Some models already start with the brand ("Acer Aspire 5") — avoid "Acer Acer Aspire 5".
+   Canonical name builder: moderation rows and the UI both route through this. */
+GW.displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.brand} ${g.model}`);
+
 /* Every seeded review as a moderation row. ponytail: every 8th row lands in
    pending and every 9th (non-pending) is rejected — deterministic demo states,
    not policy. Spread so the queue mixes gadgets. */
 GW.admin.moderation = GW.gadgets.flatMap((g) =>
   g.reviews.map((r) => ({
-    id: r.id, gadget: `${g.brand} ${g.model}`, gadgetSlug: g.id, user: r.user, date: r.date,
+    id: r.id, gadget: GW.displayName(g), gadgetSlug: g.id, user: r.user, date: r.date,
     rating: r.rating, text: r.text, status: "approved"
   }))
 ).map((row, i) => (i % 8 === 0 ? { ...row, status: "pending" } : i % 9 === 0 ? { ...row, status: "rejected" } : row));

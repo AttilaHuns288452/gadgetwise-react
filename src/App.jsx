@@ -15,11 +15,6 @@ const NAV = [
   ["/recommend", "Recommendation tool"],
 ];
 
-const ADMIN_TABS = [
-  ["dashboard", "Dashboard"], ["reports", "Reports"], ["gadgets", "Gadgets"],
-  ["categories", "Categories"], ["reviews", "Reviews"], ["users", "Users"],
-];
-
 // scroll back to the top whenever the route changes
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -33,15 +28,8 @@ export default function App() {
   const navigate = useNavigate();
   const [compare, setCompare] = useState(new Set());
   const [q, setQ] = useState("");
-  const [dev, setDev] = useState(() => localStorage.getItem("gw-dev") === "1");
-  const { search, pathname } = useLocation();
-  const activeTab =
-    pathname === "/admin" ? new URLSearchParams(search).get("tab") || "dashboard" : null;
-  const toggleDev = () =>
-    setDev((prev) => {
-      localStorage.setItem("gw-dev", prev ? "0" : "1");
-      return !prev;
-    });
+  const { pathname } = useLocation();
+  const isAdmin = pathname.startsWith("/admin");
 
   const onCompare = (id) =>
     setCompare((prev) => {
@@ -55,6 +43,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
+      {!isAdmin && (
       <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1904px] flex-wrap items-center gap-x-6 gap-y-3 px-6 lg:px-12 py-5">
           <Link to="/" className="flex items-baseline gap-2">
@@ -88,33 +77,14 @@ export default function App() {
             <button type="submit" className="btn-primary !px-3 !py-2.5 sm:!px-4">Go</button>
             <button
               type="button"
-              onClick={toggleDev}
-              aria-pressed={dev}
-              title="Toggle the staff-console tabs (dev only)"
-              className={`rounded-sm border px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] sm:px-3 sm:py-2 sm:text-sm ${dev ? "border-gold-hair bg-gold-hair/15 text-gold-hair" : "border-line text-ink3 hover:border-gold-hair hover:text-gold-hair"}`}
+              onClick={() => navigate("/admin")}
+              title="Open the staff console"
+              className="rounded-sm border border-line px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-ink3 hover:border-gold-hair hover:text-gold-hair sm:px-3 sm:py-2 sm:text-sm"
             >
               Dev
             </button>
           </form>
         </div>
-        {dev && (
-          <div className="border-t border-line bg-hero">
-            <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-6 lg:px-12 py-2">
-              <span className="mr-2 shrink-0 text-sm font-bold uppercase tracking-[0.14em] text-gold-hair">Admin</span>
-              {ADMIN_TABS.map(([key, label]) => (
-                <Link
-                  key={key}
-                  to={`/admin?tab=${key}`}
-                  className={`shrink-0 rounded-sm px-3.5 py-2 text-base font-medium hover:bg-white/10 hover:text-on-hero ${
-                    key === activeTab ? "bg-white/15 text-on-hero" : "text-on-hero2"
-                  }`}
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
         {compare.size > 0 && (
           <div className="border-t border-line bg-primary-wash">
             <div className="mx-auto flex max-w-[1904px] items-center gap-3 px-6 lg:px-12 py-2 text-base">
@@ -125,6 +95,7 @@ export default function App() {
           </div>
         )}
       </header>
+      )}
 
       <main className="flex-1">
         <Routes>
@@ -137,6 +108,7 @@ export default function App() {
         </Routes>
       </main>
 
+      {!isAdmin && (
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto grid max-w-[1904px] gap-x-10 gap-y-8 px-6 lg:px-12 py-8 text-sm sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
           <div>
@@ -166,6 +138,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

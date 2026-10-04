@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { money, ownIndex, GW } from "../lib.js";
 
-/* Some models already start with the brand ("Acer Aspire 5") — avoid "Acer Acer Aspire 5" */
-export const displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.brand} ${g.model}`);
+/* Canonical name builder lives on GW (data.js) so moderation rows match the UI */
+export const displayName = (g) => GW.displayName(g);
 
 /* Image with a never-blank fallback (Wikimedia hotlinks can fail) */
 export function Img({ gadget, className = "", imgClass = "", eager = false, frame = "4 / 3" }) {
