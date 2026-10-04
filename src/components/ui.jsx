@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { money, ownIndex, GW } from "../lib.js";
 
 /* Canonical name builder lives on GW (data.js) so moderation rows match the UI */
@@ -134,4 +134,58 @@ export function GadgetCard({ g, compare, onCompare }) {
       </div>
     </article>
   );
+}
+
+export const btnCls = "rounded-lg px-7 py-2.5 text-[15px] font-semibold transition-colors";
+export const btnPrimaryCls = btnCls + " bg-[#2563EB] text-white hover:bg-[#1D4ED8]";
+export const btnOutlineCls = btnCls + " border border-[#C7C7CC] bg-white text-[#111827] hover:bg-[#F9FAFB]";
+export const btnDangerCls = btnCls + " bg-[#B3372E] text-white hover:bg-[#93291F]";
+export const fieldLabelCls = "block text-[15px] font-bold text-[#111827]";
+export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-[17px] text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
+
+export function Modal({ title, sub, children, actions, onClose }) {
+  useEffect(() => {
+    const fn = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
+        <h3 className="text-[22px] font-bold leading-snug text-[#111827]">{title}</h3>
+        {sub && <p className="mt-1.5 text-sm leading-relaxed text-[#6B7280]">{sub}</p>}
+        <div className="mt-6 space-y-5">{children}</div>
+        <div className="mt-6 flex justify-end gap-2.5">{actions}</div>
+      </div>
+    </div>
+  );
+}
+
+const toastIco = {
+  checkCircle: <><circle cx="8" cy="8" r="6.5" /><path d="m5.2 8.2 2 2 3.6-3.9" /></>,
+  x: <path d="M4 4l8 8M12 4l-8 8" />,
+  trash: <path d="M2.5 4.5h11M6.5 4.5v-1a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1M4 4.5l.6 8a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9l.6-8" />,
+  edit: <path d="M11.5 2.5 13.5 4.5 5.5 12.5 2.5 13.5 3.5 10.5z" />,
+  alert: <><circle cx="8" cy="8" r="6.5" /><path d="M8 5v3.5M8 11h.01" /></>,
+  info: <><circle cx="8" cy="8" r="6.5" /><path d="M8 7.5v3.5M8 5h.01" /></>,
+};
+
+export function useToast() {
+  const [items, setItems] = useState([]);
+  const toast = (text, icon = "checkCircle") => {
+    const id = Math.random().toString(36).slice(2);
+    setItems((xs) => [...xs, { id, text, icon }]);
+    setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== id)), 3200);
+  };
+  const node = (
+    <div className="fixed bottom-[88px] right-6 z-[100] grid gap-2.5">
+      {items.map((t) => (
+        <div key={t.id} className="toast-in flex items-center gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl">
+          <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-[#9CC3EE]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>
+          {t.text}
+        </div>
+      ))}
+    </div>
+  );
+  return [toast, node];
 }

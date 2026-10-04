@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
-import { displayName } from "../components/ui.jsx";
+import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
 const ICONS = {
   dashboard: "M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z",
@@ -326,9 +326,10 @@ function Reports() {
   );
 }
 
-function Gadgets({ tab, rows, setRows, editIn }) {
+function Gadgets({ tab, rows, setRows, editIn, toast }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
+  const [del, setDel] = useState(null);
   const cats = [...new Set(GW.gadgets.map((g) => g.category))];
   const filtered = rows.filter((g) =>
     (cat === "all" || g.category === cat) &&
@@ -377,7 +378,7 @@ function Gadgets({ tab, rows, setRows, editIn }) {
                   <div className="flex justify-end gap-2">
                     <Link to={`/g/${g.id}`} className={iconBtn} title="View public page"><Ico n="eye" /></Link>
                     <button className={iconBtn} title="Edit" onClick={() => editIn(g)}><Ico n="pencil" /></button>
-                    <button className={iconBtn} title="Delete" onClick={() => setRows(rows.filter((r) => r.id !== g.id))}><Ico n="trash" /></button>
+                    <button className={iconBtn} title="Delete" onClick={() => setDel(g)}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
@@ -388,11 +389,28 @@ function Gadgets({ tab, rows, setRows, editIn }) {
           </tbody>
         </table>
       </div>
+      {del && (
+        <Modal
+          title="Delete gadget"
+          sub="Removes the record from the catalog — public pages, comparisons, and the recommender stop showing it."
+          onClose={() => setDel(null)}
+          actions={<>
+            <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
+            <button className={btnDangerCls} onClick={() => {
+              setRows(rows.filter((r) => r.id !== del.id));
+              setDel(null);
+              toast("Gadget deleted", "trash");
+            }}>Delete</button>
+          </>}
+        >
+          <p className="text-[17px] text-[#111827]">Remove <b>{displayName(del)}</b> from the catalog?</p>
+        </Modal>
+      )}
     </>
   );
 }
 
-function AddGadget({ tab, onSave, editing }) {
+function AddGadget({ tab, onSave, editing, toast }) {
   const form = useRef(null);
   const [specs, setSpecs] = useState(["Weight", "Ports"]);
   const fillSample = () => {
@@ -403,6 +421,7 @@ function AddGadget({ tab, onSave, editing }) {
     f.summary.value = "A thin 14-inch notebook for study, office work, and light creative tasks.";
     f.warranty.value = "2"; f.lifespan.value = "4.5"; f.repairability.value = "5"; f.durability.value = "7.5";
     f.repair.value = "Kaido authorized service center";
+    toast("Mock API response received — verify before saving", "info");
   };
   return (
     <>
@@ -474,14 +493,27 @@ function AddGadget({ tab, onSave, editing }) {
   );
 }
 
-function Categories({ rows, setRows }) {
+function Categories({ rows, setRows, toast }) {
   const [form, setForm] = useState(null);
+  const [del, setDel] = useState(null);
   const counts = Object.fromEntries(
     rows.map((c) => {
       const inCat = GW.gadgets.filter((g) => g.category === c.id);
       return [c.id, { n: inCat.length, avg: inCat.length ? (inCat.reduce((s, g) => s + g.rating, 0) / inCat.length).toFixed(1) : "0.0" }];
     })
   );
+  const save = () => {
+    const name = form.name.trim();
+    if (!name) { toast("Give the category a name", "alert"); return; }
+    if (rows.some((r) => r.name.toLowerCase() === name.toLowerCase() && r.id !== form.editing)) {
+      toast("A category with that name already exists", "alert"); return;
+    }
+    setRows(form.editing
+      ? rows.map((r) => (r.id === form.editing ? { ...r, name, desc: form.desc } : r))
+      : [...rows, { id: slugify(name), name, desc: form.desc }]);
+    setForm(null);
+    toast(form.editing ? "Category updated" : "Category added", form.editing ? "edit" : "checkCircle");
+  };
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -493,23 +525,46 @@ function Categories({ rows, setRows }) {
       </div>
 
       {form && (
-        <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-          <h2 className="text-[20px] font-bold text-[#111827]">{form.editing ? "Edit category" : "Add category"}</h2>
-          <div className="mt-4 grid gap-5 md:grid-cols-2">
-            <Field label="Name"><input className={inputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-            <Field label="Description"><input className={inputCls} value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} /></Field>
+        <Modal
+          title={form.editing ? "Edit category" : "Add category"}
+          sub="Category names appear in browse filters, the recommender, and the admin console."
+          onClose={() => setForm(null)}
+          actions={<>
+            <button className={btnOutlineCls} onClick={() => setForm(null)}>Cancel</button>
+            <button className={btnPrimaryCls} onClick={save}>{form.editing ? "Save" : "Add"}</button>
+          </>}
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="catName">Name</label>
+            <input id="catName" className={fieldInputCls} placeholder="e.g., Cameras" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
-          <div className="mt-4 flex gap-3">
-            <button className={btnPrimary} onClick={() => {
-              setRows(form.editing
-                ? rows.map((r) => (r.id === form.editing ? { ...r, name: form.name, desc: form.desc } : r))
-                : [...rows, { id: slugify(form.name), name: form.name, desc: form.desc }]);
-              setForm(null);
-            }}>Save category</button>
-            <button className={btnOutline} onClick={() => setForm(null)}>Cancel</button>
+          <div>
+            <label className={fieldLabelCls} htmlFor="catDesc">Description</label>
+            <input id="catDesc" className={fieldInputCls} placeholder="One line on what belongs here." value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} />
           </div>
-        </div>
+        </Modal>
       )}
+
+      {del && (() => {
+        const n = counts[del.id]?.n ?? 0;
+        return (
+          <Modal
+            title="Delete category"
+            sub={n ? `It still holds ${n} gadgets — move them to another category first.` : "The category is empty and will be removed."}
+            onClose={() => setDel(null)}
+            actions={<>
+              <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
+              <button className={`${btnDangerCls} disabled:cursor-not-allowed disabled:bg-[#D0D5DD] disabled:text-[#667085]`} disabled={n > 0} onClick={() => {
+                setRows(rows.filter((r) => r.id !== del.id));
+                setDel(null);
+                toast("Category deleted", "trash");
+              }}>Delete</button>
+            </>}
+          >
+            <p className="text-[17px] text-[#111827]">Delete <b>{del.name}</b>?</p>
+          </Modal>
+        );
+      })()}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {rows.map((c) => {
@@ -527,7 +582,7 @@ function Categories({ rows, setRows }) {
                 <div className="flex gap-2">
                   <Link to="/gadgets" className={iconBtn} title="View catalog"><Ico n="eye" /></Link>
                   <button className={iconBtn} title="Edit" onClick={() => setForm({ name: c.name, desc: c.desc, editing: c.id })}><Ico n="pencil" /></button>
-                  <button className={iconBtn} title="Delete" onClick={() => setRows(rows.filter((r) => r.id !== c.id))}><Ico n="trash" /></button>
+                  <button className={iconBtn} title="Delete" onClick={() => setDel(c)}><Ico n="trash" /></button>
                 </div>
               </div>
               <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.desc}</p>
@@ -539,11 +594,17 @@ function Categories({ rows, setRows }) {
   );
 }
 
-function Reviews({ rows, setRows }) {
+function Reviews({ rows, setRows, toast }) {
   const [filter, setFilter] = useState("all");
+  const [edit, setEdit] = useState(null);
+  const [del, setDel] = useState(null);
   const pending = rows.filter((r) => r.status === "pending").length;
   const shown = rows.filter((r) => filter === "all" || r.status === filter);
-  const setStatus = (id, status) => setRows(rows.map((r) => (r.id === id ? { ...r, status } : r)));
+  const setStatus = (id, status) => {
+    setRows(rows.map((r) => (r.id === id ? { ...r, status } : r)));
+    toast(status === "approved" ? "Review approved — now visible on the gadget page" : "Review rejected — hidden from the public site",
+      status === "approved" ? "checkCircle" : "x");
+  };
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
@@ -587,7 +648,8 @@ function Reviews({ rows, setRows }) {
                       disabled={r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
                     <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7]"
                       onClick={() => setStatus(r.id, "rejected")}>Reject</button>
-                    <button className={iconBtn} title="Delete" onClick={() => setRows(rows.filter((x) => x.id !== r.id))}><Ico n="trash" /></button>
+                    <button className={iconBtn} title="Edit" onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
+                    <button className={iconBtn} title="Delete" onClick={() => setDel(r)}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
@@ -601,6 +663,51 @@ function Reviews({ rows, setRows }) {
       <p className="mt-5 text-[13px] text-[#6B7280]">
         Showing {shown.length} reviews from the catalog dataset. Approved reviews appear on public product pages after the next data refresh.
       </p>
+
+      {edit && (
+        <Modal
+          title="Edit review"
+          sub="Fix profanity, personal information, or formatting. The reviewer name stays."
+          onClose={() => setEdit(null)}
+          actions={<>
+            <button className={btnOutlineCls} onClick={() => setEdit(null)}>Cancel</button>
+            <button className={btnPrimaryCls} onClick={() => {
+              if (!edit.text.trim()) { toast("Review text cannot be empty", "alert"); return; }
+              setRows(rows.map((r) => (r.id === edit.id ? { ...r, text: edit.text, rating: edit.rating } : r)));
+              setEdit(null);
+              toast("Review edited", "edit");
+            }}>Save</button>
+          </>}
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="edRating">Rating (1–5)</label>
+            <input id="edRating" type="number" min="1" max="5" className={fieldInputCls} value={edit.rating}
+              onChange={(e) => setEdit({ ...edit, rating: Math.min(5, Math.max(1, Number(e.target.value) || 1)) })} />
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="edText">Review text</label>
+            <textarea id="edText" rows="5" className={fieldInputCls} value={edit.text}
+              onChange={(e) => setEdit({ ...edit, text: e.target.value })} />
+          </div>
+        </Modal>
+      )}
+
+      {del && (
+        <Modal
+          title="Delete review"
+          onClose={() => setDel(null)}
+          actions={<>
+            <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
+            <button className={btnDangerCls} onClick={() => {
+              setRows(rows.filter((x) => x.id !== del.id));
+              setDel(null);
+              toast("Review deleted", "trash");
+            }}>Delete</button>
+          </>}
+        >
+          <p className="text-[17px] text-[#111827]">Permanently remove the review by <b>{del.user}</b>?</p>
+        </Modal>
+      )}
     </>
   );
 }
@@ -706,6 +813,7 @@ export default function Admin() {
   const [cats, setCats] = useState(() => GW.categories.map(toCat));
   const [reviews, setReviews] = useState(GW.admin.moderation);
   const [editing, setEditing] = useState(null);
+  const [toast, toastNode] = useToast();
 
   if (!inSession) {
     return <Signin onIn={() => { sessionStorage.setItem("gw-admin", "1"); setIn(true); }} />;
@@ -713,27 +821,35 @@ export default function Admin() {
 
   const editIn = (g) => { setEditing(g); tab("add"); };
   const saveGadget = (fd) => {
+    const price = Number(fd.get("price"));
+    if (!(price > 0)) { toast("Enter a price greater than zero", "alert"); return; }
+    const cat = fd.get("category");
+    if (!GW.categories.some((c) => c.id === cat)) {
+      toast("Pick a category from the list (manage categories on the Categories page)", "alert"); return;
+    }
     const name = `${fd.get("brand") || ""} ${fd.get("model") || ""}`.trim() || "Untitled gadget";
     if (!editing) {
       setGadgets([...gadgets, {
-        id: slugify(name), brand: fd.get("brand") || "", model: fd.get("model") || "", category: fd.get("category"),
-        price: Number(fd.get("price")) || 0, rating: 0, status: "published",
+        id: slugify(name), brand: fd.get("brand") || "", model: fd.get("model") || "", category: cat,
+        price, rating: 0, status: "published",
         img: fd.get("img") || "/images/gadgets/kaido-airbook-14.jpg",
       }]);
     }
     setEditing(null);
     tab("gadgets");
+    toast(editing ? "Changes saved" : "Gadget created — status: published");
   };
 
   return (
     <Shell tabKey={tabKey} tab={tab} onOut={() => { sessionStorage.removeItem("gw-admin"); setIn(false); }}>
       {tabKey === "dashboard" && <Dashboard tab={tab} />}
       {tabKey === "reports" && <Reports />}
-      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} />}
-      {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} />}
-      {tabKey === "categories" && <Categories rows={cats} setRows={setCats} />}
-      {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviews} />}
+      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} toast={toast} />}
+      {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} />}
+      {tabKey === "categories" && <Categories rows={cats} setRows={setCats} toast={toast} />}
+      {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviews} toast={toast} />}
       {tabKey === "users" && <Users />}
+      {toastNode}
     </Shell>
   );
 }

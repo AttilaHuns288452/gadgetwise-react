@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndexParts, frontier, recommend } from "../lib.js";
-import { Img, Bar, Oidx, Stars, displayName } from "../components/ui.jsx";
+import { Img, Bar, Oidx, Stars, displayName, Modal, useToast, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
 
 
 const TABS = ["Overview", "Value & Ownership", "Reviews", "Issues"];
@@ -9,6 +9,9 @@ const TABS = ["Overview", "Value & Ownership", "Reviews", "Issues"];
 function GadgetDetail({ compare, onCompare }) {
   const { id } = useParams();
   const [tab, setTab] = useState(TABS[0]);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [issueOpen, setIssueOpen] = useState(false);
+  const [toast, toastNode] = useToast();
   const g = GW.getGadget(id);
   if (!g) {
     return (
@@ -189,10 +192,14 @@ function GadgetDetail({ compare, onCompare }) {
 
         {tab === "Reviews" && (
           <div className="card p-6 lg:col-span-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-semibold">Student reviews</h2>
-              <Stars rating={g.rating} count={g.reviewCount} />
+              <div className="flex flex-wrap items-center gap-3">
+                <Stars rating={g.rating} count={g.reviewCount} />
+                <button type="button" onClick={() => setReviewOpen(true)} className={btnOutlineCls}>Write a review</button>
+              </div>
             </div>
+            <p className="mt-2 text-sm text-ink3">Showing {g.reviews.filter((r) => r.status !== "rejected").length} of {g.reviewCount}</p>
             <div className="mt-4 divide-y divide-line">
               {g.reviews.map((r) => (
                 <div key={r.id} className="py-4">
@@ -211,16 +218,101 @@ function GadgetDetail({ compare, onCompare }) {
         )}
 
         {tab === "Issues" && (
-          <div className="card border-l-4 border-l-warning p-6 lg:col-span-2">
+          <div className="card p-6 lg:col-span-2">
             <h2 className="font-semibold">Known issues</h2>
-            <p className="mt-3 text-ink2">{g.issue}</p>
-            <p className="mt-4 text-sm text-ink3">
-              Issues are community-reported and editorially reviewed. This is a static demo — reports are
-              not collected.
+            {g.issues.length > 0 ? (
+              <>
+                <p className="mt-2 text-sm text-ink3">Problems students reported to the community.</p>
+                <div className="mt-4 space-y-4">
+                  {g.issues.map((i) => (
+                    <div key={i.id} className="flex items-start gap-3">
+                      <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${i.severity === "major" ? "bg-danger" : i.severity === "moderate" ? "bg-warning" : "bg-ink3"}`} title={i.severity} />
+                      <div className="min-w-0">
+                        <div className="font-semibold">{i.title}</div>
+                        <div className="text-sm text-ink3">
+                          Reported by {i.reportedBy} · {new Date(i.date).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })} · <span className="chip-chip">{i.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="mt-3 text-ink2">No problems have been reported for this gadget yet.</p>
+            )}
+            <p className="mt-5 text-sm text-ink3">
+              Found a problem? <button type="button" onClick={() => setIssueOpen(true)} className="font-semibold text-primary-dark underline">Report an issue</button> — reviewed by moderators before appearing here.
             </p>
           </div>
         )}
       </div>
+
+      {reviewOpen && (
+        <Modal
+          title="Write a review"
+          sub="Reviews go to the moderation queue before appearing publicly."
+          onClose={() => setReviewOpen(false)}
+          actions={<>
+            <button type="button" className={btnOutlineCls} onClick={() => setReviewOpen(false)}>Cancel</button>
+            <button type="button" className={btnPrimaryCls} onClick={() => {
+              const text = document.getElementById("rvText").value.trim();
+              if (text.length < 10) { toast("Please write at least 10 characters", "alert"); return; }
+              setReviewOpen(false);
+              toast("Review submitted — pending moderation (simulated)");
+            }}>Submit for moderation</button>
+          </>}
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="rvRating">Rating</label>
+            <select id="rvRating" className={fieldInputCls} defaultValue="3">
+              <option value="5">★★★★★ Excellent</option>
+              <option value="4">★★★★ Good</option>
+              <option value="3">★★★ Fair</option>
+              <option value="2">★★ Poor</option>
+              <option value="1">★ Poor</option>
+            </select>
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="rvContext">Usage context <span className="font-normal text-ink3">(optional)</span></label>
+            <input id="rvContext" type="text" className={fieldInputCls} placeholder="e.g., Programming + online classes · 8 months" />
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="rvText">Your review</label>
+            <textarea id="rvText" rows="4" className={fieldInputCls} placeholder="How has it held up for schoolwork? Battery? Durability?" />
+          </div>
+        </Modal>
+      )}
+
+      {issueOpen && (
+        <Modal
+          title="Report an issue"
+          sub="Prototype form — reports enter the admin moderation queue (simulated)."
+          onClose={() => setIssueOpen(false)}
+          actions={<>
+            <button type="button" className={btnOutlineCls} onClick={() => setIssueOpen(false)}>Cancel</button>
+            <button type="button" className={btnPrimaryCls} onClick={() => {
+              const t = document.getElementById("isTitle").value.trim();
+              if (t.length < 5) { toast("Please describe the issue briefly", "alert"); return; }
+              setIssueOpen(false);
+              toast("Issue reported — pending moderation (simulated)");
+            }}>Submit report</button>
+          </>}
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="isTitle">Issue</label>
+            <input id="isTitle" type="text" className={fieldInputCls} placeholder="Short summary of the problem" />
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="isSev">Severity</label>
+            <select id="isSev" className={fieldInputCls} defaultValue="Moderate">
+              <option>Minor</option>
+              <option>Moderate</option>
+              <option>Major</option>
+            </select>
+          </div>
+        </Modal>
+      )}
+      {toastNode}
 
       {/* Related */}
       <div className="mt-12">
