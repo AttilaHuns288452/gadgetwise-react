@@ -114,6 +114,7 @@
   }
   .oidx span {
     /* no nowrap — the label must wrap to 2 lines on narrow cards; nowrap made min-content 134px and overflowed mobile */
+    overflow-wrap: anywhere; /* PERFORMANCE is 96px > the 84px mobile cap; allow the word to break */
     font-size: 0.78rem;
     letter-spacing: 0.09em;
     font-weight: 600;

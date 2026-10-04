@@ -1867,13 +1867,14 @@ GW.admin = {
   weeklyViews: [3120, 3480, 3260, 3890, 4210, 4650, 5020, 5480]
 };
 
-/* Every seeded review as a moderation row. ponytail: the first 7 land in
-   pending and every 9th is rejected — deterministic demo states, not policy. */
+/* Every seeded review as a moderation row. ponytail: every 8th row lands in
+   pending and every 9th (non-pending) is rejected — deterministic demo states,
+   not policy. Spread so the queue mixes gadgets. */
 GW.admin.moderation = GW.gadgets.flatMap((g) =>
   g.reviews.map((r) => ({
     id: r.id, gadget: `${g.brand} ${g.model}`, gadgetSlug: g.id, user: r.user, date: r.date,
     rating: r.rating, text: r.text, status: "approved"
   }))
-).map((row, i) => (i < 7 ? { ...row, status: "pending" } : i % 9 === 0 ? { ...row, status: "rejected" } : row));
+).map((row, i) => (i % 8 === 0 ? { ...row, status: "pending" } : i % 9 === 0 ? { ...row, status: "rejected" } : row));
 
 export default GW;

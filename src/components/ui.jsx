@@ -35,7 +35,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
 
 export function Stars({ rating, count }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5 text-sm">
+    <span className="inline-flex max-w-full flex-wrap items-baseline gap-1.5 text-sm">
       <span className="inline-flex gap-[1px]" aria-hidden="true">
         {Array.from({ length: 5 }, (_, i) => {
           const fill = Math.min(1, Math.max(0, rating - i)); // partial star per decimal

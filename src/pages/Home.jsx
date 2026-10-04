@@ -126,7 +126,7 @@ function Home({ compare, onCompare }) {
             ["Average rating", `${GW.community.avgRating}★`],
           ].map(([label, v]) => (
             <div key={label} className="sm:pl-6 sm:first:pl-0">
-              <div className="mono text-3xl font-semibold text-primary-dark">{v}</div>
+              <div className="mono text-xl font-semibold text-primary-dark sm:text-2xl lg:text-3xl">{v}</div>
               <div className="text-sm text-ink3">{label}</div>
             </div>
           ))}
@@ -210,7 +210,7 @@ function Home({ compare, onCompare }) {
                         <Stars rating={g.rating} count={g.reviewCount} />
                       </div>
                       <div className="col-start-3 row-start-3 lg:col-start-5 lg:row-start-1 lg:text-right">
-                        <span className="mono inline-flex flex-wrap items-baseline text-2xl font-semibold tabular-nums text-primary-dark">
+                        <span className="mono text-base font-semibold tabular-nums text-primary-dark sm:text-xl lg:text-2xl">
                           {money(GW.monthlyCost(g))}<span className="text-sm font-medium text-ink3">/mo</span>
                         </span>
                       </div>
