@@ -43,7 +43,7 @@ function Catalog({ compare, onCompare }) {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search gadgets, brands, categories…"
           aria-label="Search gadgets"
-          className="field min-w-[12rem] flex-1"
+          className="field min-w-[12rem] flex-1 max-w-[32rem]"
         />
         <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort gadgets" className="field max-w-[17rem]">
           <option value="index">Best Performance to Cost</option>

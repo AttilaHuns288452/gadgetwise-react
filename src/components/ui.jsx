@@ -71,17 +71,17 @@ export function GadgetCard({ g, compare, onCompare }) {
   return (
     <article className="card flex flex-col overflow-hidden transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,34,.05),0_8px_24px_rgba(15,23,34,.08)]">
       <a href={`#/g/${g.id}`} className="block">
-        <Img gadget={g} />
+        <div className="relative">
+          <Img gadget={g} />
+          <Oidx g={g} className="absolute left-3 top-3 bg-white/95" />
+        </div>
       </a>
       <div className="flex flex-1 flex-col gap-2 border-t border-line p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
-            <a href={`#/g/${g.id}`} className="font-semibold leading-snug text-ink hover:text-primary">
-              {g.model}
-            </a>
-          </div>
-          <Oidx g={g} />
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
+          <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] font-semibold leading-snug text-ink hover:text-primary">
+            {g.model}
+          </a>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="mono text-base font-semibold text-primary-dark">{money(g.price)}</span>

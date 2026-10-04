@@ -71,14 +71,14 @@ export default function Quiz() {
   return (
     <section className="section">
       <div className="eyebrow">Recommendation tool</div>
-      <h1 className="mt-2">Find the right gadget for how you actually study</h1>
+      <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">Find the right gadget for how you actually study</h1>
       <p className="mt-2 max-w-2xl text-ink2">
         Five questions, transparent weights. The score on every result is fully explained — nothing is a
         black box.
       </p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
-        <div className="card p-3 lg:self-stretch"><Stepper step={step} answers={answers} /></div>
+        <div className="card p-3 lg:self-start"><Stepper step={step} answers={answers} /></div>
 
         <div>
           {step === 1 && (
@@ -87,7 +87,7 @@ export default function Quiz() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {[{ id: "any", name: "Not sure yet — show me everything", blurb: "Rank the whole catalog." }, ...GW.categories].map((c) => (
                   <button key={c.id} type="button" onClick={() => { setCat(c.id); setStep(2); }}
-                    className={`rounded-sm border p-4 text-left transition-colors sm:[&:last-child:nth-child(odd)]:col-span-2 ${
+                    className={`rounded-sm border p-4 text-left transition-colors ${
                       cat === c.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
                     <div className="font-semibold">{c.name}</div>
                     <div className="mt-1 text-sm text-ink3">{c.blurb || ""}</div>
@@ -103,13 +103,13 @@ export default function Quiz() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {GW.budgetBands.map((b) => (
                   <button key={b.id} type="button" onClick={() => { setBandId(b.id); setStep(3); }}
-                    className={`rounded-sm border p-4 text-left transition-colors sm:[&:last-child:nth-child(odd)]:col-span-2 ${
+                    className={`rounded-sm border p-4 text-left transition-colors ${
                       bandId === b.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
                     <div className="mono font-semibold">{b.label}</div>
                   </button>
                 ))}
                 <button type="button" onClick={() => { setBandId("custom"); }}
-                  className={`rounded-sm border p-4 text-left transition-colors sm:[&:last-child:nth-child(odd)]:col-span-2 ${
+                  className={`rounded-sm border p-4 text-left transition-colors ${
                     bandId === "custom" ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
                   <div className="mono font-semibold">Custom range</div>
                   <div className="mt-2 flex gap-2">

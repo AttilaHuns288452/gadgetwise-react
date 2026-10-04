@@ -46,7 +46,7 @@ function Compare({ compare, onCompare }) {
       ) : (
         <>
           <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
+            <table style={{ maxWidth: 240 + list.length * 380 }} className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr>
                   <th className="w-40 border-b border-line py-3 text-left align-bottom text-ink3">Spec</th>

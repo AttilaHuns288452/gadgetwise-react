@@ -106,10 +106,10 @@ function Home({ compare, onCompare }) {
               <Link to="/gadgets" className="btn-hero">Browse gadgets</Link>
               <Link to="/recommend" className="btn-hero-ghost">Find my recommendation</Link>
             </div>
-            <ul className="mt-6 space-y-2.5 text-lg text-on-hero2 [&>li]:pl-[1.15em] [&>li]:[text-indent:-1.15em]">
-              <li>• Transparent 100-point scoring — see exactly why a gadget ranks where it does</li>
-              <li>• Performance to Cost index on every product</li>
-              <li>• Reviews written by students, for students</li>
+            <ul className="mt-6 max-w-2xl list-disc space-y-2.5 pl-5 text-lg text-on-hero2 marker:text-gold-hair">
+              <li>Transparent 100-point scoring — see exactly why a gadget ranks where it does</li>
+              <li>Performance to Cost index on every product</li>
+              <li>Reviews written by students, for students</li>
             </ul>
           </div>
           <HeroShowcase />
