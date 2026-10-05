@@ -149,5 +149,5 @@
 /* Admin console: desktop scale-up so type matches the public site's density at 1920x1080 */
 /* ponytail: uniform zoom instead of re-sizing every hardcoded px class in Admin.jsx */
 @media (min-width: 1024px) {
-  .admin-zoom { zoom: 1.2; }
+  .admin-zoom { zoom: 1.25; }
 }

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
@@ -20,6 +20,7 @@ const ICONS = {
   plus: "M12 5v14M5 12h14",
   cube: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12L4 7.5M12 12v9",
   star: "M12 3l2.6 6 6.4.6-4.8 4.3 1.4 6.3L12 17l-5.6 3.2 1.4-6.3L3 9.6 9.4 9z",
+  trendUp: "m3 17 6-6 4 4 8-8M15 7h6v6",
 };
 
 function Ico({ n, size = 18, className = "" }) {
@@ -31,14 +32,14 @@ function Ico({ n, size = 18, className = "" }) {
   );
 }
 
-const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#2260D4] px-4 py-2.5 text-[17px] font-semibold text-white hover:bg-[#1b4fb3]";
-const btnSecondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[17px] font-semibold text-[#2260D4] hover:bg-[#F5F8FF]";
-const btnOutline = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[17px] font-semibold text-[#344054] hover:bg-[#F4F5F7]";
+const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#2260D4] px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-[#1b4fb3]";
+const btnSecondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[15px] font-semibold text-[#2260D4] hover:bg-[#F5F8FF]";
+const btnOutline = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[15px] font-semibold text-[#344054] hover:bg-[#F4F5F7]";
 const iconBtn = "inline-flex items-center justify-center rounded-md border border-[#E4E7EC] bg-white p-2 text-[#667085] hover:border-[#2260D4] hover:text-[#2260D4]";
-const inputCls = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2.5 text-[17px] text-[#101828] placeholder:text-[#98A2B3] focus:border-[#2260D4] focus:outline-none";
-const labelCls = "block text-[16px] font-semibold text-[#344054]";
-const cellCls = "px-4 py-3.5 align-middle text-[17px] text-[#344054]";
-const headCls = "px-4 py-2.5 text-left text-[13px] font-semibold uppercase tracking-[0.08em] text-[#475467]";
+const inputCls = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2.5 text-[15px] text-[#101828] placeholder:text-[#98A2B3] focus:border-[#2260D4] focus:outline-none";
+const labelCls = "block text-[13px] font-semibold text-[#344054]";
+const cellCls = "px-4 py-3.5 align-middle text-[15px] text-[#344054]";
+const headCls = "px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#475467]";
 
 function Pill({ kind, children }) {
   const styles = {
@@ -51,7 +52,7 @@ function Pill({ kind, children }) {
     rejected: "bg-[#EAECF0] text-[#475467]",
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[15px] font-semibold ${styles[kind] || styles.inactive}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${styles[kind] || styles.inactive}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {children}
     </span>
@@ -76,11 +77,11 @@ function BarList({ rows }) {
     <ul className="space-y-3.5">
       {rows.map(([name, value]) => (
         <li key={name} className="flex items-center gap-4">
-          <span className="w-28 shrink-0 truncate text-[17px] text-[#344054] sm:w-72">{name}</span>
+          <span className="w-28 shrink-0 truncate text-[15px] text-[#344054] sm:w-72">{name}</span>
           <span className="h-3 flex-1 overflow-hidden rounded bg-[#EDEFF3]">
             <span className="block h-full rounded bg-[#CBD5E1]" style={{ width: `${(value / max) * 100}%` }} />
           </span>
-          <span className="w-16 shrink-0 text-right text-[17px] font-semibold text-[#111827]">{value.toLocaleString()}</span>
+          <span className="w-16 shrink-0 text-right text-[15px] font-semibold text-[#111827]">{value.toLocaleString()}</span>
         </li>
       ))}
     </ul>
@@ -90,11 +91,11 @@ function BarList({ rows }) {
 function StatCard({ label, value, trend, tone }) {
   const amber = tone === "amber";
   return (
-    <div className={`rounded-xl border bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)] ${amber ? "border-2 border-[#D9A441]" : "border-[#E4E7EC]"}`}>
-      <div className="text-[16px] text-[#667085]">{label}</div>
-      <div className={`mt-1 text-[40px] font-bold leading-none ${amber ? "text-[#B4791A]" : "text-[#111827]"}`}>{value}</div>
-      <div className={`mt-3 text-[16px] font-semibold ${trend.down ? "text-[#DC4B2A]" : "text-[#12B76A]"}`}>
-        {trend.down ? "↓" : "↑"} {trend.text}
+    <div className={`rounded-xl border bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)] ${amber ? "border-2 border-[#B07C28]" : "border-[#E4E7EC]"}`}>
+      <div className="text-[13px] text-[#667085]">{label}</div>
+      <div className={`mt-1 text-[40px] font-bold leading-none ${amber ? "text-[#7C4708]" : "text-[#111827]"}`}>{value}</div>
+      <div className={`mt-3 flex items-center gap-1.5 text-[13px] font-semibold ${trend.down ? "text-[#C0392B]" : "text-[#12B76A]"}`}>
+        <Ico n="trendUp" size={15} /> {trend.text}
       </div>
     </div>
   );
@@ -112,6 +113,40 @@ function Field({ label, children }) {
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
 
+function Signin({ onIn }) {
+  const nav = useNavigate();
+  return (
+    <div className="admin-zoom min-h-screen bg-white px-6 py-8 font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:px-12">
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={22} /></span>
+        <span className="text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
+      </div>
+      <div className="mt-12 max-w-[1500px]">
+        <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6B7280]">▪ Staff Console</div>
+        <h1 className="mt-3 text-[48px] font-bold leading-none text-[#111827]">Admin sign-in</h1>
+        <p className="mt-3 text-[15px] text-[#4B5563]">Gadget Wise team console prototype.</p>
+        <form className="mt-8 space-y-5" onSubmit={(e) => { e.preventDefault(); onIn(); }}>
+          <Field label="Staff username">
+            <input className={inputCls} defaultValue="admin" name="username" />
+          </Field>
+          <Field label="Password">
+            <input className={inputCls} type="password" defaultValue="password" name="password" />
+          </Field>
+          <button type="submit" className="w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
+            Sign in to console
+          </button>
+        </form>
+        <div className="mt-6 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
+          Prototype: any credentials work. Staff accounts are managed separately from student accounts.
+        </div>
+        <button type="button" onClick={() => nav("/")} className="mt-6 block w-full text-center text-[13px] text-[#1B6AC9] hover:underline">
+          ← Back to GadgetWise
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ tab }) {
   const pending = GW.admin.moderation.filter((r) => r.status === "pending").length;
   const stats = [
@@ -126,7 +161,7 @@ function Dashboard({ tab }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Dashboard</h1>
-          <p className="mt-1 text-[17px] text-[#6B7280]">Activity across the Gadget Wise catalog and community.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Live overview of the catalog and moderation queues.</p>
         </div>
         <div className="flex gap-3">
           <button className={btnSecondary} onClick={() => tab("reviews")}>Moderation queue</button>
@@ -142,7 +177,7 @@ function Dashboard({ tab }) {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[52fr_44fr]">
-        <Panel title="Top viewed this month" action={<button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
+        <Panel title="Top viewed this month" action={<button className="text-[14px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
           <BarList rows={GW.admin.topViewed.slice(0, 5).map(([id, v]) => [displayName(GW.getGadget(id)), v])} />
         </Panel>
         <Panel title="Moderation queue preview">
@@ -150,8 +185,8 @@ function Dashboard({ tab }) {
             {preview.map((r) => (
               <li key={r.id} className="flex items-center gap-3">
                 <span className="h-2 w-2 shrink-0 rounded-full bg-[#D9A441]" />
-                <span className="min-w-0 flex-1 truncate text-[17px] text-[#111827]">{r.gadget} · {r.rating}★</span>
-                <span className="shrink-0 text-[16px] text-[#6B7280]">{r.user} · {r.date}</span>
+                <span className="min-w-0 flex-1 truncate text-[15px] text-[#111827]">{r.gadget} · {r.rating}★</span>
+                <span className="shrink-0 text-[13px] text-[#6B7280]">{r.user} · {r.date}</span>
               </li>
             ))}
           </ul>
@@ -161,12 +196,12 @@ function Dashboard({ tab }) {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel title="Popular categories">
-          <p className="text-[17px] leading-relaxed text-[#4B5563]">
+          <p className="text-[15px] leading-relaxed text-[#4B5563]">
             Smartphones and laptops draw 65% of catalog views — keep their specs and issues freshest.
           </p>
         </Panel>
         <Panel title="Data status">
-          <p className="text-[17px] leading-relaxed text-[#4B5563]">
+          <p className="text-[15px] leading-relaxed text-[#4B5563]">
             Figures come from the catalog dataset plus admin edits stored in this browser.
           </p>
         </Panel>
@@ -191,18 +226,18 @@ function Reports() {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Reports</h1>
-      <p className="mt-1 text-[17px] text-[#6B7280]">Internal analytics — content performance and catalog trends.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Internal analytics — content performance and catalog trends.</p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
         {panels.map(([id, title, sub, rows, count]) => (
           <Panel key={id} title={title} action={
-            <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === id ? null : id)}>
+            <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === id ? null : id)}>
               {dt === id ? "Hide data table" : "View data table"}
             </button>
           }>
-            <p className="text-[16px] text-[#667085]">{sub}</p>
+            <p className="text-[13px] text-[#667085]">{sub}</p>
             {dt === id ? (
-              <table className="mt-4 w-full text-[16px]">
+              <table className="mt-4 w-full text-[13px]">
                 <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Product</th><th className={headCls}>Views</th></tr></thead>
                 <tbody>
                   {rows.slice(0, count).map(([sid, v]) => (
@@ -219,13 +254,13 @@ function Reports() {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel title="Views by category" action={
-          <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "cats" ? null : "cats")}>
+          <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "cats" ? null : "cats")}>
             {dt === "cats" ? "Hide data table" : "View data table"}
           </button>
         }>
-          <p className="text-[16px] text-[#667085]">Share of product page views in the last 30 days.</p>
+          <p className="text-[13px] text-[#667085]">Share of product page views in the last 30 days.</p>
           {dt === "cats" ? (
-            <table className="mt-4 w-full text-[16px]">
+            <table className="mt-4 w-full text-[13px]">
               <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Category</th><th className={headCls}>Share</th></tr></thead>
               <tbody>
                 {GW.admin.viewsByCategory.map(([name, pct]) => (
@@ -242,7 +277,7 @@ function Reports() {
               }} />
               <ul className="space-y-2">
                 {GW.admin.viewsByCategory.map(([name, pct], i) => (
-                  <li key={name} className="flex items-center gap-2.5 text-[16px] text-[#344054]">
+                  <li key={name} className="flex items-center gap-2.5 text-[14px] text-[#344054]">
                     <span className="h-3 w-3 rounded-full" style={{ background: legendColors[i] }} />
                     <span className="w-28">{name}</span>
                     <span className="font-semibold text-[#111827]">{pct}%</span>
@@ -254,13 +289,13 @@ function Reports() {
         </Panel>
 
         <Panel title="Weekly page views" action={
-          <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "week" ? null : "week")}>
+          <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "week" ? null : "week")}>
             {dt === "week" ? "Hide data table" : "View data table"}
           </button>
         }>
-          <p className="text-[16px] text-[#667085]">Total product page views across all categories.</p>
+          <p className="text-[13px] text-[#667085]">Total product page views across all categories.</p>
           {dt === "week" ? (
-            <table className="mt-4 w-full text-[16px]">
+            <table className="mt-4 w-full text-[13px]">
               <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Week</th><th className={headCls}>Views</th></tr></thead>
               <tbody>
                 {GW.admin.weeklyViews.map((v, i) => (
@@ -285,7 +320,7 @@ function Reports() {
           )}
         </Panel>
       </div>
-      <p className="mt-6 text-[16px] text-[#6B7280]">
+      <p className="mt-6 text-[13px] text-[#6B7280]">
         Analytics figures are generated for the prototype dataset. Production reporting will use real page and comparison events.
       </p>
     </>
@@ -304,7 +339,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
-      <p className="mt-1 text-[17px] text-[#6B7280]">Catalog records visible on the public site.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Catalog records visible on the public site.</p>
       <div className="mt-6 flex flex-wrap gap-3">
         <input className={`${inputCls} !w-72`} placeholder="Search brand or model..." value={q} onChange={(e) => setQ(e.target.value)} />
         <select className={`${inputCls} !w-52`} value={cat} onChange={(e) => setCat(e.target.value)}>
@@ -332,7 +367,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
                     <img src={g.img} alt="" className="h-11 w-11 shrink-0 rounded-md border border-[#E4E7EC] bg-white object-contain p-0.5" />
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#111827]">{displayName(g)}</div>
-                      <div className="truncate text-[16px] text-[#6B7280]">{g.id}</div>
+                      <div className="truncate text-[13px] text-[#6B7280]">{g.id}</div>
                     </div>
                   </div>
                 </td>
@@ -391,18 +426,18 @@ function AddGadget({ tab, onSave, editing, toast }) {
   };
   return (
     <>
-      <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
+      <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
       <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[17px] text-[#6B7280]">Create a catalog record manually or fetch from the sample product API.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Create a catalog record manually or fetch from the sample product API.</p>
 
       <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
-        <p className="mt-1 text-[16px] text-[#667085]">
+        <p className="mt-1 text-[13px] text-[#667085]">
           Prototype source: sample product response. Select Fetch Product Information to prefill this form.
         </p>
         <button className={`${btnSecondary} mt-4`} onClick={fillSample}><Ico n="refresh" size={16} /> Fetch Product Information</button>
       </div>
-      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[16px] text-[#8A6520]">
+      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
         Verify fields after fetching. The sample API is illustrative and may return incomplete values.
       </div>
 
@@ -485,7 +520,7 @@ function Categories({ rows, setRows, toast }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Categories</h1>
-          <p className="mt-1 text-[17px] text-[#6B7280]">Organization labels for the catalog.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Organization labels for the catalog.</p>
         </div>
         <button className={btnPrimary} onClick={() => setForm({ name: "", desc: "" })}><Ico n="plus" size={16} /> Add category</button>
       </div>
@@ -542,7 +577,7 @@ function Categories({ rows, setRows, toast }) {
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF3FC] text-[#2260D4]"><Ico n="cube" size={18} /></span>
                   <div>
                     <h3 className="text-[20px] font-bold text-[#111827]">{c.name}</h3>
-                    <p className="text-[16px] text-[#667085]">{s.n} gadgets · avg {s.avg}★</p>
+                    <p className="text-[13px] text-[#667085]">{s.n} gadgets · avg {s.avg}★</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -551,7 +586,7 @@ function Categories({ rows, setRows, toast }) {
                   <button className={iconBtn} title="Delete" onClick={() => setDel(c)}><Ico n="trash" /></button>
                 </div>
               </div>
-              <p className="mt-3 text-[17px] leading-relaxed text-[#4B5563]">{c.desc}</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.desc}</p>
             </div>
           );
         })}
@@ -575,14 +610,14 @@ function Reviews({ rows, setRows, toast }) {
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-[30px] font-bold text-[#111827]">Review Moderation</h1>
-        <span className="rounded-full bg-[#FCF3E4] px-3 py-1 text-[16px] font-semibold text-[#8A6520]">{pending} pending</span>
+        <span className="rounded-full bg-[#FCF3E4] px-3 py-1 text-[13px] font-semibold text-[#8A6520]">{pending} pending</span>
       </div>
-      <p className="mt-1 text-[17px] text-[#6B7280]">Approve, reject, edit, or delete community reviews before they appear on product pages.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Approve, reject, edit, or delete community reviews before they appear on product pages.</p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         {["all", "pending", "approved", "rejected"].map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-2 text-[16px] font-semibold capitalize ${filter === f ? "bg-[#2260D4] text-white" : "border border-[#D9DEE7] bg-white text-[#344054] hover:bg-[#F5F8FF]"}`}>
+            className={`rounded-full px-4 py-2 text-[14px] font-semibold capitalize ${filter === f ? "bg-[#2260D4] text-white" : "border border-[#D9DEE7] bg-white text-[#344054] hover:bg-[#F5F8FF]"}`}>
             {f}
           </button>
         ))}
@@ -601,7 +636,7 @@ function Reviews({ rows, setRows, toast }) {
               <tr key={r.id} className="border-b border-[#F2F4F7] last:border-0">
                 <td className={cellCls}>
                   <div className="font-semibold text-[#111827]">{r.gadget}</div>
-                  <div className="text-[16px] text-[#6B7280]">{r.user} · {r.date}</div>
+                  <div className="text-[13px] text-[#6B7280]">{r.user} · {r.date}</div>
                 </td>
                 <td className={cellCls}>{r.rating}★</td>
                 <td className={`${cellCls} max-w-md`}>
@@ -610,9 +645,9 @@ function Reviews({ rows, setRows, toast }) {
                 <td className={cellCls}><Pill kind={r.status}>{r.status}</Pill></td>
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
-                    <button className="rounded-md bg-[#111827] px-3 py-1.5 text-[16px] font-semibold text-white disabled:bg-[#D0D5DD] disabled:text-[#98A2B3]"
+                    <button className="rounded-md bg-[#111827] px-3 py-1.5 text-[13px] font-semibold text-white disabled:bg-[#D0D5DD] disabled:text-[#98A2B3]"
                       disabled={r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
-                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[16px] font-semibold text-[#344054] hover:bg-[#F4F5F7]"
+                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7]"
                       onClick={() => setStatus(r.id, "rejected")}>Reject</button>
                     <button className={iconBtn} title="Edit" onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
                     <button className={iconBtn} title="Delete" onClick={() => setDel(r)}><Ico n="trash" /></button>
@@ -626,7 +661,7 @@ function Reviews({ rows, setRows, toast }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-5 text-[16px] text-[#6B7280]">
+      <p className="mt-5 text-[13px] text-[#6B7280]">
         Showing {shown.length} reviews from the catalog dataset. Approved reviews appear on public product pages after the next data refresh.
       </p>
 
@@ -684,7 +719,7 @@ function Users() {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Users</h1>
-      <p className="mt-1 text-[17px] text-[#6B7280]">Registered users and moderation status.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Registered users and moderation status.</p>
       <input className={`${inputCls} mt-6 !w-72`} placeholder="Search name or email..." value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[760px]">
@@ -699,12 +734,12 @@ function Users() {
               <tr key={u.id} className="border-b border-[#F2F4F7] last:border-0">
                 <td className={cellCls}>
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAECF0] text-[16px] font-bold text-[#475467]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAECF0] text-[13px] font-bold text-[#475467]">
                       {u.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                     </span>
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#111827]">{u.name}</div>
-                      <div className="truncate text-[16px] text-[#6B7280]">{u.email}</div>
+                      <div className="truncate text-[13px] text-[#6B7280]">{u.email}</div>
                     </div>
                   </div>
                 </td>
@@ -723,38 +758,56 @@ function Users() {
   );
 }
 
-function Shell({ tabKey, tab, children }) {
-  const items = [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"], ["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"], ["reviews", "Reviews", "chat"], ["users", "Users", "user"]];
+function Shell({ tabKey, tab, onOut, children }) {
+  const groups = [
+    ["overview", [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"]]],
+    ["catalog", [["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"]]],
+    ["community", [["reviews", "Reviews", "chat"]]],
+    ["people", [["users", "Users", "user"]]],
+    ["session", [["public", "View public site", "home"], ["out", "Sign out", "exit"]]],
+  ];
   return (
-    <div className="admin-zoom min-h-screen bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif]">
-      <header className="sticky top-0 z-30 border-b border-[#E4E7EC] bg-white">
-        <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-5 py-3 lg:px-12">
-          <span className="flex shrink-0 items-center gap-2.5 pr-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={18} /></span>
-            <span className="whitespace-nowrap text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
-            <span className="rounded-full bg-[#EEF2FB] px-2.5 py-0.5 text-[15px] font-semibold text-[#4B5563]">admin</span>
-          </span>
-          {items.map(([key, label, icon]) => (
-            <button key={key} onClick={() => tab(key)}
-              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-[17px] font-medium ${key === tabKey ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#475467] hover:bg-[#F4F5F7]"}`}>
-              <Ico n={icon} />
-              {label}
-            </button>
-          ))}
-          <button onClick={() => (window.location.hash = "#/")}
-            className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2 text-[17px] font-medium text-[#344054] hover:bg-[#F4F5F7]">
-            <Ico n="home" />
-            View public site
-          </button>
+    <div className="admin-zoom flex min-h-screen flex-col bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:flex-row">
+      <aside className="w-full shrink-0 bg-[#14213A] lg:sticky lg:top-0 lg:h-screen lg:w-[300px] lg:overflow-y-auto">
+        <div className="flex items-center justify-between gap-3 px-5 py-5">
+          <div className="text-[19px] font-bold text-white">Gadget <span className="text-[#A9C4F5]">Wise</span></div>
+          <span className="ml-auto rounded bg-white/15 px-[7px] py-[3px] text-[10px] font-bold tracking-[0.1em] text-white">ADMIN</span>
         </div>
-      </header>
-      <main className="mx-auto min-w-0 max-w-[1904px] p-6 lg:px-12 lg:py-10">{children}</main>
+        <hr className="border-white/10" />
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-5 pt-3 lg:block lg:space-y-4 lg:overflow-visible">
+          {groups.map(([group, items]) => (
+            <div key={group}>
+              <div className="hidden px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7E8FAE] lg:block">{group}</div>
+              <ul className="flex gap-1 lg:flex-col lg:space-y-1">
+                {items.map(([key, label, icon]) => {
+                  const active = key === tabKey;
+                  const out = key === "out";
+                  return (
+                    <li key={key}>
+                      <button
+                        onClick={() => (key === "public" ? (window.location.hash = "#/") : out ? onOut() : tab(key))}
+                        className={`flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-[15px] font-medium ${active ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#D5DCE9] hover:bg-white/10"}`}
+                      >
+                        <Ico n={icon} />
+                        {label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </aside>
+      <main className="min-w-0 flex-1 p-6 lg:p-10">{children}</main>
     </div>
   );
 }
 
 export default function Admin() {
+  const nav = useNavigate();
   const [params, setParams] = useSearchParams();
+  const [inSession, setIn] = useState(() => sessionStorage.getItem("gw-admin") === "1");
   const tabKey = params.get("tab") || "dashboard";
   const tab = (t) => setParams({ tab: t });
   const [gadgets, setGadgets] = useState(GW.gadgets);
@@ -762,6 +815,10 @@ export default function Admin() {
   const [reviews, setReviews] = useState(GW.admin.moderation);
   const [editing, setEditing] = useState(null);
   const [toast, toastNode] = useToast();
+
+  if (!inSession) {
+    return <Signin onIn={() => { sessionStorage.setItem("gw-admin", "1"); setIn(true); }} />;
+  }
 
   const editIn = (g) => { setEditing(g); tab("add"); };
   const saveGadget = (fd) => {
@@ -785,7 +842,7 @@ export default function Admin() {
   };
 
   return (
-    <Shell tabKey={tabKey} tab={tab}>
+    <Shell tabKey={tabKey} tab={tab} onOut={() => { sessionStorage.removeItem("gw-admin"); setIn(false); }}>
       {tabKey === "dashboard" && <Dashboard tab={tab} />}
       {tabKey === "reports" && <Reports />}
       {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} toast={toast} />}
