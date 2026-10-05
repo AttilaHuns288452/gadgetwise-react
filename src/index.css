@@ -146,6 +146,27 @@
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in .25s ease; }
 
+/* keyboard focus — one ring for every interactive element */
+:focus-visible {
+  outline: 2px solid var(--color-primary, #2563EB);
+  outline-offset: 2px;
+}
+
+/* motion-sensitive users */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection { background: var(--color-primary-soft, #DBEAFE); }
+
+/* row feedback for admin/data tables */
+tbody tr { transition: background-color .15s ease; }
+tbody tr:hover { background: #F9FAFB; }
+
 /* Admin console: desktop scale-up so type matches the public site's density at 1920x1080 */
 /* ponytail: uniform zoom instead of re-sizing every hardcoded px class in Admin.jsx */
 @media (min-width: 1024px) {

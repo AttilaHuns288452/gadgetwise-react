@@ -252,7 +252,7 @@ export function useToast() {
     setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== id)), 3200);
   };
   const node = (
-    <div className="fixed bottom-[88px] right-6 z-[100] grid gap-2.5">
+    <div className="fixed bottom-[88px] right-6 z-[100] grid gap-2.5" role="status" aria-live="polite">
       {items.map((t) => (
         <div key={t.id} className="toast-in flex items-center gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl">
           <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-[#9CC3EE]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>

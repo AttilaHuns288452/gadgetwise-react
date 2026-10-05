@@ -117,7 +117,7 @@ export default function Catalog({ compare, onCompare }) {
 
       <div className="grid gap-8 lg:grid-cols-[19rem_minmax(0,1fr)]">
         {/* Filters */}
-        <aside className="min-w-0" aria-label="Filters">
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto" aria-label="Filters">
           <div className="card p-5">
             <div>
               <h4 className={headCls}>CATEGORY</h4>
