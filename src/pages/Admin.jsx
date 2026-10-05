@@ -31,14 +31,14 @@ function Ico({ n, size = 18, className = "" }) {
   );
 }
 
-const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#2260D4] px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-[#1b4fb3]";
-const btnSecondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[15px] font-semibold text-[#2260D4] hover:bg-[#F5F8FF]";
-const btnOutline = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[15px] font-semibold text-[#344054] hover:bg-[#F4F5F7]";
+const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#2260D4] px-4 py-2.5 text-[17px] font-semibold text-white hover:bg-[#1b4fb3]";
+const btnSecondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[17px] font-semibold text-[#2260D4] hover:bg-[#F5F8FF]";
+const btnOutline = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-[17px] font-semibold text-[#344054] hover:bg-[#F4F5F7]";
 const iconBtn = "inline-flex items-center justify-center rounded-md border border-[#E4E7EC] bg-white p-2 text-[#667085] hover:border-[#2260D4] hover:text-[#2260D4]";
-const inputCls = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2.5 text-[15px] text-[#101828] placeholder:text-[#98A2B3] focus:border-[#2260D4] focus:outline-none";
-const labelCls = "block text-[13px] font-semibold text-[#344054]";
-const cellCls = "px-4 py-3.5 align-middle text-[15px] text-[#344054]";
-const headCls = "px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#475467]";
+const inputCls = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2.5 text-[17px] text-[#101828] placeholder:text-[#98A2B3] focus:border-[#2260D4] focus:outline-none";
+const labelCls = "block text-[16px] font-semibold text-[#344054]";
+const cellCls = "px-4 py-3.5 align-middle text-[17px] text-[#344054]";
+const headCls = "px-4 py-2.5 text-left text-[13px] font-semibold uppercase tracking-[0.08em] text-[#475467]";
 
 function Pill({ kind, children }) {
   const styles = {
@@ -51,7 +51,7 @@ function Pill({ kind, children }) {
     rejected: "bg-[#EAECF0] text-[#475467]",
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${styles[kind] || styles.inactive}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[15px] font-semibold ${styles[kind] || styles.inactive}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {children}
     </span>
@@ -76,11 +76,11 @@ function BarList({ rows }) {
     <ul className="space-y-3.5">
       {rows.map(([name, value]) => (
         <li key={name} className="flex items-center gap-4">
-          <span className="w-28 shrink-0 truncate text-[15px] text-[#344054] sm:w-52">{name}</span>
+          <span className="w-28 shrink-0 truncate text-[17px] text-[#344054] sm:w-72">{name}</span>
           <span className="h-3 flex-1 overflow-hidden rounded bg-[#EDEFF3]">
             <span className="block h-full rounded bg-[#CBD5E1]" style={{ width: `${(value / max) * 100}%` }} />
           </span>
-          <span className="w-16 shrink-0 text-right text-[15px] font-semibold text-[#111827]">{value.toLocaleString()}</span>
+          <span className="w-16 shrink-0 text-right text-[17px] font-semibold text-[#111827]">{value.toLocaleString()}</span>
         </li>
       ))}
     </ul>
@@ -91,9 +91,9 @@ function StatCard({ label, value, trend, tone }) {
   const amber = tone === "amber";
   return (
     <div className={`rounded-xl border bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)] ${amber ? "border-2 border-[#D9A441]" : "border-[#E4E7EC]"}`}>
-      <div className="text-[13px] text-[#667085]">{label}</div>
+      <div className="text-[16px] text-[#667085]">{label}</div>
       <div className={`mt-1 text-[40px] font-bold leading-none ${amber ? "text-[#B4791A]" : "text-[#111827]"}`}>{value}</div>
-      <div className={`mt-3 text-[13px] font-semibold ${trend.down ? "text-[#DC4B2A]" : "text-[#12B76A]"}`}>
+      <div className={`mt-3 text-[16px] font-semibold ${trend.down ? "text-[#DC4B2A]" : "text-[#12B76A]"}`}>
         {trend.down ? "↓" : "↑"} {trend.text}
       </div>
     </div>
@@ -126,7 +126,7 @@ function Dashboard({ tab }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Dashboard</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Activity across the Gadget Wise catalog and community.</p>
+          <p className="mt-1 text-[17px] text-[#6B7280]">Activity across the Gadget Wise catalog and community.</p>
         </div>
         <div className="flex gap-3">
           <button className={btnSecondary} onClick={() => tab("reviews")}>Moderation queue</button>
@@ -142,7 +142,7 @@ function Dashboard({ tab }) {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[52fr_44fr]">
-        <Panel title="Top viewed this month" action={<button className="text-[14px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
+        <Panel title="Top viewed this month" action={<button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
           <BarList rows={GW.admin.topViewed.slice(0, 5).map(([id, v]) => [displayName(GW.getGadget(id)), v])} />
         </Panel>
         <Panel title="Moderation queue preview">
@@ -150,8 +150,8 @@ function Dashboard({ tab }) {
             {preview.map((r) => (
               <li key={r.id} className="flex items-center gap-3">
                 <span className="h-2 w-2 shrink-0 rounded-full bg-[#D9A441]" />
-                <span className="min-w-0 flex-1 truncate text-[15px] text-[#111827]">{r.gadget} · {r.rating}★</span>
-                <span className="shrink-0 text-[13px] text-[#6B7280]">{r.user} · {r.date}</span>
+                <span className="min-w-0 flex-1 truncate text-[17px] text-[#111827]">{r.gadget} · {r.rating}★</span>
+                <span className="shrink-0 text-[16px] text-[#6B7280]">{r.user} · {r.date}</span>
               </li>
             ))}
           </ul>
@@ -161,12 +161,12 @@ function Dashboard({ tab }) {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel title="Popular categories">
-          <p className="text-[15px] leading-relaxed text-[#4B5563]">
+          <p className="text-[17px] leading-relaxed text-[#4B5563]">
             Smartphones and laptops draw 65% of catalog views — keep their specs and issues freshest.
           </p>
         </Panel>
         <Panel title="Data status">
-          <p className="text-[15px] leading-relaxed text-[#4B5563]">
+          <p className="text-[17px] leading-relaxed text-[#4B5563]">
             Figures come from the catalog dataset plus admin edits stored in this browser.
           </p>
         </Panel>
@@ -191,18 +191,18 @@ function Reports() {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Reports</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Internal analytics — content performance and catalog trends.</p>
+      <p className="mt-1 text-[17px] text-[#6B7280]">Internal analytics — content performance and catalog trends.</p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
         {panels.map(([id, title, sub, rows, count]) => (
           <Panel key={id} title={title} action={
-            <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === id ? null : id)}>
+            <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === id ? null : id)}>
               {dt === id ? "Hide data table" : "View data table"}
             </button>
           }>
-            <p className="text-[13px] text-[#667085]">{sub}</p>
+            <p className="text-[16px] text-[#667085]">{sub}</p>
             {dt === id ? (
-              <table className="mt-4 w-full text-[13px]">
+              <table className="mt-4 w-full text-[16px]">
                 <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Product</th><th className={headCls}>Views</th></tr></thead>
                 <tbody>
                   {rows.slice(0, count).map(([sid, v]) => (
@@ -219,13 +219,13 @@ function Reports() {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel title="Views by category" action={
-          <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "cats" ? null : "cats")}>
+          <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "cats" ? null : "cats")}>
             {dt === "cats" ? "Hide data table" : "View data table"}
           </button>
         }>
-          <p className="text-[13px] text-[#667085]">Share of product page views in the last 30 days.</p>
+          <p className="text-[16px] text-[#667085]">Share of product page views in the last 30 days.</p>
           {dt === "cats" ? (
-            <table className="mt-4 w-full text-[13px]">
+            <table className="mt-4 w-full text-[16px]">
               <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Category</th><th className={headCls}>Share</th></tr></thead>
               <tbody>
                 {GW.admin.viewsByCategory.map(([name, pct]) => (
@@ -242,7 +242,7 @@ function Reports() {
               }} />
               <ul className="space-y-2">
                 {GW.admin.viewsByCategory.map(([name, pct], i) => (
-                  <li key={name} className="flex items-center gap-2.5 text-[14px] text-[#344054]">
+                  <li key={name} className="flex items-center gap-2.5 text-[16px] text-[#344054]">
                     <span className="h-3 w-3 rounded-full" style={{ background: legendColors[i] }} />
                     <span className="w-28">{name}</span>
                     <span className="font-semibold text-[#111827]">{pct}%</span>
@@ -254,13 +254,13 @@ function Reports() {
         </Panel>
 
         <Panel title="Weekly page views" action={
-          <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "week" ? null : "week")}>
+          <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "week" ? null : "week")}>
             {dt === "week" ? "Hide data table" : "View data table"}
           </button>
         }>
-          <p className="text-[13px] text-[#667085]">Total product page views across all categories.</p>
+          <p className="text-[16px] text-[#667085]">Total product page views across all categories.</p>
           {dt === "week" ? (
-            <table className="mt-4 w-full text-[13px]">
+            <table className="mt-4 w-full text-[16px]">
               <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Week</th><th className={headCls}>Views</th></tr></thead>
               <tbody>
                 {GW.admin.weeklyViews.map((v, i) => (
@@ -285,7 +285,7 @@ function Reports() {
           )}
         </Panel>
       </div>
-      <p className="mt-6 text-[13px] text-[#6B7280]">
+      <p className="mt-6 text-[16px] text-[#6B7280]">
         Analytics figures are generated for the prototype dataset. Production reporting will use real page and comparison events.
       </p>
     </>
@@ -304,7 +304,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Catalog records visible on the public site.</p>
+      <p className="mt-1 text-[17px] text-[#6B7280]">Catalog records visible on the public site.</p>
       <div className="mt-6 flex flex-wrap gap-3">
         <input className={`${inputCls} !w-72`} placeholder="Search brand or model..." value={q} onChange={(e) => setQ(e.target.value)} />
         <select className={`${inputCls} !w-52`} value={cat} onChange={(e) => setCat(e.target.value)}>
@@ -332,7 +332,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
                     <img src={g.img} alt="" className="h-11 w-11 shrink-0 rounded-md border border-[#E4E7EC] bg-white object-contain p-0.5" />
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#111827]">{displayName(g)}</div>
-                      <div className="truncate text-[13px] text-[#6B7280]">{g.id}</div>
+                      <div className="truncate text-[16px] text-[#6B7280]">{g.id}</div>
                     </div>
                   </div>
                 </td>
@@ -391,18 +391,18 @@ function AddGadget({ tab, onSave, editing, toast }) {
   };
   return (
     <>
-      <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
+      <button className="text-[16px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
       <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Create a catalog record manually or fetch from the sample product API.</p>
+      <p className="mt-1 text-[17px] text-[#6B7280]">Create a catalog record manually or fetch from the sample product API.</p>
 
       <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
-        <p className="mt-1 text-[13px] text-[#667085]">
+        <p className="mt-1 text-[16px] text-[#667085]">
           Prototype source: sample product response. Select Fetch Product Information to prefill this form.
         </p>
         <button className={`${btnSecondary} mt-4`} onClick={fillSample}><Ico n="refresh" size={16} /> Fetch Product Information</button>
       </div>
-      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
+      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[16px] text-[#8A6520]">
         Verify fields after fetching. The sample API is illustrative and may return incomplete values.
       </div>
 
@@ -485,7 +485,7 @@ function Categories({ rows, setRows, toast }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Categories</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Organization labels for the catalog.</p>
+          <p className="mt-1 text-[17px] text-[#6B7280]">Organization labels for the catalog.</p>
         </div>
         <button className={btnPrimary} onClick={() => setForm({ name: "", desc: "" })}><Ico n="plus" size={16} /> Add category</button>
       </div>
@@ -542,7 +542,7 @@ function Categories({ rows, setRows, toast }) {
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF3FC] text-[#2260D4]"><Ico n="cube" size={18} /></span>
                   <div>
                     <h3 className="text-[20px] font-bold text-[#111827]">{c.name}</h3>
-                    <p className="text-[13px] text-[#667085]">{s.n} gadgets · avg {s.avg}★</p>
+                    <p className="text-[16px] text-[#667085]">{s.n} gadgets · avg {s.avg}★</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -551,7 +551,7 @@ function Categories({ rows, setRows, toast }) {
                   <button className={iconBtn} title="Delete" onClick={() => setDel(c)}><Ico n="trash" /></button>
                 </div>
               </div>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.desc}</p>
+              <p className="mt-3 text-[17px] leading-relaxed text-[#4B5563]">{c.desc}</p>
             </div>
           );
         })}
@@ -575,14 +575,14 @@ function Reviews({ rows, setRows, toast }) {
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-[30px] font-bold text-[#111827]">Review Moderation</h1>
-        <span className="rounded-full bg-[#FCF3E4] px-3 py-1 text-[13px] font-semibold text-[#8A6520]">{pending} pending</span>
+        <span className="rounded-full bg-[#FCF3E4] px-3 py-1 text-[16px] font-semibold text-[#8A6520]">{pending} pending</span>
       </div>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Approve, reject, edit, or delete community reviews before they appear on product pages.</p>
+      <p className="mt-1 text-[17px] text-[#6B7280]">Approve, reject, edit, or delete community reviews before they appear on product pages.</p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         {["all", "pending", "approved", "rejected"].map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-2 text-[14px] font-semibold capitalize ${filter === f ? "bg-[#2260D4] text-white" : "border border-[#D9DEE7] bg-white text-[#344054] hover:bg-[#F5F8FF]"}`}>
+            className={`rounded-full px-4 py-2 text-[16px] font-semibold capitalize ${filter === f ? "bg-[#2260D4] text-white" : "border border-[#D9DEE7] bg-white text-[#344054] hover:bg-[#F5F8FF]"}`}>
             {f}
           </button>
         ))}
@@ -601,7 +601,7 @@ function Reviews({ rows, setRows, toast }) {
               <tr key={r.id} className="border-b border-[#F2F4F7] last:border-0">
                 <td className={cellCls}>
                   <div className="font-semibold text-[#111827]">{r.gadget}</div>
-                  <div className="text-[13px] text-[#6B7280]">{r.user} · {r.date}</div>
+                  <div className="text-[16px] text-[#6B7280]">{r.user} · {r.date}</div>
                 </td>
                 <td className={cellCls}>{r.rating}★</td>
                 <td className={`${cellCls} max-w-md`}>
@@ -610,9 +610,9 @@ function Reviews({ rows, setRows, toast }) {
                 <td className={cellCls}><Pill kind={r.status}>{r.status}</Pill></td>
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
-                    <button className="rounded-md bg-[#111827] px-3 py-1.5 text-[13px] font-semibold text-white disabled:bg-[#D0D5DD] disabled:text-[#98A2B3]"
+                    <button className="rounded-md bg-[#111827] px-3 py-1.5 text-[16px] font-semibold text-white disabled:bg-[#D0D5DD] disabled:text-[#98A2B3]"
                       disabled={r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
-                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7]"
+                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[16px] font-semibold text-[#344054] hover:bg-[#F4F5F7]"
                       onClick={() => setStatus(r.id, "rejected")}>Reject</button>
                     <button className={iconBtn} title="Edit" onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
                     <button className={iconBtn} title="Delete" onClick={() => setDel(r)}><Ico n="trash" /></button>
@@ -626,7 +626,7 @@ function Reviews({ rows, setRows, toast }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-5 text-[13px] text-[#6B7280]">
+      <p className="mt-5 text-[16px] text-[#6B7280]">
         Showing {shown.length} reviews from the catalog dataset. Approved reviews appear on public product pages after the next data refresh.
       </p>
 
@@ -684,7 +684,7 @@ function Users() {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Users</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Registered users and moderation status.</p>
+      <p className="mt-1 text-[17px] text-[#6B7280]">Registered users and moderation status.</p>
       <input className={`${inputCls} mt-6 !w-72`} placeholder="Search name or email..." value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[760px]">
@@ -699,12 +699,12 @@ function Users() {
               <tr key={u.id} className="border-b border-[#F2F4F7] last:border-0">
                 <td className={cellCls}>
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAECF0] text-[13px] font-bold text-[#475467]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAECF0] text-[16px] font-bold text-[#475467]">
                       {u.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                     </span>
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#111827]">{u.name}</div>
-                      <div className="truncate text-[13px] text-[#6B7280]">{u.email}</div>
+                      <div className="truncate text-[16px] text-[#6B7280]">{u.email}</div>
                     </div>
                   </div>
                 </td>
@@ -726,29 +726,29 @@ function Users() {
 function Shell({ tabKey, tab, children }) {
   const items = [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"], ["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"], ["reviews", "Reviews", "chat"], ["users", "Users", "user"]];
   return (
-    <div className="min-h-screen bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif]">
+    <div className="admin-zoom min-h-screen bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif]">
       <header className="sticky top-0 z-30 border-b border-[#E4E7EC] bg-white">
-        <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-5 py-3 lg:px-14">
+        <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-5 py-3 lg:px-12">
           <span className="flex shrink-0 items-center gap-2.5 pr-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={18} /></span>
             <span className="whitespace-nowrap text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
-            <span className="rounded-full bg-[#EEF2FB] px-2.5 py-0.5 text-[12px] font-semibold text-[#4B5563]">admin</span>
+            <span className="rounded-full bg-[#EEF2FB] px-2.5 py-0.5 text-[15px] font-semibold text-[#4B5563]">admin</span>
           </span>
           {items.map(([key, label, icon]) => (
             <button key={key} onClick={() => tab(key)}
-              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-[15px] font-medium ${key === tabKey ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#475467] hover:bg-[#F4F5F7]"}`}>
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-[17px] font-medium ${key === tabKey ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#475467] hover:bg-[#F4F5F7]"}`}>
               <Ico n={icon} />
               {label}
             </button>
           ))}
           <button onClick={() => (window.location.hash = "#/")}
-            className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2 text-[15px] font-medium text-[#344054] hover:bg-[#F4F5F7]">
+            className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2 text-[17px] font-medium text-[#344054] hover:bg-[#F4F5F7]">
             <Ico n="home" />
             View public site
           </button>
         </div>
       </header>
-      <main className="mx-auto min-w-0 max-w-[1904px] p-6 lg:p-10">{children}</main>
+      <main className="mx-auto min-w-0 max-w-[1904px] p-6 lg:px-12 lg:py-10">{children}</main>
     </div>
   );
 }

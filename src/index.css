@@ -145,3 +145,9 @@
 
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in .25s ease; }
+
+/* Admin console: desktop scale-up so type matches the public site's density at 1920x1080 */
+/* ponytail: uniform zoom instead of re-sizing every hardcoded px class in Admin.jsx */
+@media (min-width: 1024px) {
+  .admin-zoom { zoom: 1.2; }
+}
