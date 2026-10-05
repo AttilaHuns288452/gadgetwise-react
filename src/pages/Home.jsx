@@ -262,13 +262,13 @@ function Cheapest() {
         </div>
         <ul>
         {rows.map((g) => (
-          <li key={g.id} className="flex items-center gap-4 border-b border-line py-5 last:border-b-0">
+          <li key={g.id} className="flex flex-wrap items-center gap-4 border-b border-line py-5 last:border-b-0">
             <Img gadget={g} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line" imgClass="object-cover" frame="1 / 1" />
             <div className="min-w-0 flex-1">
               <Link to={'/g/' + g.id} className="break-words text-lg font-semibold text-primary hover:underline">{GW.displayName(g)}</Link>
               <div className="mt-1"><Stars rating={g.rating} count={g.reviewCount} /></div>
             </div>
-            <div className="shrink-0 text-right">
+            <div className="ml-auto shrink-0 text-right">
               <p className="text-base font-semibold text-ink">{money(g.price)}</p>
               <p className="mono mt-1 text-xl font-bold text-primary">≈ {money(GW.monthlyCost(g))}/month</p>
             </div>

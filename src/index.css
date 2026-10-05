@@ -36,15 +36,27 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 
-  /* type scale: one hierarchy (14/16/18/20/24/30/38/44) — heading:body 2.1:1, labels capped at 14 */
-  --text-xs: 0.875rem;
-  --text-sm: 1rem;
-  --text-base: 1.125rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 1.875rem;
-  --text-3xl: 2.375rem;
-  --text-4xl: 2.75rem;
+  /* type scale: one hierarchy (14/16/18/20/24/30/38/44) — heading:body 2.1:1, labels capped at 14.
+     Every size multiplies --tscale so type tracks viewport width like the gutters
+     (Figma 1280 artboard renders natively; 1920 gets the scaled relationship). */
+  --text-xs: calc(0.875rem * var(--tscale, 1));
+  --text-sm: calc(1rem * var(--tscale, 1));
+  --text-base: calc(1.125rem * var(--tscale, 1));
+  --text-lg: calc(1.25rem * var(--tscale, 1));
+  --text-xl: calc(1.5rem * var(--tscale, 1));
+  --text-2xl: calc(1.875rem * var(--tscale, 1));
+  --text-3xl: calc(2.375rem * var(--tscale, 1));
+  --text-4xl: calc(2.75rem * var(--tscale, 1));
+}
+
+:root {
+  --tscale: 1;
+}
+/* wide desktop: type grows with the wider grid instead of floating small in it */
+@media (min-width: 1700px) {
+  :root {
+    --tscale: 1.25;
+  }
 }
 
 @layer base {
@@ -57,9 +69,9 @@
   }
   h1, h2, h3 { letter-spacing: -0.015em; }
   /* type contract (css/styles.css in the prototype), display sizes raised 2026-10 for 1080p */
-  h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
-  h2 { font-size: clamp(1.75rem, 2.6vw, 2.375rem); font-weight: 700; line-height: 1.15; }
-  h3 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+  h1 { font-size: clamp(2.25rem, 5vw, calc(3.5rem * var(--tscale, 1))); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
+  h2 { font-size: clamp(1.75rem, 2.6vw, calc(2.375rem * var(--tscale, 1))); font-weight: 700; line-height: 1.15; }
+  h3 { font-size: calc(1.5rem * var(--tscale, 1)); font-weight: 700; line-height: 1.2; }
 }
 
 @layer components {

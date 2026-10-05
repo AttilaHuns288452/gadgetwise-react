@@ -226,7 +226,7 @@ export function Modal({ title, sub, children, actions, onClose }) {
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
-        <h3 className="text-[22px] font-bold leading-snug text-[#111827]">{title}</h3>
+        <h3 className="text-[calc(22px*var(--tscale,1))] font-bold leading-snug text-[#111827]">{title}</h3>
         {sub && <p className="mt-1.5 text-sm leading-relaxed text-[#6B7280]">{sub}</p>}
         <div className="mt-6 space-y-5">{children}</div>
         <div className="mt-6 flex justify-end gap-2.5">{actions}</div>
