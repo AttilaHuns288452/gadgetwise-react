@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
@@ -111,40 +111,6 @@ function Field({ label, children }) {
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
-
-function Signin({ onIn }) {
-  const nav = useNavigate();
-  return (
-    <div className="min-h-screen bg-white px-6 py-8 font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:px-12">
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={22} /></span>
-        <span className="text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
-      </div>
-      <div className="mt-12 max-w-[1500px]">
-        <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6B7280]">▪ Staff Console</div>
-        <h1 className="mt-3 text-[48px] font-bold leading-none text-[#111827]">Admin sign-in</h1>
-        <p className="mt-3 text-[15px] text-[#4B5563]">Gadget Wise team console prototype.</p>
-        <form className="mt-8 space-y-5" onSubmit={(e) => { e.preventDefault(); onIn(); }}>
-          <Field label="Staff username">
-            <input className={inputCls} defaultValue="admin" name="username" />
-          </Field>
-          <Field label="Password">
-            <input className={inputCls} type="password" defaultValue="password" name="password" />
-          </Field>
-          <button type="submit" className="w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
-            Sign in to console
-          </button>
-        </form>
-        <div className="mt-6 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-          Prototype: any credentials work. Staff accounts are managed separately from student accounts.
-        </div>
-        <button type="button" onClick={() => nav("/")} className="mt-6 block w-full text-center text-[13px] text-[#1B6AC9] hover:underline">
-          ← Back to GadgetWise
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Dashboard({ tab }) {
   const pending = GW.admin.moderation.filter((r) => r.status === "pending").length;
@@ -757,56 +723,38 @@ function Users() {
   );
 }
 
-function Shell({ tabKey, tab, onOut, children }) {
-  const groups = [
-    ["overview", [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"]]],
-    ["catalog", [["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"]]],
-    ["community", [["reviews", "Reviews", "chat"]]],
-    ["people", [["users", "Users", "user"]]],
-    ["session", [["public", "View public site", "home"], ["out", "Sign out", "exit"]]],
-  ];
+function Shell({ tabKey, tab, children }) {
+  const items = [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"], ["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"], ["reviews", "Reviews", "chat"], ["users", "Users", "user"]];
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:flex-row">
-      <aside className="w-full shrink-0 bg-[#12223F] lg:sticky lg:top-0 lg:h-screen lg:w-[300px] lg:overflow-y-auto">
-        <div className="flex items-center justify-between gap-3 px-5 py-5">
-          <div className="text-[19px] font-bold text-white">Gadget <span className="text-[#A9C4F5]">Wise</span></div>
-          <input placeholder="Search" className="w-28 rounded-md border border-white/20 bg-white px-2.5 py-1.5 text-[12px] text-[#101828] placeholder:text-[#98A2B3]" />
-        </div>
-        <hr className="border-white/10" />
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-5 pt-3 lg:block lg:space-y-4 lg:overflow-visible">
-          {groups.map(([group, items]) => (
-            <div key={group}>
-              <div className="hidden px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7E8FAE] lg:block">{group}</div>
-              <ul className="flex gap-1 lg:space-y-1">
-                {items.map(([key, label, icon]) => {
-                  const active = key === tabKey;
-                  const out = key === "out";
-                  return (
-                    <li key={key}>
-                      <button
-                        onClick={() => (key === "public" ? (window.location.hash = "#/") : out ? onOut() : tab(key))}
-                        className={`flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-[15px] font-medium ${active ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#D5DCE9] hover:bg-white/10"}`}
-                      >
-                        <Ico n={icon} />
-                        {label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+    <div className="min-h-screen bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif]">
+      <header className="sticky top-0 z-30 border-b border-[#E4E7EC] bg-white">
+        <div className="mx-auto flex max-w-[1904px] items-center gap-1 overflow-x-auto px-5 py-3 lg:px-14">
+          <span className="flex shrink-0 items-center gap-2.5 pr-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={18} /></span>
+            <span className="whitespace-nowrap text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
+            <span className="rounded-full bg-[#EEF2FB] px-2.5 py-0.5 text-[12px] font-semibold text-[#4B5563]">admin</span>
+          </span>
+          {items.map(([key, label, icon]) => (
+            <button key={key} onClick={() => tab(key)}
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-[15px] font-medium ${key === tabKey ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#475467] hover:bg-[#F4F5F7]"}`}>
+              <Ico n={icon} />
+              {label}
+            </button>
           ))}
-        </nav>
-      </aside>
-      <main className="min-w-0 flex-1 p-6 lg:p-10">{children}</main>
+          <button onClick={() => (window.location.hash = "#/")}
+            className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-[#D9DEE7] bg-white px-3.5 py-2 text-[15px] font-medium text-[#344054] hover:bg-[#F4F5F7]">
+            <Ico n="home" />
+            View public site
+          </button>
+        </div>
+      </header>
+      <main className="mx-auto min-w-0 max-w-[1904px] p-6 lg:p-10">{children}</main>
     </div>
   );
 }
 
 export default function Admin() {
-  const nav = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [inSession, setIn] = useState(() => sessionStorage.getItem("gw-admin") === "1");
   const tabKey = params.get("tab") || "dashboard";
   const tab = (t) => setParams({ tab: t });
   const [gadgets, setGadgets] = useState(GW.gadgets);
@@ -814,10 +762,6 @@ export default function Admin() {
   const [reviews, setReviews] = useState(GW.admin.moderation);
   const [editing, setEditing] = useState(null);
   const [toast, toastNode] = useToast();
-
-  if (!inSession) {
-    return <Signin onIn={() => { sessionStorage.setItem("gw-admin", "1"); setIn(true); }} />;
-  }
 
   const editIn = (g) => { setEditing(g); tab("add"); };
   const saveGadget = (fd) => {
@@ -841,7 +785,7 @@ export default function Admin() {
   };
 
   return (
-    <Shell tabKey={tabKey} tab={tab} onOut={() => { sessionStorage.removeItem("gw-admin"); setIn(false); }}>
+    <Shell tabKey={tabKey} tab={tab}>
       {tabKey === "dashboard" && <Dashboard tab={tab} />}
       {tabKey === "reports" && <Reports />}
       {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} toast={toast} />}
