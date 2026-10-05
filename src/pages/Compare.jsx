@@ -14,7 +14,7 @@ const ROWS = [
     label: "Rating", better: "high", badge: "Higher rating", num: (g) => g.rating,
     val: (g) => (
       <>
-        {g.rating.toFixed(1)} ★ <span className="text-[11px] text-ink2">({g.reviewCount})</span>
+        {g.rating.toFixed(1)} ★ <span className="text-xs text-ink2">({g.reviewCount})</span>
       </>
     ),
   },
@@ -137,7 +137,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                         >
                           <span className={`mono ${win ? "font-bold text-primary-dark" : "text-ink"}`}>{row.val(g)}</span>
                           {win && (
-                            <span className="chip-blue ml-2 rounded-full px-2.5 py-1 text-[11px]">
+                            <span className="chip-blue ml-2 rounded-full px-2.5 py-1 text-xs">
                               <span aria-hidden="true">↗ </span>
                               {row.badge}
                             </span>

@@ -36,14 +36,15 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 
-  /* type scale: sized for 1080p desktops (site read "zoomed out" at 1920) */
-  --text-xs: 0.9375rem;
-  --text-sm: 1.0625rem;
-  --text-base: 1.1875rem;
-  --text-lg: 1.5rem;
-  --text-xl: 1.875rem;
-  --text-2xl: 2.375rem;
-  --text-3xl: 3rem;
+  /* type scale: one hierarchy (14/16/18/20/24/30/38/44) — heading:body 2.1:1, labels capped at 14 */
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
+  --text-base: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.375rem;
+  --text-4xl: 2.75rem;
 }
 
 @layer base {
@@ -56,9 +57,9 @@
   }
   h1, h2, h3 { letter-spacing: -0.015em; }
   /* type contract (css/styles.css in the prototype), display sizes raised 2026-10 for 1080p */
-  h1 { font-size: clamp(2.5rem, 4.6vw, 5.25rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
-  h2 { font-size: clamp(2rem, 3.6vw, 3.5rem); font-weight: 700; line-height: 1.15; }
-  h3 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
+  h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
+  h2 { font-size: clamp(1.75rem, 2.6vw, 2.375rem); font-weight: 700; line-height: 1.15; }
+  h3 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 }
 
 @layer components {
@@ -108,15 +109,15 @@
   .oidx b {
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 2rem;
+    font-size: 1.75rem;
     color: var(--color-primary-dark);
     line-height: 1;
   }
   .oidx span {
     /* no nowrap — the label must wrap to 2 lines on narrow cards; nowrap made min-content 134px and overflowed mobile */
     overflow-wrap: anywhere; /* PERFORMANCE is 96px > the 84px mobile cap; allow the word to break */
-    font-size: 0.78rem;
-    letter-spacing: 0.09em;
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
     font-weight: 600;
     color: var(--color-ink3);
     line-height: 1.25;
@@ -129,19 +130,7 @@
   }
 }
 
-/* ponytail: desktop type scale bump via theme vars so every utility follows; mobile keeps the tight scale that passes 320px QA */
-@media (min-width: 1024px) {
-  :root {
-    --text-xs: 1.0625rem;
-    --text-sm: 1.25rem;
-    --text-base: 1.4375rem;
-    --text-lg: 1.8125rem;
-    --text-xl: 2.25rem;
-    --text-2xl: 2.875rem;
-    --text-3xl: 3.625rem;
-  }
-  .oidx b { font-size: 2.25rem; }
-}
+/* one scale at every width — the old desktop 1.25x bump made headings huge while hardcoded px text stayed tiny */
 
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in .25s ease; }

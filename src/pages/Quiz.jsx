@@ -184,7 +184,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                 </>
               ) : (
                 <div className="mt-6 max-w-[420px]">
-                  <label htmlFor="budget-amount" className="block text-[15px] font-bold">
+                  <label htmlFor="budget-amount" className="block text-base font-bold">
                     Budget amount
                   </label>
                   <div className="mt-2 flex items-center gap-2 rounded-lg border border-line-strong px-4">
@@ -313,7 +313,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
               </div>
 
               <div className="mt-5 rounded-2xl border border-line px-5 py-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">Scoring weights</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">Scoring weights</div>
                 <div className="mt-1 text-sm text-ink2">Adjustable 50 pts after your priorities</div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {[...FIXED_CHIPS, ...ADJ_CHIPS].map((c) => (
@@ -333,7 +333,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <div className="flex items-start gap-4">
                           <span className="mono text-xl font-semibold text-ink2">#{i + 1}</span>
                           <div>
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">
                               {g.brand} · {catName(g.category)}
                             </div>
                             <h3 className="mt-1 text-2xl font-extrabold leading-tight">{g.model}</h3>
@@ -356,13 +356,13 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
 
                       <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                         <span className="text-xl font-bold">{money(g.price)}</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink2">Per month</span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-ink2">Per month</span>
                         <span className="mono text-sm text-ink2">≈ {money(GW.monthlyCost(g))}/month</span>
                       </div>
 
                       <div className="mt-5 grid gap-6 md:grid-cols-2">
                         <div>
-                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">Why it ranks here</h4>
+                          <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">Why it ranks here</h4>
                           <ul className="mt-3 grid gap-2">
                             {r.reasons.map((s, j) => (
                               <li key={j} className="text-sm">
@@ -372,7 +372,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                           </ul>
                         </div>
                         <div>
-                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">
+                          <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">
                             Strengths &amp; weaknesses
                           </h4>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">

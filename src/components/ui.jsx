@@ -150,7 +150,7 @@ export function GadgetCard({ g, compare, onCompare }) {
       <div className="flex flex-1 flex-col gap-2.5 border-t border-line p-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
-          <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] font-semibold leading-snug text-ink hover:text-primary">
+          <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary">
             {g.model}
           </a>
         </div>
@@ -210,12 +210,12 @@ export function GadgetCard({ g, compare, onCompare }) {
   );
 }
 
-export const btnCls = "rounded-lg px-7 py-2.5 text-[15px] font-semibold transition-colors";
+export const btnCls = "rounded-lg px-7 py-2.5 text-base font-semibold transition-colors";
 export const btnPrimaryCls = btnCls + " bg-[#2563EB] text-white hover:bg-[#1D4ED8]";
 export const btnOutlineCls = btnCls + " border border-[#C7C7CC] bg-white text-[#111827] hover:bg-[#F9FAFB]";
 export const btnDangerCls = btnCls + " bg-[#B3372E] text-white hover:bg-[#93291F]";
-export const fieldLabelCls = "block text-[15px] font-bold text-[#111827]";
-export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-[17px] text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
+export const fieldLabelCls = "block text-sm font-bold text-[#111827]";
+export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-base text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
 
 export function Modal({ title, sub, children, actions, onClose }) {
   useEffect(() => {
