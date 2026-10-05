@@ -4,9 +4,16 @@ import { GW } from "../lib.js";
 
 const KEY = "gw_compare_history";
 
-function readHistory() {
+export function readCompareHistory() {
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) || "[]");
+    const raw = localStorage.getItem(KEY);
+    if (raw === null) {
+      // ponytail: seeded demo sessions (the Figma account page's "Comparisons run")
+      const seeded = GW.seedCompareHistory.map((c) => ({ ids: c.items, ts: Date.parse(c.date) }));
+      localStorage.setItem(KEY, JSON.stringify(seeded));
+      return seeded;
+    }
+    const v = JSON.parse(raw);
     return Array.isArray(v) ? v : [];
   } catch {
     return [];
@@ -30,13 +37,13 @@ function gadgetName(id) {
 }
 
 function ComparisonHistory({ compare }) {
-  const [history, setHistory] = useState(readHistory);
+  const [history, setHistory] = useState(readCompareHistory);
 
   useEffect(() => {
     if (!compare || compare.size === 0) return;
     const ids = [...compare];
     const key = [...ids].sort().join(",");
-    const h = readHistory();
+    const h = readCompareHistory();
     const first = h[0];
     // ponytail: dedupe only against the newest entry (consecutive identical sets)
     if (first && [...first.ids].sort().join(",") === key) return;

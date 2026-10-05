@@ -96,7 +96,14 @@ export function Bar({ v, max = 10, label, mono = false }) {
 let _wishListeners = [];
 function _wishRead() {
   try {
-    return new Set(JSON.parse(localStorage.getItem("gw_wishlist") || "[]"));
+    const raw = localStorage.getItem("gw_wishlist");
+    if (raw === null) {
+      // ponytail: seeded demo wishlist (the Figma account page's 3 saved gadgets)
+      const seeded = ["apple-macbook-air-m1", "samsung-galaxy-s23", "xiaomi-pad-7"];
+      localStorage.setItem("gw_wishlist", JSON.stringify(seeded));
+      return new Set(seeded);
+    }
+    return new Set(JSON.parse(raw));
   } catch {
     return new Set();
   }

@@ -170,6 +170,14 @@ export default function App() {
             >
               <ScaleIcon />
             </Link>
+            <button
+              type="button"
+              onClick={() => navigate("/admin")}
+              title="Open the staff console"
+              className="ml-1 rounded-lg border border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:border-[#2563EB] hover:text-[#2563EB]"
+            >
+              Dev
+            </button>
             <span className="mx-2 h-6 w-px bg-line-strong" aria-hidden="true" />
             <Link
               to="/profile"
