@@ -1,280 +1,440 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { GW, money, recommend, FACTOR_META } from "../lib.js";
-import { Img, Oidx, displayName } from "../components/ui.jsx";
+// Quiz — /recommend · "Get Recommendations"
+// 5-step flow: category → budget → academic use → priorities → ranked results.
+// Scoring engine is recommend() in lib.js — this file is UI + copy only.
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { GW, money, FACTOR_META, recommend } from "../lib.js";
+import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
 
-const STEP_META = [
-  ["What are you looking for?", "Pick a gadget type"],
-  ["Budget", "What can you spend?"],
-  ["Academic use", "What is it for?"],
-  ["Priorities", "What matters most?"],
-  ["Results", "Ranked shortlist"],
+const CATS = [
+  { id: "smartphones", name: "Smartphones", blurb: "Everyday carry, notes, hotspot" },
+  { id: "laptops", name: "Laptops", blurb: "Heavy work, code, thesis builds" },
+  { id: "tablets", name: "Tablets", blurb: "Stylus notes, PDFs, media" },
+  { id: "headphones", name: "Headphones", blurb: "Focus, commutes, calls" },
+  { id: "powerbanks", name: "Power Banks", blurb: "Brownout and long-day insurance" },
+  { id: "smartwatches", name: "Smartwatches", blurb: "Alarms, health, time management" },
 ];
 
-const LEVELS = ["none", "low", "medium", "high"];
+// Sub-lines under each budget bracket card, in GW.budgetBands order.
+const BAND_SUB = ["₱0 – ₱10,000", "₱10,000 – ₱20,000", "₱20,000 – ₱40,000", "₱40,000 – ₱60,000", "Flagship territory"];
 
-function Stepper({ step, answers }) {
-  return (
-    <ol className="space-y-1">
-      {STEP_META.map(([title, sub], i) => {
-        const n = i + 1;
-        const cur = n === step;
-        const done = n < step;
-        return (
-          <li key={title} className={`flex items-start gap-3 rounded-sm px-3 py-2.5 ${cur ? "bg-primary-wash border border-primary-soft" : ""}`}>
-            <span className={`mono flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-            done ? "bg-primary text-white" : cur ? "bg-primary text-white" : "bg-surface2 text-ink2"}`}>
-              {n}
-            </span>
-            <div>
-              <div className={`text-sm font-semibold ${cur ? "text-primary-dark" : "text-ink"}`}>{title}</div>
-              <div className="text-xs text-ink3">{n < step ? (answers[i] || sub) : sub}</div>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
+const CUSTOM_CHIPS = [
+  [15000, "₱15,000"], [20000, "₱20,000"], [30000, "₱30,000"], [45000, "₱45,000"], [60000, "₱60,000+"],
+];
 
-export default function Quiz() {
+const LEVELS = [["none", "—"], ["low", "Low"], ["medium", "Med"], ["high", "High"]];
+
+const SCORE_BARS = [
+  ["performance", "Performance"], ["battery", "Battery"], ["durability", "Durability"], ["portability", "Portability"],
+  ["display", "Display"], ["camera", "Camera"], ["storage", "Storage"], ["repairability", "Repairability"],
+];
+
+const FIXED_CHIPS = ["Budget fit · 20 pts fixed", "Academic fit · 25 pts fixed", "Community · 5 pts fixed"];
+const ADJ_CHIPS = Object.entries(FACTOR_META)
+  .filter(([, m]) => m.raw > 0)
+  .map(([k, m]) => `${m.label} · ${m.raw} pts`);
+
+const TITLES = ["What are you looking for?", "Budget", "Academic use", "Priorities", "Results"];
+
+const catName = (id) => (CATS.find((c) => c.id === id) || {}).name || "";
+const bandFor = (n) => GW.budgetBands.find((b) => n >= b.min && n < b.max) || GW.budgetBands[0];
+
+const optionCls = (on) =>
+  `rounded-2xl border p-5 text-left transition-colors ${
+    on ? "border-primary bg-primary-soft" : "border-line bg-white hover:border-primary"
+  }`;
+
+export default function Quiz({ compare: compareProp, onCompare: onCompareProp }) {
   const [step, setStep] = useState(1);
-  const [cat, setCat] = useState("");
-  const [bandId, setBandId] = useState("20-40k");
-  const [custom, setCustom] = useState({ min: "", max: "" });
-  const [useId, setUseId] = useState("general");
+  const [cat, setCat] = useState(null);
+  const [bandId, setBandId] = useState(null);
+  const [custom, setCustom] = useState(false);
+  const [amount, setAmount] = useState("30000");
+  const [useId, setUseId] = useState(null);
   const [prio, setPrio] = useState({
-    performance: "high", battery: "medium", value: "medium",
-    portability: "none", display: "none", camera: "none", storage: "none",
-    budget: "medium",
+    performance: "none", battery: "none", portability: "none", display: "none",
+    camera: "none", storage: "none", value: "none", budget: "none",
   });
+  const [toast, toastNode] = useToast();
+  const wish = useWishlist();
+  const navigate = useNavigate();
 
-  const band = bandId === "custom"
-    ? { id: "custom", label: "Custom range", min: +custom.min || 0, max: +custom.max || Infinity }
-    : GW.budgetBands.find((b) => b.id === bandId);
-  const useCase = GW.useCases.find((u) => u.id === useId);
+  // ponytail: App renders <Quiz /> bare today; fall back to local toggles if props ever arrive
+  const [localCompare, setLocalCompare] = useState(new Set());
+  const compare = compareProp || localCompare;
+  const onCompare =
+    onCompareProp ||
+    ((id) =>
+      setLocalCompare((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      }));
 
-  const answers = [
-    cat ? (cat === "any" ? "Any gadget type" : GW.getCategory(cat).name) : "",
-    band ? band.label : "",
-    useCase ? useCase.label : "",
+  const band = custom ? bandFor(Number(amount) || 0) : GW.budgetBands.find((b) => b.id === bandId) || null;
+  const useCase = GW.useCases.find((u) => u.id === useId) || null;
+
+  const engine = useMemo(() => {
+    if (!cat || !band || !useCase) return null;
+    return recommend({ category: cat, budget: band, useCase, priorities: prio });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cat, band && band.id, useId, prio]);
+  const results = engine ? engine.results.slice(0, 5) : [];
+  const summary = cat && band && useCase ? `${catName(cat)} · ${band.label} · ${useCase.label}` : "";
+
+  useEffect(() => {
+    if (step === 5 && engine && results.length) {
+      toast(`Shortlist ready — showing the top ${results.length} of ${engine.results.length}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  const subs = [
     "",
-    "",
+    catName(cat) || "Pick a gadget type",
+    band ? band.label : "What can you spend?",
+    useCase ? useCase.label : "What is it for?",
+    "What matters most?",
+    summary || "Ranked shortlist",
   ];
 
-  const result = step === 5
-    ? recommend({ budget: band, useCase, priorities: prio, category: cat === "any" ? null : cat })
-    : null;
-
-  const setP = (f, v) => setPrio((p) => ({ ...p, [f]: v }));
-
   return (
-    <section className="section">
-      <div className="eyebrow">Recommendation tool</div>
-      <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">Find the right gadget for how you actually study</h1>
-      <p className="mt-2 max-w-2xl text-ink2">
-        Five questions, transparent weights. The score on every result is fully explained — nothing is a
-        black box.
+    <main className="mx-auto w-full max-w-[1200px] px-5 pb-24 pt-10">
+      <h1 className="text-[32px] font-extrabold leading-tight">Get Recommendations</h1>
+      <p className="mt-2 max-w-[560px] text-ink2">
+        Three questions, then a ranked shortlist. Every score shows its full breakdown.
       </p>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
-        <div className="card p-3 lg:self-start"><Stepper step={step} answers={answers} /></div>
+      <div className="mt-8 grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">
+        {/* LEFT — numbered steps */}
+        <nav aria-label="Quiz steps" className="lg:sticky lg:top-24 lg:self-start">
+          <ol>
+            {TITLES.map((t, i) => {
+              const n = i + 1;
+              const active = step === n;
+              return (
+                <li key={n} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${
+                        active ? "bg-primary text-white" : n < step ? "bg-primary-soft text-primary-dark" : "bg-surface2 text-ink2"
+                      }`}
+                    >
+                      {n}
+                    </span>
+                    {n < TITLES.length && <span className="w-px flex-1 bg-line" />}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={n > step}
+                    onClick={() => setStep(n)}
+                    className={`pb-7 text-left ${n > step ? "cursor-default" : ""}`}
+                  >
+                    <div className={active ? "font-bold text-ink" : "font-semibold text-ink2"}>{t}</div>
+                    <div className="mt-0.5 text-sm text-ink2">{subs[n]}</div>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
 
-        <div>
+        {/* RIGHT — current step */}
+        <section className="min-w-0">
           {step === 1 && (
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold">What are you looking for?</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {[{ id: "any", name: "Not sure yet — show me everything", blurb: "Rank the whole catalog." }, ...GW.categories].map((c) => (
-                  <button key={c.id} type="button" onClick={() => { setCat(c.id); setStep(2); }}
-                    className={`rounded-sm border p-4 text-left transition-colors ${
-                      cat === c.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
-                    <div className="font-semibold">{c.name}</div>
-                    <div className="mt-1 text-sm text-ink3">{c.blurb || ""}</div>
+            <div>
+              <h2 className="text-2xl font-extrabold">What are you looking for?</h2>
+              <p className="mt-1.5 text-ink2">
+                Only that category gets ranked — a laptop is never compared against a power bank.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {CATS.map((c) => (
+                  <button key={c.id} type="button" onClick={() => setCat(c.id)} className={optionCls(cat === c.id)}>
+                    <div className="text-lg font-bold">{c.name}</div>
+                    <div className="mt-1 text-sm text-ink2">{c.blurb}</div>
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold">What can you spend?</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {GW.budgetBands.map((b) => (
-                  <button key={b.id} type="button" onClick={() => { setBandId(b.id); setStep(3); }}
-                    className={`rounded-sm border p-4 text-left transition-colors ${
-                      bandId === b.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
-                    <div className="mono font-semibold">{b.label}</div>
-                  </button>
-                ))}
-                <button type="button" onClick={() => { setBandId("custom"); }}
-                  className={`rounded-sm border p-4 text-left transition-colors ${
-                    bandId === "custom" ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
-                  <div className="mono font-semibold">Custom range</div>
-                  <div className="mt-2 flex gap-2">
-                    <input type="number" min="0" placeholder="Min ₱" value={custom.min} onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => setCustom((c) => ({ ...c, min: e.target.value }))} className="field !py-1.5" aria-label="Minimum budget" />
-                    <input type="number" min="0" placeholder="Max ₱" value={custom.max} onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => setCustom((c) => ({ ...c, max: e.target.value }))} className="field !py-1.5" aria-label="Maximum budget" />
-                  </div>
+              <div className="mt-7">
+                <button type="button" disabled={!cat} onClick={() => setStep(2)} className={`${btnPrimaryCls} disabled:opacity-40`}>
+                  Continue
                 </button>
               </div>
             </div>
           )}
 
+          {step === 2 && (
+            <div>
+              <h2 className="text-2xl font-extrabold">What's your budget?</h2>
+              <p className="mt-1.5 text-ink2">Realistic student brackets, or set a custom ceiling.</p>
+              {!custom ? (
+                <>
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {GW.budgetBands.map((b, i) => (
+                      <button key={b.id} type="button" onClick={() => setBandId(b.id)} className={optionCls(band && band.id === b.id)}>
+                        <div className="text-lg font-bold">{b.label}</div>
+                        <div className="mt-1 text-sm text-ink2">{BAND_SUB[i]}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => setCustom(true)} className="mt-5 text-sm font-semibold text-primary hover:underline">
+                    Set a custom budget instead
+                  </button>
+                </>
+              ) : (
+                <div className="mt-6 max-w-[420px]">
+                  <label htmlFor="budget-amount" className="block text-[15px] font-bold">
+                    Budget amount
+                  </label>
+                  <div className="mt-2 flex items-center gap-2 rounded-lg border border-line-strong px-4">
+                    <span className="text-ink2">₱</span>
+                    <input
+                      id="budget-amount"
+                      inputMode="numeric"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
+                      className="w-full min-w-0 bg-transparent py-3 outline-none"
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {CUSTOM_CHIPS.map(([v, label]) => (
+                      <button key={label} type="button" onClick={() => setAmount(String(v))} className="chip">
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-sm text-ink2">
+                    Range <span className="mono font-semibold text-ink">{band.label}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBandId(band.id);
+                      setCustom(false);
+                    }}
+                    className="mt-4 text-sm font-semibold text-primary hover:underline"
+                  >
+                    Pick a bracket instead
+                  </button>
+                </div>
+              )}
+              <div className="mt-7 flex gap-3">
+                <button type="button" className={btnOutlineCls} onClick={() => setStep(1)}>
+                  Back
+                </button>
+                <button type="button" className={btnPrimaryCls} onClick={() => setStep(3)}>
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
           {step === 3 && (
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold">What is it for?</h2>
-              <div className="mt-4 space-y-3">
+            <div>
+              <h2 className="text-2xl font-extrabold">What will you use it for?</h2>
+              <p className="mt-1.5 text-ink2">Pick one primary use. Scoring changes with the workload.</p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {GW.useCases.map((u) => (
-                  <button key={u.id} type="button" onClick={() => { setUseId(u.id); setStep(4); }}
-                    className={`block w-full rounded-sm border p-4 text-left transition-colors ${
-                      useId === u.id ? "border-primary bg-primary-wash" : "border-line-strong hover:border-primary"}`}>
-                    <div className="font-semibold">{u.label}</div>
-                    <div className="mt-1 text-sm text-ink3">{u.note}</div>
+                  <button key={u.id} type="button" onClick={() => setUseId(u.id)} className={optionCls(useId === u.id)}>
+                    <div className="text-lg font-bold">{u.label}</div>
+                    <div className="mt-1 text-sm text-ink2">{u.note}</div>
                   </button>
                 ))}
+              </div>
+              <div className="mt-7 flex gap-3">
+                <button type="button" className={btnOutlineCls} onClick={() => setStep(2)}>
+                  Back
+                </button>
+                <button type="button" disabled={!useId} onClick={() => setStep(4)} className={`${btnPrimaryCls} disabled:opacity-40`}>
+                  Continue
+                </button>
               </div>
             </div>
           )}
 
           {step === 4 && (
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold">What matters most?</h2>
-              <p className="mt-1 text-sm text-ink3">
-                High pushes weight toward a factor, low pulls it away. “Budget discipline” controls how far
-                above your ceiling we still rank gadgets (high = 5%, medium = 15%, otherwise 35%).
+            <div>
+              <h2 className="text-2xl font-extrabold">What matters most to you?</h2>
+              <p className="mt-1.5 text-ink2">
+                Your picks shift scoring weight. Leave everything on “—” for a balanced score.
               </p>
-              <div className="mt-5 space-y-4">
-                {Object.entries(FACTOR_META).map(([f, meta]) => (
-                  <div key={f} className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="font-medium">{meta.label}</div>
-                      <div className="text-xs text-ink3">Base weight {meta.raw}/50 adjustable points</div>
+              <p className="mt-4 rounded-xl bg-surface2 px-4 py-3 text-sm text-ink2">
+                50 of the 100 points are redistributed by these priorities. Budget fit (20), academic suitability (25),
+                and community rating (5) stay fixed.
+              </p>
+              <div className="mt-5 grid gap-3">
+                {GW.priorityFactors.map((f) => (
+                  <div
+                    key={f.id}
+                    className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-line px-5 py-4"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-bold">{f.label}</div>
+                      <div className="text-sm text-ink2">{f.hint}</div>
                     </div>
-                    <div className="flex gap-1">
-                      {LEVELS.map((lv) => (
-                        <button key={lv} type="button" onClick={() => setP(f, lv)}
-                          className={`chip !px-3 !py-1.5 capitalize ${
-                            prio[f] === lv ? "bg-primary text-white" : "chip-neutral hover:border-primary"}`}>
-                          {lv}
+                    <div className="flex shrink-0 overflow-hidden rounded-lg border border-line-strong">
+                      {LEVELS.map(([v, label]) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setPrio((p) => ({ ...p, [f.id]: v }))}
+                          className={`px-3.5 py-2 text-sm font-semibold transition-colors ${
+                            prio[f.id] === v ? "bg-primary text-white" : "bg-white text-ink2 hover:bg-surface2"
+                          }`}
+                        >
+                          {label}
                         </button>
                       ))}
                     </div>
                   </div>
                 ))}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-                  <div>
-                    <div className="font-medium">Budget discipline</div>
-                    <div className="text-xs text-ink3">How strictly to stay under your ceiling</div>
-                  </div>
-                  <div className="flex gap-1">
-                    {LEVELS.map((lv) => (
-                      <button key={lv} type="button" onClick={() => setP("budget", lv)}
-                        className={`chip !px-3 !py-1.5 capitalize ${
-                          prio.budget === lv ? "bg-primary text-white" : "chip-neutral hover:border-primary"}`}>
-                        {lv}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              </div>
+              <div className="mt-7 flex gap-3">
+                <button type="button" className={btnOutlineCls} onClick={() => setStep(3)}>
+                  Back
+                </button>
+                <button type="button" className={btnPrimaryCls} onClick={() => setStep(5)}>
+                  Calculate recommendations
+                </button>
               </div>
             </div>
           )}
 
-          {step === 5 && result && (
-            <div className="space-y-6">
-              <div className="card p-5">
-                <h2 className="font-semibold">Your ranked shortlist</h2>
-                <p className="mt-1 text-sm text-ink2">
-                  {result.results.length} gadget{result.results.length === 1 ? "" : "s"} ranked ·
-                  stretch limit {result.stretchLimit ? money(result.stretchLimit) : "none (open budget)"}
-                  {result.hiddenCount > 0 ? ` · ${result.hiddenCount} excluded above the stretch limit` : ""}
-                </p>
-                {result.notes.length > 0 && (
-                  <ul className="mt-3 space-y-1 text-sm text-ink3">
-                    {result.notes.map((n) => <li key={n}>• {n}</li>)}
-                  </ul>
-                )}
+          {step === 5 && (
+            <div>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-extrabold">Your ranked shortlist</h2>
+                  <p className="mt-1 text-ink2">Based on {summary}</p>
+                </div>
+                <button type="button" onClick={() => setStep(1)} className="text-sm font-semibold text-primary hover:underline">
+                  Change answers
+                </button>
               </div>
 
-              {result.results.map((r, i) => (
-                <div key={r.gadget.id} className="card overflow-hidden">
-                  <div className="flex flex-wrap items-start gap-4 p-5">
-                    <div className="mono flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-soft text-lg font-semibold text-primary-dark">
-                      {r.score}
-                    </div>
-                    <Img gadget={r.gadget} className="h-20 w-28 shrink-0" imgClass="p-1" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="mono text-xs text-ink3">#{i + 1}</span>
-                        <Link to={`/g/${r.gadget.id}`} className="text-lg font-semibold hover:text-primary">
-                          {displayName(r.gadget)}
-                        </Link>
-                        <Oidx g={r.gadget} />
+              <div className="mt-5 rounded-2xl border border-line px-5 py-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">Scoring weights</div>
+                <div className="mt-1 text-sm text-ink2">Adjustable 50 pts after your priorities</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[...FIXED_CHIPS, ...ADJ_CHIPS].map((c) => (
+                    <span key={c} className="chip">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-5">
+                {results.map((r, i) => {
+                  const g = r.gadget;
+                  return (
+                    <article key={g.id} className="card p-5 sm:p-6">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <span className="mono text-xl font-semibold text-ink2">#{i + 1}</span>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">
+                              {g.brand} · {catName(g.category)}
+                            </div>
+                            <h3 className="mt-1 text-2xl font-extrabold leading-tight">{g.model}</h3>
+                            <div className="mono mt-1 text-sm text-ink2">
+                              {g.rating.toFixed(1)} ({g.reviewCount})
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="mono text-3xl font-extrabold">{r.score}</span>{" "}
+                          <span className="mono text-sm text-ink2">/ 100</span>
+                        </div>
                       </div>
-                      <div className="mt-1 text-sm text-ink3">
-                        <span className="mono">{money(r.gadget.price)}</span> · ≈ <span className="mono">{money(GW.monthlyCost(r.gadget))}/month</span>
-                      </div>
-                      {r.reasons.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {r.reasons.map((x) => <span key={x} className="chip-blue">{x}</span>)}
+
+                      {i === 0 && (
+                        <div className="mt-3">
+                          <span className="chip-blue">BEST MATCH</span>
                         </div>
                       )}
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-sm bg-success-soft p-2.5 text-xs text-success">
-                          <b>Strengths:</b> {r.strengths.join(" · ")}
+
+                      <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="text-xl font-bold">{money(g.price)}</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink2">Per month</span>
+                        <span className="mono text-sm text-ink2">≈ {money(GW.monthlyCost(g))}/month</span>
+                      </div>
+
+                      <div className="mt-5 grid gap-6 md:grid-cols-2">
+                        <div>
+                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">Why it ranks here</h4>
+                          <ul className="mt-3 grid gap-2">
+                            {r.reasons.map((s, j) => (
+                              <li key={j} className="text-sm">
+                                {s}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                        <div className="rounded-sm bg-danger-soft p-2.5 text-xs text-danger">
-                          <b>Weaknesses:</b> {r.weaknesses.join(" · ")}
+                        <div>
+                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink2">
+                            Strengths &amp; weaknesses
+                          </h4>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <ul className="grid gap-2">
+                              {r.strengths.slice(0, 3).map((s, j) => (
+                                <li key={j} className="text-sm text-ink2">
+                                  — {s}
+                                </li>
+                              ))}
+                            </ul>
+                            <ul className="grid gap-2">
+                              {r.weaknesses.slice(0, 3).map((s, j) => (
+                                <li key={j} className="text-sm text-ink2">
+                                  — {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <details className="border-t border-line">
-                    <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-primary-dark">
-                      Why this score? ({r.score}/100, every point)
-                    </summary>
-                    <div className="space-y-3 px-5 pb-5">
-                      {r.breakdown.factors.map((f) => (
-                        <div key={f.key}>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-ink2">{f.label}</span>
-                            <span className="mono font-semibold">{f.earned} / {f.max}</span>
-                          </div>
-                          <div className="mt-1 h-1.5 rounded-full bg-surface2">
-                            <div className="h-full rounded-full bg-primary" style={{ width: `${(f.earned / f.max) * 100}%` }} />
-                          </div>
-                          {f.note && <div className="mt-0.5 text-xs text-ink3">{f.note}</div>}
+
+                      <details className="mt-5">
+                        <summary className="cursor-pointer text-sm font-semibold text-primary hover:underline">
+                          Show score breakdown
+                        </summary>
+                        <div className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                          {SCORE_BARS.map(([k, label]) => (
+                            <Bar key={k} v={g.scored[k]} label={label} />
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </details>
-                </div>
-              ))}
+                      </details>
+
+                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                        <button
+                          type="button"
+                          onClick={() => onCompare(g.id)}
+                          className={compare.has(g.id) ? "chip-blue" : "chip"}
+                        >
+                          Compare this gadget
+                        </button>
+                        <div className="flex items-center gap-5">
+                          <button
+                            type="button"
+                            onClick={() => wish.toggle(g.id)}
+                            className={`text-sm font-semibold ${wish.has(g.id) ? "text-primary" : "text-ink2 hover:text-primary"}`}
+                          >
+                            Save
+                          </button>
+                          <Link to={`/g/${g.id}`} className="text-sm font-semibold text-primary hover:underline">
+                            Details
+                          </Link>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
           )}
-
-          {/* Nav */}
-          <div className="mt-6 flex items-center gap-3">
-            {step > 1 && (
-              <button type="button" onClick={() => setStep(step - 1)} className="btn-ghost">← Back</button>
-            )}
-            {step > 1 && step < 5 && (
-              <button type="button" onClick={() => setStep(step + 1)} className="btn-primary">
-                {step === 4 ? "See results" : "Next"}
-              </button>
-            )}
-            {step === 5 && (
-              <>
-                <button type="button" onClick={() => setStep(1)} className="btn-primary">Start over</button>
-                <Link to="/gadgets" className="btn-ghost">Browse instead</Link>
-              </>
-            )}
-          </div>
-        </div>
+        </section>
       </div>
-    </section>
+      {toastNode}
+    </main>
   );
 }

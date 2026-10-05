@@ -91,47 +91,114 @@ export function Bar({ v, max = 10, label, mono = false }) {
   );
 }
 
+/* Wishlist: localStorage-backed so cards, navbar and the Wishlist page
+   share one list without prop drilling. */
+let _wishListeners = [];
+function _wishRead() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("gw_wishlist") || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+function _wishWrite(set) {
+  localStorage.setItem("gw_wishlist", JSON.stringify([...set]));
+  _wishListeners.forEach((fn) => fn(set));
+}
+export function useWishlist() {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    _wishListeners.push(fn);
+    return () => {
+      _wishListeners = _wishListeners.filter((f) => f !== fn);
+    };
+  }, []);
+  const ids = _wishRead();
+  return {
+    ids,
+    has: (id) => ids.has(id),
+    toggle: (id) => {
+      const s = _wishRead();
+      s.has(id) ? s.delete(id) : s.add(id);
+      _wishWrite(s);
+    },
+  };
+}
+
 export function GadgetCard({ g, compare, onCompare }) {
   const monthly = GW.monthlyCost(g);
+  const wish = useWishlist();
+  const [toast, toastNode] = useToast();
+  const catName = GW.categories.find((c) => c.id === g.category)?.name || g.category;
+  const specRows = Object.entries(g.specs || {}).slice(0, 3);
   return (
     <article className="card flex flex-col overflow-hidden transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,34,.05),0_8px_24px_rgba(15,23,34,.08)]">
       <a href={`#/g/${g.id}`} className="block">
         <div className="relative">
           <Img gadget={g} />
-          <Oidx g={g} className="absolute left-3 top-3 bg-white/95" />
+          <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink2 shadow-sm">{catName}</span>
         </div>
       </a>
-      <div className="flex flex-1 flex-col gap-2 border-t border-line p-4">
+      <div className="flex flex-1 flex-col gap-2.5 border-t border-line p-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
           <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] font-semibold leading-snug text-ink hover:text-primary">
             {g.model}
           </a>
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="mono text-base font-semibold text-primary-dark">{money(g.price)}</span>
-          <span className="text-xs text-ink3">≈ {money(monthly)}/mo</span>
-        </div>
         <Stars rating={g.rating} count={g.reviewCount} />
-        <div className="flex flex-wrap gap-1.5">
-          <span className="chip-tag">{g.strengths[0]}</span>
-          {g.value.warrantyYears >= 2 && <span className="chip-good">Warranty {g.value.warrantyYears}y</span>}
-          {g.price > 30000 && <span className="chip-bad">Premium price</span>}
-        </div>
-        <div className="mt-auto flex items-center gap-2 pt-1">
-          <a href={`#/g/${g.id}`} className="btn-primary flex-1 !py-2 text-center">View details</a>
-          {onCompare && (
+        <div><Oidx g={g} /></div>
+        {g.goodFor?.length > 0 && (
+          <p className="text-sm text-ink2">
+            <b className="font-semibold text-ink">Best for:</b> {g.goodFor.slice(0, 2).join(" + ")}
+          </p>
+        )}
+        <dl className="text-sm">
+          {specRows.map(([k, v]) => (
+            <div key={k} className="flex items-baseline justify-between gap-3 border-t border-line py-1.5 first:border-t-0">
+              <dt className="text-ink3">{k}</dt>
+              <dd className="text-right font-medium text-ink">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mt-auto">
+          <div className="flex items-center justify-between gap-2">
+            <span className="mono text-xl font-bold text-ink">{money(g.price)}</span>
             <button
               type="button"
-              onClick={() => onCompare(g.id)}
-              aria-pressed={compare?.has(g.id)}
-              className={`btn !px-3 !py-2 border ${compare?.has(g.id) ? "border-primary bg-primary-soft text-primary-dark" : "border-line-strong text-ink2 hover:border-primary hover:text-primary"}`}
+              onClick={() => {
+                const adding = !wish.has(g.id);
+                wish.toggle(g.id);
+                if (adding) toast("Added to wishlist");
+              }}
+              aria-pressed={wish.has(g.id)}
+              aria-label={wish.has(g.id) ? "Remove from wishlist" : "Add to wishlist"}
+              className={`rounded-full border p-2 transition-colors ${wish.has(g.id) ? "border-[#B07C28] bg-[#FBF5E7] text-[#B07C28]" : "border-line-strong text-ink3 hover:border-[#B07C28] hover:text-[#B07C28]"}`}
             >
-              {compare?.has(g.id) ? "✓ Compare" : "Compare"}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={wish.has(g.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z" />
+              </svg>
             </button>
-          )}
+          </div>
+          <div className="mt-0.5 text-xs uppercase tracking-wide text-ink3">Per month ≈ {money(monthly)}/month</div>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+            {onCompare ? (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-ink2">
+                <input
+                  type="checkbox"
+                  checked={!!compare?.has(g.id)}
+                  onChange={() => onCompare(g.id)}
+                  className="h-4 w-4 rounded border-line-strong text-primary focus:ring-primary"
+                />
+                Compare
+              </label>
+            ) : <span />}
+            <a href={`#/g/${g.id}`} className="font-semibold text-primary hover:text-primary-dark">Details</a>
+          </div>
         </div>
       </div>
+      {toastNode}
     </article>
   );
 }

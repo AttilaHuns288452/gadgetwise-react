@@ -338,8 +338,13 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
   );
   return (
     <>
-      <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Catalog records visible on the public site.</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog records the recommendation engine and comparison tool rely on.</p>
+        </div>
+        <button className={btnPrimary} onClick={() => tab("add")}><Ico n="plus" size={16} /> Add gadget</button>
+      </div>
       <div className="mt-6 flex flex-wrap gap-3">
         <input className={`${inputCls} !w-72`} placeholder="Search brand or model..." value={q} onChange={(e) => setQ(e.target.value)} />
         <select className={`${inputCls} !w-52`} value={cat} onChange={(e) => setCat(e.target.value)}>
@@ -428,17 +433,20 @@ function AddGadget({ tab, onSave, editing, toast }) {
     <>
       <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
       <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Create a catalog record manually or fetch from the sample product API.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Prefill from the sample product API, then verify every field before saving.</p>
 
       <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-        <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
+          <span className="rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#2260D4]">Sample data source — admin verification is mandatory</span>
+        </div>
         <p className="mt-1 text-[13px] text-[#667085]">
-          Prototype source: sample product response. Select Fetch Product Information to prefill this form.
+          Click Fetch Product Information to call the sample product API. In production this runs on the server (the browser never calls third-party APIs directly) and returns name, brand, category, and image — which the administrator then verifies or corrects before saving.
         </p>
         <button className={`${btnSecondary} mt-4`} onClick={fillSample}><Ico n="refresh" size={16} /> Fetch Product Information</button>
       </div>
       <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-        Verify fields after fetching. The sample API is illustrative and may return incomplete values.
+        ⚠️ API data is unverified until an administrator reviews and saves it. The API never writes to the catalog by itself.
       </div>
 
       <form ref={form} className="mt-6 space-y-6" onSubmit={(e) => { e.preventDefault(); onSave(new FormData(e.target)); }}>
