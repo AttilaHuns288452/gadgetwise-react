@@ -100,7 +100,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   ];
 
   return (
-    <main className="mx-auto w-full max-w-[1760px] px-6 lg:px-12 pb-24 pt-10">
+    <main className="mx-auto w-full max-w-none px-6 pb-24 pt-10">
       <h1 className="text-[32px] font-extrabold leading-tight">Get Recommendations</h1>
       <p className="mt-2 max-w-[560px] text-ink2">
         Three questions, then a ranked shortlist. Every score shows its full breakdown.

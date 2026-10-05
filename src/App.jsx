@@ -141,7 +141,7 @@ export default function App() {
       <ScrollToTop />
       {!isAdmin && (
       <header className="sticky top-0 z-20 border-b border-line bg-white">
-        <div className="mx-auto flex max-w-[1760px] flex-wrap items-center gap-x-4 gap-y-2 px-6 lg:px-12 py-3">
+        <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3">
           {/* logo */}
           <Link to="/" className="order-1 flex min-w-0 shrink-0 items-center gap-2">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white">
@@ -234,7 +234,7 @@ export default function App() {
         </div>
         {compare.size > 0 && (
           <div className="border-t border-line bg-primary-wash">
-            <div className="mx-auto flex max-w-[1760px] items-center gap-3 px-6 lg:px-12 py-2 text-base">
+            <div className="mx-auto flex max-w-none items-center gap-3 px-6 py-2 text-base">
               <span className="mono font-semibold text-primary-dark">{compare.size}/4</span>
               <span className="text-ink2">in compare</span>
               <Link to="/compare" className="font-semibold text-primary hover:underline">Open compare →</Link>
@@ -263,7 +263,7 @@ export default function App() {
 
       {!isAdmin && (
       <footer className="bg-[#14213A]">
-        <div className="mx-auto max-w-[1760px] px-6 lg:px-12 py-12">
+        <div className="mx-auto max-w-none px-6 py-12">
           <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
             <div>
               <div className="text-xl font-bold">
