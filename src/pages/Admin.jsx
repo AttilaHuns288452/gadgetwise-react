@@ -116,7 +116,7 @@ const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
 function Signin({ onIn }) {
   const nav = useNavigate();
   return (
-    <div className="admin-zoom min-h-screen bg-white px-6 py-8 font-[Inter,ui-sans-serif,system-ui,sans-serif]">
+    <div className="admin-zoom min-h-screen bg-white px-6 lg:px-12 2xl:px-16 py-8 font-[Inter,ui-sans-serif,system-ui,sans-serif]">
       <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={22} /></span>
         <span className="text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>

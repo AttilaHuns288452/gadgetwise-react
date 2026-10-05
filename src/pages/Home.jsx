@@ -7,7 +7,7 @@ function Hero() {
   const g = GW.getGadget('apple-macbook-air-m1');
   return (
     <section className="bg-hero text-on-hero">
-      <div className="mx-auto grid max-w-none items-center gap-10 px-6 py-14 md:py-20 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="mx-auto grid max-w-none items-center gap-10 px-6 lg:px-12 2xl:px-16 py-14 md:py-20 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="min-w-0">
           <h1 className="font-display text-[clamp(32px,5.4vw,56px)] font-bold leading-[1.05] tracking-tight">
             Find the right gadget for <span className="text-star">school.</span>
@@ -62,7 +62,7 @@ function Stats() {
   ];
   return (
     <section className="border-y border-line bg-surface2">
-      <div className="mx-auto grid max-w-none grid-cols-2 gap-y-4 px-6 py-7 md:grid-cols-4">
+      <div className="mx-auto grid max-w-none grid-cols-2 gap-y-4 px-6 lg:px-12 2xl:px-16 py-7 md:grid-cols-4">
         {cells.map(([num, label], i) => (
           <p key={label} className={'text-[14px] text-ink3' + (i % 2 === 1 ? ' md:border-l md:border-line-strong md:pl-6' : '') + (i === 2 ? ' md:border-l md:border-line-strong md:pl-6' : '')}>
             <span className="mono mr-1.5 block text-2xl font-bold text-hero md:inline">{num}</span>
@@ -85,7 +85,7 @@ const CAT_ICONS = {
 
 function Categories() {
   return (
-    <section className="mx-auto max-w-none px-6 py-14">
+    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Start with what you need</h2>
@@ -119,7 +119,7 @@ const MISS = [
 
 function Miss() {
   return (
-    <section className="mx-auto max-w-none px-6 pb-14">
+    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
       <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">What students usually miss</h2>
       <p className="mt-2 text-[15px] text-ink2">Three things most price lists leave out.</p>
       <div className="mt-8 grid gap-8 md:grid-cols-3">
@@ -138,7 +138,7 @@ function Miss() {
 function TopRated({ compare, onCompare }) {
   const top = [...GW.gadgets].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount).slice(0, 3);
   return (
-    <section className="mx-auto max-w-none px-6 pb-14">
+    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Top rated by students</h2>
@@ -229,7 +229,7 @@ function PriceChart() {
     ...GW.categories.map((c) => ({ id: c.id, name: c.name, n: GW.gadgetsInCategory(c.id).length })),
   ];
   return (
-    <section className="mx-auto max-w-none px-6 pb-14">
+    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
       <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Price vs Performance to Cost</h2>
       <p className="mt-2 max-w-[62ch] text-[15px] text-ink2">Amber dots sit on the best value frontier — nothing beats them on price and build at once. Click a dot for details.</p>
       <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-line">
@@ -254,7 +254,7 @@ function PriceChart() {
 function Cheapest() {
   const rows = [...GW.gadgets].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b)).slice(0, 3);
   return (
-    <section className="mx-auto max-w-none px-6 pb-14">
+    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
       <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Cheapest to own</h2>
       <p className="mt-2 text-[15px] text-ink2">The three cheapest gadgets to own per month.</p>
       <p className="mono mt-1 text-[11px] text-ink3">Ranked by monthly cost — lowest first.</p>
@@ -288,7 +288,7 @@ const STEPS = [
 function Steps() {
   return (
     <section className="border-y border-line bg-surface2">
-      <div className="mx-auto grid max-w-none grid-cols-1 gap-y-6 px-6 py-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-y-0">
+      <div className="mx-auto grid max-w-none grid-cols-1 gap-y-6 px-6 lg:px-12 2xl:px-16 py-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-y-0">
         {STEPS.map(([n, t, d], i) => (
           <div key={n} className={'min-w-0' + (i > 0 ? ' lg:border-l lg:border-line-strong lg:pl-6' : '')}>
             <p className="mono text-[13px] font-semibold text-primary">{n}</p>
@@ -303,7 +303,7 @@ function Steps() {
 
 function CTA() {
   return (
-    <section className="mx-auto max-w-none px-6 py-14">
+    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 py-14">
       <div className="flex flex-col gap-6 rounded-2xl border-l-4 border-gold-hair bg-hero px-6 py-10 md:flex-row md:items-center md:justify-between md:px-8">
         <div className="min-w-0">
           <h2 className="font-display text-[24px] font-bold tracking-tight text-white md:text-[28px]">Not sure which one?</h2>
