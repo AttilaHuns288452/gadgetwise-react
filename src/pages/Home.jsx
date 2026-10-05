@@ -254,10 +254,13 @@ function Cheapest() {
   const rows = [...GW.gadgets].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b)).slice(0, 3);
   return (
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
-      <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Cheapest to own</h2>
-      <p className="mt-2 text-base text-ink2">The three cheapest gadgets to own per month.</p>
-      <p className="mono mt-1 text-sm text-ink3">Ranked by monthly cost — lowest first.</p>
-      <ul className="mt-6 max-w-[760px]">
+      <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[1fr_1.35fr]">
+        <div>
+          <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Cheapest to own</h2>
+          <p className="mt-2 text-base text-ink2">The three cheapest gadgets to own per month.</p>
+          <p className="mono mt-1 text-sm text-ink3">Ranked by monthly cost — lowest first.</p>
+        </div>
+        <ul>
         {rows.map((g) => (
           <li key={g.id} className="flex items-center gap-4 border-b border-line py-5 last:border-b-0">
             <Img gadget={g} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line" imgClass="object-cover" frame="1 / 1" />
@@ -272,6 +275,7 @@ function Cheapest() {
           </li>
         ))}
       </ul>
+      </div>
     </section>
   );
 }

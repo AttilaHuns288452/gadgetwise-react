@@ -97,7 +97,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                   {list.map((g) => (
                     <th key={g.id} className="min-w-[190px] px-5 pb-4 text-left align-bottom font-normal">
                       <Img gadget={g} className="rounded-lg" frame="4 / 3" />
-                      <div className="mt-3 text-xs font-normal text-ink2">{g.brand}</div>
+                      <div className="mt-3 text-xs font-normal text-ink2">{g.model.startsWith(g.brand) ? "" : g.brand}</div>
                       <Link to={`/g/${g.id}`} className="mt-0.5 block text-base font-bold text-primary hover:underline">
                         {g.model}
                       </Link>
@@ -170,24 +170,24 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                     <li className="flex items-start gap-2">
                       {check}
                       <span>
-                        Lowest price: <strong>{lowestPrice.brand} {lowestPrice.model}</strong> at {money(lowestPrice.price)}
+                        Lowest price: <strong>{GW.displayName(lowestPrice)}</strong> at {money(lowestPrice.price)}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       {check}
                       <span>
-                        Cheapest long-term: <strong>{cheapest.brand} {cheapest.model}</strong> at ≈ {money(GW.monthlyCost(cheapest))}/month
+                        Cheapest long-term: <strong>{GW.displayName(cheapest)}</strong> at ≈ {money(GW.monthlyCost(cheapest))}/month
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       {check}
                       <span>
-                        Highest rated: <strong>{highestRated.brand} {highestRated.model}</strong> at {highestRated.rating.toFixed(1)}★
+                        Highest rated: <strong>{GW.displayName(highestRated)}</strong> at {highestRated.rating.toFixed(1)}★
                       </span>
                     </li>
                   </ul>
                   <p className="mt-4 text-sm text-ink2">
-                    Students rate <strong>{mostReviewed.brand} {mostReviewed.model}</strong> highest ({mostReviewed.rating.toFixed(1)}★).
+                    Students rate <strong>{GW.displayName(mostReviewed)}</strong> highest ({mostReviewed.rating.toFixed(1)}★).
                     All monthly costs use the same fixed 36-month window, so the comparison stays apples-to-apples.
                   </p>
                 </div>
