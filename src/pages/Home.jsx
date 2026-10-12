@@ -7,7 +7,7 @@ function Hero() {
   const g = GW.getGadget('apple-macbook-air-m1');
   return (
     <section className="bg-hero text-on-hero">
-      <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-14 md:py-16 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="flex min-w-0 flex-col justify-between">
           <h1 className="font-display text-[clamp(38px,5vw,68px)] font-bold leading-[1.02] tracking-tight">
             Find the right gadget for <span className="text-star">school.</span>
