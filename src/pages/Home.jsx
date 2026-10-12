@@ -7,19 +7,19 @@ function Hero() {
   const g = GW.getGadget('apple-macbook-air-m1');
   return (
     <section className="bg-hero text-on-hero">
-      <div className="mx-auto grid max-w-none items-center gap-10 px-6 lg:px-12 2xl:px-16 py-14 md:py-20 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="min-w-0">
-          <h1 className="font-display text-[clamp(32px,5.4vw,56px)] font-bold leading-[1.05] tracking-tight">
+      <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-14 md:py-16 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="flex min-w-0 flex-col justify-between">
+          <h1 className="font-display text-[clamp(38px,5vw,68px)] font-bold leading-[1.02] tracking-tight">
             Find the right gadget for <span className="text-star">school.</span>
           </h1>
-          <p className="mt-5 max-w-[54ch] text-lg leading-relaxed text-on-hero2">
+          <p className="mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2">
             Compare <strong className="font-semibold text-white">verified specifications, monthly costs, and student priorities</strong> before you buy — with recommendations whose scoring you can actually read.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/recommend" className={btnPrimaryCls}>Find my gadget</Link>
             <Link to="/gadgets" className="rounded-lg border border-white/70 px-7 py-2.5 text-base font-semibold text-white transition-colors hover:bg-white/10">Browse gadgets</Link>
           </div>
-          <ul className="mt-8 grid gap-2.5 text-sm text-on-hero2 sm:grid-cols-3">
+          <ul className="mt-9 grid gap-3 text-base text-on-hero2 sm:grid-cols-3">
             {['Ownership cost on every tag', 'Warranty & repair paths surfaced', 'Scores show their math'].map((t) => (
               <li key={t} className="flex items-start gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fb0ec" strokeWidth="2" className="mt-[3px] shrink-0" aria-hidden="true">
