@@ -88,7 +88,7 @@ function Categories() {
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Start with what you need</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Start with what you need</h2>
           <p className="mt-2 max-w-[62ch] text-base text-ink2">Six categories, each with real specs, warranty and repair paths, and a monthly cost estimate.</p>
         </div>
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>All gadgets →</Link>
@@ -120,7 +120,7 @@ const MISS = [
 function Miss() {
   return (
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
-      <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">What students usually miss</h2>
+      <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">What students usually miss</h2>
       <p className="mt-2 text-base text-ink2">Three things most price lists leave out.</p>
       <div className="mt-8 grid gap-8 md:grid-cols-3">
         {MISS.map(([head, label, body]) => (
@@ -141,7 +141,7 @@ function TopRated({ compare, onCompare }) {
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Top rated by students</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Top rated by students</h2>
           <p className="mt-2 max-w-[62ch] text-base text-ink2">The three highest rated gadgets in the catalog, ranked from student ratings and reviews.</p>
         </div>
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>See all rankings</Link>
@@ -230,7 +230,7 @@ function PriceChart() {
   ];
   return (
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
-      <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Price vs Performance to Cost</h2>
+      <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Price vs Performance to Cost</h2>
       <p className="mt-2 max-w-[62ch] text-base text-ink2">Amber dots sit on the best value frontier — nothing beats them on price and build at once. Click a dot for details.</p>
       <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-line">
         {tabs.map((t) => (
@@ -254,9 +254,9 @@ function Cheapest() {
   const rows = [...GW.gadgets].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b)).slice(0, 3);
   return (
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
-      <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[1fr_1.35fr]">
+      <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
         <div>
-          <h2 className="font-display text-[26px] font-bold tracking-tight text-ink md:text-3xl">Cheapest to own</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Cheapest to own</h2>
           <p className="mt-2 text-base text-ink2">The three cheapest gadgets to own per month.</p>
           <p className="mono mt-1 text-sm text-ink3">Ranked by monthly cost — lowest first.</p>
         </div>
