@@ -141,13 +141,13 @@ export default function App() {
       <ScrollToTop />
       {!isAdmin && (
       <header className="sticky top-0 z-20 border-b border-line bg-white">
-        <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-2 px-6 lg:px-12 2xl:px-16 py-3">
+        <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-5 gap-y-3 px-6 lg:px-12 2xl:px-16 py-4">
           {/* logo */}
           <Link to="/" className="order-1 flex min-w-0 shrink-0 items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white">
               <CubeIcon />
             </span>
-            <span className="text-base font-bold sm:text-xl">
+            <span className="text-lg font-bold sm:text-2xl">
               <span className="text-[#111827]">Gadget</span>
               <span className="text-[#2563EB]">{" "}Wise</span>
             </span>
@@ -182,7 +182,7 @@ export default function App() {
             <Link
               to="/profile"
               aria-label="Profile"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-sm font-semibold text-[#14213A]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-base font-semibold text-[#14213A]"
             >
               AV
             </Link>
@@ -190,14 +190,14 @@ export default function App() {
 
           {/* nav links (horizontally scrollable on small screens) */}
           <nav className="order-3 w-full overflow-x-auto lg:order-2 lg:w-auto lg:shrink-0" aria-label="Main">
-            <ul className="flex w-max items-center gap-1 whitespace-nowrap text-sm font-medium">
+            <ul className="flex w-max items-center gap-2 whitespace-nowrap text-base font-semibold">
               {NAV.map(([href, label]) => (
                 <li key={href}>
                   <NavLink
                     to={href}
                     end={href === "/"}
                     className={({ isActive }) =>
-                      `inline-block rounded-lg px-4 py-2 ${
+                      `inline-block rounded-lg px-5 py-2.5 ${
                         isActive ? "bg-[#EFF6FF] text-[#2563EB]" : "text-ink2 hover:text-[#2563EB]"
                       }`
                     }
