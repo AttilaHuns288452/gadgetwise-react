@@ -34,6 +34,27 @@ export default async function handler(req, res) {
     });
   }
 
+  // TEMPORARY: ?probe=1 finds the correct upstream path. Removed after use.
+  if (req.query.probe === "1") {
+    const candidates = [
+      "/search/items", "/lazada/search/items", "/items/search",
+      "/search", "/item/search", "/lazada/search", "/products/search",
+      "/api/search", "/catalog/search", "/v1/search/items",
+    ];
+    const out = [];
+    for (const p of candidates) {
+      const u = `https://lazada-api.p.rapidapi.com${p}?site=ph&keywords=laptop`;
+      try {
+        const r = await fetch(u, { headers: buildAuthHeaders(key), signal: AbortSignal.timeout(12000) });
+        const t = await r.text();
+        out.push({ path: p, status: r.status, body: t.slice(0, 120) });
+      } catch (e) {
+        out.push({ path: p, status: 0, body: String(e?.message || e).slice(0, 60) });
+      }
+    }
+    return res.status(200).json({ probe: out });
+  }
+
   const query = normalizeQuery(req.query.q ?? req.query.search_query);
   if (!query) {
     return res.status(400).json({
