@@ -28,6 +28,32 @@ export default async function handler(req, res) {
     });
   }
 
+  // TEMPORARY: ?probe=1 finds the working detail request shape. Removed after use.
+  if (req.query.probe === "1") {
+    const variants = [
+      ["item_detail", "item_id", req.query.pid || "3960754486"],
+      ["item_detail", "itemid", req.query.pid || "3960754486"],
+      ["item_detail", "product_id", req.query.pid || "3960754486"],
+      ["item_detail", "id", req.query.pid || "3960754486"],
+      ["items/detail", "item_id", req.query.pid || "3960754486"],
+      ["item/detail", "item_id", req.query.pid || "3960754486"],
+      ["lazada/item_detail", "item_id", req.query.pid || "3960754486"],
+      ["item_detail", "item_id", req.query.pid2 || "15623372807"],
+    ];
+    const out = [];
+    for (const [path, k, v] of variants) {
+      const u = `https://lazada-api.p.rapidapi.com/lazada/${path}?site=ph&${k}=${v}`;
+      try {
+        const r = await fetch(u, { headers: buildAuthHeaders(key), signal: AbortSignal.timeout(12000) });
+        const t = await r.text();
+        out.push({ path, param: k, val: v, status: r.status, body: t.slice(0, 80) });
+      } catch (e) {
+        out.push({ path, param: k, val: v, status: 0, body: String(e?.message || e).slice(0, 50) });
+      }
+    }
+    return res.status(200).json({ probe: out });
+  }
+
   const productId = typeof req.query.id === "string" ? req.query.id.trim() : "";
   if (!isValidProductId(productId)) {
     return res.status(400).json({
