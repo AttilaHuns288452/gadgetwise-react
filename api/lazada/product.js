@@ -28,6 +28,28 @@ export default async function handler(req, res) {
     });
   }
 
+  // TEMPORARY diagnostic. Removed after use.
+  if (req.query.probe === "1") {
+    const cases = [
+      ["doc ex 3960754486", "3960754486", true],
+      ["doc ex 2457464623", "2457464623", true],
+      ["doc ex no-site", "3960754486", false],
+      ["real 15458423476", "15458423476", true],
+    ];
+    const out = [];
+    for (const [label, id, withSite] of cases) {
+      const u = `https://lazada-api.p.rapidapi.com/lazada/item_detail?item_id=${id}` + (withSite ? "&site=ph" : "");
+      try {
+        const r = await fetch(u, { headers: buildAuthHeaders(key), signal: AbortSignal.timeout(18000) });
+        const t = await r.text();
+        out.push({ label, status: r.status, body: t.slice(0, 300) });
+      } catch (e) {
+        out.push({ label, status: 0, body: String(e?.message || e).slice(0, 60) });
+      }
+    }
+    return res.status(200).json({ probe: out });
+  }
+
   const productId = typeof req.query.id === "string" ? req.query.id.trim() : "";
   if (!isValidProductId(productId)) {
     return res.status(400).json({
