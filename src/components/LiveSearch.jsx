@@ -68,7 +68,7 @@ export default function LiveSearch({ query }) {
 
       {state.items.length > 0 && (
         <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {state.items.slice(0, 8).map((p) => (
+          {state.items.map((p) => (
             <a
               key={p.productId || p.productUrl}
               href={`#/g/lazada-${p.productId}`}

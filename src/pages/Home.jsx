@@ -154,7 +154,6 @@ function TopRated({ compare, onCompare }) {
 }
 
 function Scatter({ list = GW.gadgets }) {
-  const [tip, setTip] = useState(null);
   const priceCap = 50000;
   const W = 720, H = 420, padL = 64, padR = 24, padT = 24, padB = 52;
   const iw = W - padL - padR, ih = H - padT - padB;
@@ -184,26 +183,18 @@ function Scatter({ list = GW.gadgets }) {
         {list.map((g) => {
           const v = ownIndex(g), isP = pareto.includes(g.id);
           return (
-            <g key={g.id} className="cursor-pointer" onClick={() => setTip(tip && tip.id === g.id ? null : { id: g.id, x: sx(g.price), y: sy(v) })}>
+            <a key={g.id} href={`#/g/${g.id}`} className="cursor-pointer">
               <circle cx={sx(g.price)} cy={sy(v)} r={isP ? 8 : 6} fill={isP ? '#c2872f' : '#14213a'} fillOpacity={isP ? 1 : 0.7} />
-              <a href={`#/g/${g.id}`}>
-                <circle cx={sx(g.price)} cy={sy(v)} r={16} fill="transparent" />
-              </a>
-            </g>
+              <circle cx={sx(g.price)} cy={sy(v)} r={16} fill="transparent" />
+              {isP && (
+                <text x={sx(g.price) + 11} y={sy(v) + 4} fontSize="11" fill="#3e4c61" fontWeight="600">
+                  {GW.displayName(g)}
+                </text>
+              )}
+            </a>
           );
         })}
       </svg>
-      {tip && (() => {
-        const g = GW.getGadget(tip.id);
-        return (
-          <div className="absolute z-10 w-[240px] rounded-lg border border-line-strong bg-white p-4 shadow-lg" style={{ left: Math.max(8, Math.min(tip.x - 120, W - 250)), top: Math.max(8, tip.y - 150) }}>
-            <button type="button" className="float-right text-ink3 hover:text-ink" onClick={() => setTip(null)} aria-label="Close">✕</button>
-            <p className="pr-5 font-semibold text-ink">{GW.displayName(g)}</p>
-            <p className="mt-1 text-sm text-ink2">{money(g.price)} · <span className="mono">{ownIndex(g)}</span> Performance to Cost</p>
-            <a href={`#/g/${g.id}`} className="mt-2 inline-block text-sm font-semibold text-primary hover:underline">View details →</a>
-          </div>
-        );
-      })()}
     </div>
   );
 }
