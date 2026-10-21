@@ -73,6 +73,8 @@ export default async function handler(req, res) {
     return res.status(mapped.status).json({
       error: { code: mapped.code, message: mapped.message },
       upstreamStatus: upstream.status,
+      // safe diagnostic: reason string only, never the key
+      upstreamMessage: typeof body?.message === "string" ? body.message.slice(0, 160) : null,
     });
   }
 
