@@ -154,6 +154,8 @@ function TopRated({ compare, onCompare }) {
 }
 
 function Scatter({ list = GW.gadgets }) {
+  const [hovId, setHovId] = useState(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
   const priceCap = 50000;
   const W = 720, H = 420, padL = 64, padR = 24, padT = 24, padB = 52;
   const iw = W - padL - padR, ih = H - padT - padB;
@@ -167,7 +169,10 @@ function Scatter({ list = GW.gadgets }) {
     if (!dominated) pareto.push(g.id);
   });
   return (
-    <div className="relative overflow-x-auto rounded-xl border border-line bg-white p-4">
+    <div
+      className="relative overflow-x-auto rounded-xl border border-line bg-white p-4"
+      onMouseMove={(e) => setPos({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })}
+    >
       <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1200px]" role="img" aria-label="Scatter plot of price versus performance to cost index">
         {[20, 40, 60, 80, 100].map((v) => (
           <g key={v}>
@@ -190,7 +195,13 @@ function Scatter({ list = GW.gadgets }) {
           // Stagger above/below to break collisions in dense clusters.
           const dy = i % 2 === 0 ? -9 : 14;
           return (
-            <a key={g.id} href={`#/g/${g.id}`} className="cursor-pointer">
+            <a
+              key={g.id}
+              href={`#/g/${g.id}`}
+              className="cursor-pointer"
+              onMouseEnter={() => setHovId(g.id)}
+              onMouseLeave={() => setHovId(null)}
+            >
               <circle cx={cx} cy={cy} r={isP ? 8 : 6} fill={isP ? '#c2872f' : '#14213a'} fillOpacity={isP ? 1 : 0.7} />
               <circle cx={cx} cy={cy} r={16} fill="transparent" />
               <text
@@ -207,6 +218,22 @@ function Scatter({ list = GW.gadgets }) {
           );
         })}
       </svg>
+      {hovId && (() => {
+        const g = GW.getGadget(hovId);
+        if (!g) return null;
+        return (
+          <div
+            className="pointer-events-none absolute z-10 w-[220px] rounded-lg border border-line-strong bg-white p-3 shadow-lg"
+            style={{ left: Math.min(pos.x + 14, 480), top: Math.max(8, pos.y - 90) }}
+          >
+            <p className="font-semibold text-ink">{GW.displayName(g)}</p>
+            <p className="mt-1 text-sm text-ink2">
+              {money(g.price)} · <span className="mono">{ownIndex(g)}</span> Performance to Cost
+            </p>
+            <p className="mt-1 text-xs text-primary">Click for details →</p>
+          </div>
+        );
+      })()}
     </div>
   );
 }
