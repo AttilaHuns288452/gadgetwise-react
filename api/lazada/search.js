@@ -11,6 +11,7 @@ import {
   normalizePage,
   buildSearchUrl,
   buildAuthHeaders,
+  fetchUpstream,
   normalizeSearchResponse,
   unwrap,
   mapUpstreamError,
@@ -59,10 +60,7 @@ export default async function handler(req, res) {
   const url = buildSearchUrl({ query, marketplace, page });
   let upstream;
   try {
-    upstream = await fetch(url, {
-      headers: buildAuthHeaders(key),
-      signal: AbortSignal.timeout(20000),
-    });
+    upstream = await fetchUpstream(url, buildAuthHeaders(key));
   } catch (err) {
     const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
     return res.status(504).json({

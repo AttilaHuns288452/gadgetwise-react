@@ -9,6 +9,7 @@ import {
   normalizeMarketplace,
   buildProductUrl,
   buildAuthHeaders,
+  fetchUpstream,
   normalizeProduct,
   isRealProduct,
   unwrap,
@@ -45,10 +46,7 @@ export default async function handler(req, res) {
   const url = buildProductUrl({ productId, marketplace });
   let upstream;
   try {
-    upstream = await fetch(url, {
-      headers: buildAuthHeaders(key),
-      signal: AbortSignal.timeout(20000),
-    });
+    upstream = await fetchUpstream(url, buildAuthHeaders(key));
   } catch (err) {
     const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
     return res.status(504).json({

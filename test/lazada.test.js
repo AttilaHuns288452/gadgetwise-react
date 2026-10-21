@@ -22,6 +22,7 @@ import {
   buildSearchUrl,
   buildProductUrl,
   buildAuthHeaders,
+  fetchUpstream,
 } from "../lib/lazada.js";
 
 test("normalizeQuery bounds length and trims", () => {
@@ -212,4 +213,27 @@ test("buildAuthHeaders switches on gateway type", () => {
   const rapid = buildAuthHeaders("tok", "https://lazada-api.p.rapidapi.com/lazada");
   assert.equal(rapid["X-RapidAPI-Key"], "tok");
   assert.equal(rapid["X-RapidAPI-Host"], "lazada-api.p.rapidapi.com");
+});
+
+test("fetchUpstream retries once on transient 5xx then succeeds", async () => {
+  const orig = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return calls === 1 ? { status: 503 } : { status: 200, ok: true };
+  };
+  const r = await fetchUpstream("https://x", {}, { retries: 1 });
+  globalThis.fetch = orig;
+  assert.equal(r.status, 200);
+  assert.equal(calls, 2, "retried once after 5xx");
+});
+
+test("fetchUpstream does NOT retry on 4xx", async () => {
+  const orig = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return { status: 404 }; };
+  const r = await fetchUpstream("https://x", {}, { retries: 1 });
+  globalThis.fetch = orig;
+  assert.equal(r.status, 404);
+  assert.equal(calls, 1, "no retry on 4xx");
 });
