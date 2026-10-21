@@ -1,16 +1,26 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
+import { useAuth } from "../lib/auth.js";
 
 function Login() {
   const navigate = useNavigate();
+  const { signIn, configured } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  // ponytail: mock demo login, no real auth
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    localStorage.setItem("gw_user", JSON.stringify({ name: "AV Demo", email }));
+    setError("");
+    setBusy(true);
+    const { error: err } = await signIn(email, password);
+    setBusy(false);
+    if (err) {
+      setError(err.message || "Could not sign in. Check your email and password.");
+      return;
+    }
     navigate("/profile");
   };
 
@@ -46,7 +56,19 @@ function Login() {
               className={fieldInputCls}
             />
           </div>
-          <button type="submit" className="btn-primary w-full">Log in</button>
+          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {busy ? "Signing in…" : "Log in"}
+          </button>
+          {error && (
+            <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
+              {error}
+            </p>
+          )}
+          {!configured && (
+            <p className="text-center text-xs text-ink2">
+              Demo mode: any email and password signs you in locally.
+            </p>
+          )}
           <p className="text-center text-sm text-ink2">
             New here? <Link to="/register" className="font-semibold text-primary hover:text-primary-dark">Create an account</Link>
           </p>

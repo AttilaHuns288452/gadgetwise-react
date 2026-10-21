@@ -1,17 +1,33 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
+import { useAuth } from "../lib/auth.js";
 
 function Register() {
   const navigate = useNavigate();
+  const { signUp, configured } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  // ponytail: mock demo signup, no real auth
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    localStorage.setItem("gw_user", JSON.stringify({ name: name.trim() || "AV Demo", email }));
+    setError("");
+    setNotice("");
+    setBusy(true);
+    const { error: err, needsConfirm } = await signUp(name, email, password);
+    setBusy(false);
+    if (err) {
+      setError(err.message || "Could not create your account. Try again.");
+      return;
+    }
+    if (needsConfirm) {
+      setNotice("Check your email to confirm your account, then sign in.");
+      return;
+    }
     navigate("/profile");
   };
 
@@ -59,7 +75,24 @@ function Register() {
               className={fieldInputCls}
             />
           </div>
-          <button type="submit" className="btn-primary w-full">Create account</button>
+          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {busy ? "Creating account…" : "Create account"}
+          </button>
+          {error && (
+            <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
+              {error}
+            </p>
+          )}
+          {notice && (
+            <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
+              {notice}
+            </p>
+          )}
+          {!configured && (
+            <p className="text-center text-xs text-ink2">
+              Demo mode: no account is created; sign-in stays on this device.
+            </p>
+          )}
           <p className="text-center text-sm text-ink2">
             Already have an account? <Link to="/login" className="font-semibold text-primary hover:text-primary-dark">Log in</Link>
           </p>
