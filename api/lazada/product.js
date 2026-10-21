@@ -9,6 +9,8 @@ import {
   normalizeMarketplace,
   buildProductUrl,
   normalizeProduct,
+  isRealProduct,
+  isErrorBody,
   mapUpstreamError,
 } from "../../lib/lazada.js";
 
@@ -70,7 +72,22 @@ export default async function handler(req, res) {
     return res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
   }
 
+  // A 2xx that is actually an error body must not become a fake empty product.
+  if (isErrorBody(body)) {
+    const mapped = mapUpstreamError(400, body, {});
+    return res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+  }
+
   // Upstream may wrap the product in { product: {...} } or return it bare.
   const raw = body?.product ?? body;
-  return res.status(200).json({ product: normalizeProduct(raw), cachedAt: new Date().toISOString() });
+  const product = normalizeProduct(raw);
+
+  // If we got no recognizable product, that is a not-found, not a success.
+  if (!isRealProduct(product)) {
+    return res.status(404).json({
+      error: { code: "product_not_found", message: "That product could not be found." },
+    });
+  }
+
+  return res.status(200).json({ product, cachedAt: new Date().toISOString() });
 }

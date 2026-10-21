@@ -13,6 +13,8 @@ import {
   toRating,
   toCount,
   normalizeProduct,
+  isRealProduct,
+  isErrorBody,
   normalizeSearchResponse,
   mapUpstreamError,
   buildSearchUrl,
@@ -153,4 +155,27 @@ test("buildSearchUrl encodes params", () => {
   assert.equal(u.searchParams.get("search_query"), "gaming laptop");
   assert.equal(u.searchParams.get("marketplace"), "ph");
   assert.equal(u.searchParams.get("page"), "2");
+});
+
+test("isRealProduct rejects all-null products", () => {
+  assert.equal(isRealProduct(normalizeProduct({})), false, "empty raw is not a real product");
+  assert.equal(isRealProduct(normalizeProduct(null)), false);
+  assert.equal(isRealProduct(normalizeProduct({ product_id: "12345" })), true, "id is enough");
+  assert.equal(isRealProduct(normalizeProduct({ title: "X" })), true, "title is enough");
+});
+
+test("isErrorBody detects 2xx error-shaped payloads", () => {
+  assert.equal(isErrorBody({ code: "invalid_api_key", message: "bad key" }), true);
+  assert.equal(isErrorBody({ code: "not_found", error: "nope" }), true);
+  assert.equal(isErrorBody({ products: [], count: 0 }), false, "legit empty search is not an error");
+  assert.equal(isErrorBody({ product_id: "1", title: "x" }), false);
+  assert.equal(isErrorBody(null), false);
+});
+
+test("all-null product must not be treated as success (regression)", () => {
+  // This is the exact bug: upstream 2xx with an unrecognizable body.
+  const fake = normalizeProduct({});
+  assert.equal(isRealProduct(fake), false);
+  // and an error-shaped 2xx is caught too
+  assert.equal(isErrorBody({ code: "upstream_unavailable", message: "down" }), true);
 });
