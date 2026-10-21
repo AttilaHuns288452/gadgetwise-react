@@ -1,23 +1,23 @@
 /**
  * GET /api/lazada/search?q=<query>&marketplace=ph&page=1
  *
- * Serverless proxy for the OmkarCloud Lazada scraper. The upstream API key
- * lives in the OMKAR_LAZADA_API_KEY env var and never reaches the browser.
- * Returns normalized product data plus an explicit freshness marker.
+ * Serverless proxy for the TMAPI Lazada search API. The API key lives in the
+ * OMKAR_LAZADA_API_KEY env var (kept name-compatible) and never reaches the
+ * browser. Returns normalized product data plus an explicit freshness marker.
  */
 import {
   normalizeQuery,
   normalizeMarketplace,
   normalizePage,
   buildSearchUrl,
+  buildAuthHeaders,
   normalizeSearchResponse,
-  isErrorBody,
+  unwrap,
   mapUpstreamError,
 } from "../../lib/lazada.js";
 
 // ponytail: in-memory TTL cache per warm lambda instance. Resets on cold start
-// and is not shared across instances. Fine at 100 req/month; move to KV if that
-// becomes a real constraint.
+// and is not shared across instances. Fine at low volume; move to KV if needed.
 const CACHE = new Map();
 const TTL_MS = 10 * 60 * 1000;
 
@@ -60,7 +60,7 @@ export default async function handler(req, res) {
   let upstream;
   try {
     upstream = await fetch(url, {
-      headers: { "API-Key": key, Accept: "application/json" },
+      headers: buildAuthHeaders(key),
       signal: AbortSignal.timeout(20000),
     });
   } catch (err) {
@@ -88,20 +88,15 @@ export default async function handler(req, res) {
     return res.status(mapped.status).json({
       error: { code: mapped.code, message: mapped.message },
       upstreamStatus: upstream.status,
-      upstreamCode: typeof body?.code === "string" ? body.code : null,
-      // safe shape-only diagnostic: top-level keys, never values
-      upstreamBodyKeys: body && typeof body === "object" ? Object.keys(body).slice(0, 12) : typeof body,
-      upstreamMessage: typeof body?.message === "string" ? body.message.slice(0, 200) : null,
     });
   }
 
   // A 2xx error-shaped body must not become a fake empty result set.
-  if (isErrorBody(body)) {
-    const mapped = mapUpstreamError(400, body, {});
-    return res.status(mapped.status).json({
-      error: { code: mapped.code, message: mapped.message },
+  const un = unwrap(body);
+  if (!un.ok) {
+    return res.status(502).json({
+      error: { code: "search_failed", message: "Product search failed. Please try again." },
       upstreamStatus: upstream.status,
-      upstreamCode: typeof body?.code === "string" ? body.code : null,
     });
   }
 

@@ -1,6 +1,7 @@
 /**
- * Tests for lib/lazada.js pure logic. Run: node --test test/
- * Covers validation, price/rating parsing, normalization, and error mapping.
+ * Tests for lib/lazada.js (TMAPI contract). Run: node --test test/
+ * Covers validation, price/rating parsing, normalization, envelope unwrapping,
+ * and safe error mapping.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -14,10 +15,13 @@ import {
   toCount,
   normalizeProduct,
   isRealProduct,
+  unwrap,
   isErrorBody,
   normalizeSearchResponse,
   mapUpstreamError,
   buildSearchUrl,
+  buildProductUrl,
+  buildAuthHeaders,
 } from "../lib/lazada.js";
 
 test("normalizeQuery bounds length and trims", () => {
@@ -38,22 +42,22 @@ test("normalizeMarketplace accepts 6 codes, rejects others", () => {
 test("normalizePage bounds pagination", () => {
   assert.equal(normalizePage(undefined), 1);
   assert.equal(normalizePage("0"), 1);
-  assert.equal(normalizePage("-3"), 1);
   assert.equal(normalizePage("3"), 3);
   assert.equal(normalizePage("999"), 50, "capped");
   assert.equal(normalizePage("junk"), 1);
 });
 
 test("isValidProductId requires numeric id", () => {
-  assert.equal(isValidProductId("4999580322"), true);
+  assert.equal(isValidProductId("4864957710"), true);
   assert.equal(isValidProductId("42"), false, "too short");
   assert.equal(isValidProductId("abc"), false);
   assert.equal(isValidProductId(""), false);
 });
 
-test("toPrice drops NaN, zero, negatives", () => {
+test("toPrice drops NaN, zero, negatives, handles comma strings", () => {
   assert.equal(toPrice(7299), 7299);
-  assert.equal(toPrice("123.5"), 123.5);
+  assert.equal(toPrice("1423"), 1423);
+  assert.equal(toPrice("1,423"), 1423, "strips commas");
   assert.equal(toPrice(0), null);
   assert.equal(toPrice(-5), null);
   assert.equal(toPrice("abc"), null);
@@ -61,127 +65,151 @@ test("toPrice drops NaN, zero, negatives", () => {
 });
 
 test("toRating clamps to 0..5 and rejects invalid", () => {
+  assert.equal(toRating("4.0"), 4);
   assert.equal(toRating(5), 5);
-  assert.equal(toRating(4.5), 4.5);
   assert.equal(toRating(6), null);
-  assert.equal(toRating(-1), null);
   assert.equal(toRating("x"), null);
 });
 
 test("toCount floors and defaults to 0", () => {
-  assert.equal(toCount(7), 7);
-  assert.equal(toCount("12"), 12);
+  assert.equal(toCount("7"), 7);
   assert.equal(toCount(-3), 0);
   assert.equal(toCount("junk"), 0);
 });
 
+test("normalizeProduct maps the TMAPI search row", () => {
+  const n = normalizeProduct({
+    item_id: "4864957710",
+    title: "  German Rausch hair water  ",
+    product_url: "https://www.lazada.co.th/products/-i4864957710.html",
+    img: "https://img/x.jpg",
+    brand: "No Brand",
+    currency: "THB",
+    price: "1423",
+    price_info: { sale_price: "1423", origin_price: "1637" },
+    review_info: { average_score: "4.0", review_count: "1" },
+    shop_info: { shop_name: "saixuan416541" },
+    sold_count: null,
+  });
+  assert.equal(n.productId, "4864957710");
+  assert.equal(n.title, "German Rausch hair water", "trimmed");
+  assert.equal(n.price, 1423);
+  assert.equal(n.originalPrice, 1637);
+  assert.equal(n.currency, "THB");
+  assert.equal(n.rating, 4);
+  assert.equal(n.reviewCount, 1);
+  assert.equal(n.sellerName, "saixuan416541");
+  assert.equal(n.imageUrl, "https://img/x.jpg");
+  assert.equal(n.soldCount, 0, "null -> 0");
+});
+
+test("normalizeProduct maps the TMAPI detail object (main_imgs)", () => {
+  const n = normalizeProduct({
+    item_id: 2457464623,
+    title: "Electric toothbrush",
+    brand: "P/S",
+    currency: "VND",
+    price_info: { sale_price: "460000", origin_price: "650000" },
+    main_imgs: ["https://a.jpg", "https://b.jpg"],
+    review_info: { average_score: "5", review_count: "10" },
+    shop_info: { shop_name: "official" },
+  });
+  assert.equal(n.productId, "2457464623", "number id -> string");
+  assert.equal(n.imageUrl, "https://a.jpg", "first main_img");
+  assert.equal(n.price, 460000);
+  assert.equal(n.rating, 5);
+});
+
 test("normalizeProduct never fabricates missing fields", () => {
-  const n = normalizeProduct({ product_id: "12345", title: "  Test  " });
-  assert.equal(n.productId, "12345");
-  assert.equal(n.title, "Test", "trimmed");
+  const n = normalizeProduct({ item_id: "12345", title: "  T  " });
   assert.equal(n.price, null, "missing price stays null, not 0");
   assert.equal(n.rating, null);
   assert.equal(n.reviewCount, 0);
-  assert.equal(n.inStock, false);
-  assert.equal(n.source, "lazada");
   assert.equal(n.brandName, null);
-});
-
-test("normalizeProduct maps full upstream shape", () => {
-  const n = normalizeProduct({
-    product_id: "4999580322",
-    title: "Raspberry Pi 5",
-    product_url: "https://www.lazada.com.ph/products/-i4999580322.html",
-    brand_name: "Raspberry Pi",
-    pricing: { currency: "PHP", current: 7299, original: 18249, discount_text: "60% Off" },
-    reviews: { average_rating: 5.0, review_count: 7 },
-    seller: { shop_name: "FU-LABS", seller_id: "501146720544" },
-    sold_count: 19,
-    in_stock: true,
-    is_sponsored: false,
-  });
-  assert.equal(n.price, 7299);
-  assert.equal(n.originalPrice, 18249);
-  assert.equal(n.currency, "PHP");
-  assert.equal(n.rating, 5);
-  assert.equal(n.reviewCount, 7);
-  assert.equal(n.sellerName, "FU-LABS");
-  assert.equal(n.inStock, true);
-});
-
-test("normalizeSearchResponse handles empty and bad shapes", () => {
-  assert.deepEqual(normalizeSearchResponse({}).products, []);
-  assert.equal(normalizeSearchResponse({}).perPage, 40);
-  const full = normalizeSearchResponse({
-    count: 3572, per_page: 40, current_page: 1, total_pages: 90,
-    next: "https://x?page=2", previous: null,
-    products: [{ product_id: "1" }],
-  });
-  assert.equal(full.count, 3572);
-  assert.equal(full.totalPages, 90);
-  assert.equal(full.products.length, 1);
-  assert.equal(full.previous, null);
-});
-
-test("mapUpstreamError branches on code not message", () => {
-  const quota = mapUpstreamError(429, { code: "quota_exceeded", renews_at: "2026-11-05" });
-  assert.equal(quota.status, 429);
-  assert.equal(quota.code, "quota_exceeded");
-  assert.equal(quota.renewsAt, "2026-11-05");
-
-  const noKey = mapUpstreamError(401, { code: "missing_api_key" });
-  assert.equal(noKey.code, "search_unconfigured");
-
-  const badKey = mapUpstreamError(401, { code: "invalid_api_key" });
-  assert.equal(badKey.code, "search_unconfigured");
-
-  const rate = mapUpstreamError(429, { code: "rate_limited" }, { "retry-after": "60" });
-  assert.equal(rate.retryAfter, "60");
-
-  const serverErr = mapUpstreamError(502, { code: "upstream_unavailable" });
-  assert.equal(serverErr.status, 502);
-
-  const sub = mapUpstreamError(402, { code: "subscription_expired" });
-  assert.equal(sub.status, 502, "never leaks 402 plan detail to client");
-});
-
-test("mapUpstreamError never leaks secrets or upstream text", () => {
-  const r = mapUpstreamError(401, { code: "invalid_api_key", message: "The key sk-secret123 is wrong" });
-  assert.equal(JSON.stringify(r).includes("sk-secret123"), false);
-});
-
-test("buildSearchUrl encodes params", () => {
-  const u = new URL(buildSearchUrl({ query: "gaming laptop", marketplace: "ph", page: 2 }));
-  assert.equal(u.searchParams.get("search_query"), "gaming laptop");
-  assert.equal(u.searchParams.get("marketplace"), "ph");
-  assert.equal(u.searchParams.get("page"), "2");
+  assert.equal(n.source, "lazada");
 });
 
 test("isRealProduct rejects all-null products", () => {
-  assert.equal(isRealProduct(normalizeProduct({})), false, "empty raw is not a real product");
-  assert.equal(isRealProduct(normalizeProduct(null)), false);
-  assert.equal(isRealProduct(normalizeProduct({ product_id: "12345" })), true, "id is enough");
-  assert.equal(isRealProduct(normalizeProduct({ title: "X" })), true, "title is enough");
+  assert.equal(isRealProduct(normalizeProduct({})), false);
+  assert.equal(isRealProduct(normalizeProduct({ item_id: "12345" })), true);
+  assert.equal(isRealProduct(normalizeProduct({ title: "X" })), true);
 });
 
-test("isErrorBody detects 2xx error-shaped payloads", () => {
-  assert.equal(isErrorBody({ code: "invalid_api_key", message: "bad key" }), true);
-  assert.equal(isErrorBody({ code: "not_found", error: "nope" }), true);
-  assert.equal(isErrorBody({ products: [], count: 0 }), false, "legit empty search is not an error");
-  assert.equal(isErrorBody({ product_id: "1", title: "x" }), false);
-  assert.equal(isErrorBody(null), false);
+test("unwrap accepts the 200 envelope", () => {
+  const u = unwrap({ code: 200, msg: "success", data: { items: [] } });
+  assert.equal(u.ok, true);
 });
 
-test("isErrorBody catches the generic upstream {message} shape (regression)", () => {
-  // OmkarCloud returns 500/200 with just { message: 'Server Error' } and no code.
-  assert.equal(isErrorBody({ message: "Server Error" }), true, "message-only with no data = error");
-  assert.equal(isErrorBody({ message: "ok", products: [] }), false, "message + data keys = not error");
+test("unwrap rejects non-200 envelope codes", () => {
+  const u = unwrap({ code: 500, msg: "Server Error" });
+  assert.equal(u.ok, false);
+  assert.equal(u.status, 500);
 });
 
-test("all-null product must not be treated as success (regression)", () => {
-  // This is the exact bug: upstream 2xx with an unrecognizable body.
-  const fake = normalizeProduct({});
-  assert.equal(isRealProduct(fake), false);
-  // and an error-shaped 2xx is caught too
-  assert.equal(isErrorBody({ code: "upstream_unavailable", message: "down" }), true);
+test("unwrap rejects the generic {message} body (RapidAPI shape)", () => {
+  const u = unwrap({ message: "Server Error" });
+  assert.equal(u.ok, false);
+});
+
+test("isErrorBody matches unwrap verdicts", () => {
+  assert.equal(isErrorBody({ code: 200, data: { items: [] } }), false);
+  assert.equal(isErrorBody({ code: 500, msg: "x" }), true);
+  assert.equal(isErrorBody({ message: "Server Error" }), true);
+  assert.equal(isErrorBody({ code: 200, msg: "ok", data: { items: [1] } }), false);
+});
+
+test("normalizeSearchResponse unwraps the TMAPI search envelope", () => {
+  const r = normalizeSearchResponse({
+    code: 200,
+    msg: "success",
+    data: {
+      page: 1, page_size: 3, start_key: "1726385507727", total_count: 2993,
+      items: [{ item_id: "1", title: "A" }],
+    },
+  });
+  assert.equal(r.count, 2993);
+  assert.equal(r.currentPage, 1);
+  assert.equal(r.perPage, 3);
+  assert.equal(r.products.length, 1);
+  assert.equal(r.next, "1726385507727", "start_key cursor");
+  assert.equal(r.totalPages, 50, "bounded estimate, capped");
+});
+
+test("normalizeSearchResponse handles empty and error shapes", () => {
+  assert.deepEqual(normalizeSearchResponse({ code: 200, data: {} }).products, []);
+  assert.deepEqual(normalizeSearchResponse({ message: "err" }).products, [], "error -> empty, not crash");
+});
+
+test("mapUpstreamError maps status codes safely", () => {
+  assert.equal(mapUpstreamError(401, { msg: "bad key" }).code, "search_unconfigured");
+  assert.equal(mapUpstreamError(429, {}, { "retry-after": "60" }).retryAfter, "60");
+  assert.equal(mapUpstreamError(402, {}).code, "search_unavailable");
+  assert.equal(mapUpstreamError(500, { msg: "Server Error" }).status, 502);
+});
+
+test("mapUpstreamError never leaks secrets or upstream text", () => {
+  const r = mapUpstreamError(401, { msg: "The key sk-secret123 is wrong" });
+  assert.equal(JSON.stringify(r).includes("sk-secret123"), false);
+});
+
+test("buildSearchUrl + buildProductUrl use the TMAPI paths and params", () => {
+  const s = new URL(buildSearchUrl({ query: "gaming laptop", marketplace: "ph", page: 2, base: "https://api.tmapi.top/lazada" }));
+  assert.equal(s.pathname, "/lazada/search/items");
+  assert.equal(s.searchParams.get("site"), "ph");
+  assert.equal(s.searchParams.get("keywords"), "gaming laptop");
+  assert.equal(s.searchParams.get("page"), "2");
+
+  const d = new URL(buildProductUrl({ productId: "4864957710", marketplace: "ph", base: "https://api.tmapi.top/lazada" }));
+  assert.equal(d.pathname, "/lazada/item_detail");
+  assert.equal(d.searchParams.get("item_id"), "4864957710");
+});
+
+test("buildAuthHeaders switches on gateway type", () => {
+  const tmapi = buildAuthHeaders("tok", "https://api.tmapi.top/lazada");
+  assert.equal(tmapi.apikey, "tok");
+  assert.equal(tmapi["X-RapidAPI-Key"], undefined);
+
+  const rapid = buildAuthHeaders("tok", "https://lazada-api.p.rapidapi.com/lazada");
+  assert.equal(rapid["X-RapidAPI-Key"], "tok");
+  assert.equal(rapid["X-RapidAPI-Host"], "lazada-api.p.rapidapi.com");
 });

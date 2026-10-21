@@ -1,16 +1,17 @@
 /**
- * GET /api/lazada/product?id=<product_id>&marketplace=ph
+ * GET /api/lazada/product?id=<item_id>&marketplace=ph
  *
- * Serverless proxy for the OmkarCloud Lazada product snapshot. The upstream
- * API key stays server-side in OMKAR_LAZADA_API_KEY.
+ * Serverless proxy for the TMAPI Lazada item-detail API. The API key stays
+ * server-side in OMKAR_LAZADA_API_KEY and is never sent to the browser.
  */
 import {
   isValidProductId,
   normalizeMarketplace,
   buildProductUrl,
+  buildAuthHeaders,
   normalizeProduct,
   isRealProduct,
-  isErrorBody,
+  unwrap,
   mapUpstreamError,
 } from "../../lib/lazada.js";
 
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
   let upstream;
   try {
     upstream = await fetch(url, {
-      headers: { "API-Key": key, Accept: "application/json" },
+      headers: buildAuthHeaders(key),
       signal: AbortSignal.timeout(20000),
     });
   } catch (err) {
@@ -71,27 +72,20 @@ export default async function handler(req, res) {
     const mapped = mapUpstreamError(upstream.status, body, Object.fromEntries(upstream.headers.entries()));
     return res.status(mapped.status).json({
       error: { code: mapped.code, message: mapped.message },
-      // safe diagnostics: numeric status + stable upstream code, never the key
       upstreamStatus: upstream.status,
-      upstreamCode: typeof body?.code === "string" ? body.code : null,
     });
   }
 
-  // A 2xx that is actually an error body must not become a fake empty product.
-  if (isErrorBody(body)) {
-    const mapped = mapUpstreamError(400, body, {});
-    return res.status(mapped.status).json({
-      error: { code: mapped.code, message: mapped.message },
+  // A 2xx error-shaped body must not become a fake empty product.
+  const un = unwrap(body);
+  if (!un.ok) {
+    return res.status(502).json({
+      error: { code: "search_failed", message: "Product lookup failed. Please try again." },
       upstreamStatus: upstream.status,
-      upstreamCode: typeof body?.code === "string" ? body.code : null,
     });
   }
 
-  // Upstream may wrap the product in { product: {...} } or return it bare.
-  const raw = body?.product ?? body;
-  const product = normalizeProduct(raw);
-
-  // If we got no recognizable product, that is a not-found, not a success.
+  const product = normalizeProduct(un.data);
   if (!isRealProduct(product)) {
     return res.status(404).json({
       error: { code: "product_not_found", message: "That product could not be found." },
