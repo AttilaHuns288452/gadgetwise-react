@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
 import { GadgetCard } from "../components/ui.jsx";
+import LiveSearch from "../components/LiveSearch.jsx";
 
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
 const FEATURES = {
@@ -259,6 +260,8 @@ export default function Catalog({ compare, onCompare }) {
           </div>
 
           <p className="mt-3 text-sm text-ink3">{meta}</p>
+
+          <LiveSearch query={q} />
 
           <div className="mt-4 flex flex-wrap gap-2">
             {CATS.map(([id, label]) => (
