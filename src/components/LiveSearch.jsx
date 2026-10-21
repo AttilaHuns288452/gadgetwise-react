@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { money } from "../lib.js";
 import { Stars } from "./ui.jsx";
+import { registerListings } from "../lib/marketplace.js";
 
 /**
  * Live Lazada marketplace results. Separate from the curated catalog on
@@ -28,7 +29,9 @@ export default function LiveSearch({ query }) {
           setState({ status: "error", items: [], error: data?.error?.message || "Search is unavailable right now." });
           return;
         }
-        setState({ status: "ready", items: data.products || [], error: null });
+        const items = data.products || [];
+        registerListings(items); // map + register so /#/g/:id resolves on our detail page
+        setState({ status: "ready", items, error: null });
       })
       .catch(() => {
         if (!cancelled) setState({ status: "error", items: [], error: "Could not reach the marketplace." });
@@ -46,7 +49,7 @@ export default function LiveSearch({ query }) {
     <section className="mt-8" aria-label="Live marketplace results">
       <div className="flex items-baseline gap-2">
         <h2 className="text-2xl">Live marketplace results</h2>
-        <span className="text-sm text-ink3">real-time from Lazada · links open on Lazada</span>
+        <span className="text-sm text-ink3">real-time from Lazada · opens GadgetWise detail</span>
       </div>
 
       {state.status === "loading" && (
@@ -68,9 +71,7 @@ export default function LiveSearch({ query }) {
           {state.items.slice(0, 8).map((p) => (
             <a
               key={p.productId || p.productUrl}
-              href={p.productUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`#/g/lazada-${p.productId}`}
               className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-white transition-shadow hover:shadow-md"
             >
               <div className="aspect-[4/3] w-full overflow-hidden bg-[#F9FAFB]">

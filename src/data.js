@@ -1825,7 +1825,15 @@ GW.seedRecommendationHistory = [
     top: { id: "apple-ipad-9", score: 91 } }
 ];
 
-GW.getGadget = function (id) { return GW.gadgets.find(g => g.id === id) || null; };
+// ponytail: resolver hook so marketplace (live Lazada) listings resolve by id
+// without data.js importing marketplace.js (avoids a cycle). Set by
+// marketplace.js at module init.
+GW.listingResolver = null;
+GW.getGadget = function (id) {
+  const hit = GW.gadgets.find(g => g.id === id);
+  if (hit) return hit;
+  return GW.listingResolver ? GW.listingResolver(id) : null;
+};
 GW.getCategory = function (id) { return GW.categories.find(c => c.id === id) || null; };
 GW.gadgetsInCategory = function (catId) { return GW.gadgets.filter(g => g.category === catId); };
 GW.gadgetsByIds = function (ids) { return ids.map(GW.getGadget).filter(Boolean); };

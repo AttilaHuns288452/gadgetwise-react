@@ -245,12 +245,28 @@ function GadgetDetail({ compare, onCompare }) {
             <button type="button" onClick={() => setReviewOpen(true)} className="btn-primary">
               Write Review
             </button>
+            {g.productUrl && (
+              <a
+                href={g.productUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-ghost"
+              >
+                View on Lazada ↗
+              </a>
+            )}
           </div>
         </div>
 
         <div className="min-w-0">
           <div className="text-xs font-semibold tracking-[0.18em] text-ink3">
-            {g.brand} · {catName} · {g.releaseYear}
+            {g.brand} · {catName}
+            {g.releaseYear ? ` · ${g.releaseYear}` : ""}
+            {g.marketplace && (
+              <span className="ml-2 rounded-full border border-[#C7C7CC] bg-[#F9FAFB] px-2 py-0.5 text-[0.65rem] font-semibold tracking-normal text-ink2">
+                Live marketplace listing
+              </span>
+            )}
           </div>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
             <h1 className="text-3xl sm:text-4xl">{g.model}</h1>
