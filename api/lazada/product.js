@@ -69,13 +69,22 @@ export default async function handler(req, res) {
 
   if (!upstream.ok) {
     const mapped = mapUpstreamError(upstream.status, body, Object.fromEntries(upstream.headers.entries()));
-    return res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    return res.status(mapped.status).json({
+      error: { code: mapped.code, message: mapped.message },
+      // safe diagnostics: numeric status + stable upstream code, never the key
+      upstreamStatus: upstream.status,
+      upstreamCode: typeof body?.code === "string" ? body.code : null,
+    });
   }
 
   // A 2xx that is actually an error body must not become a fake empty product.
   if (isErrorBody(body)) {
     const mapped = mapUpstreamError(400, body, {});
-    return res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    return res.status(mapped.status).json({
+      error: { code: mapped.code, message: mapped.message },
+      upstreamStatus: upstream.status,
+      upstreamCode: typeof body?.code === "string" ? body.code : null,
+    });
   }
 
   // Upstream may wrap the product in { product: {...} } or return it bare.

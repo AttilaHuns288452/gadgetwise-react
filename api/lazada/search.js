@@ -85,13 +85,21 @@ export default async function handler(req, res) {
   if (!upstream.ok) {
     const mapped = mapUpstreamError(upstream.status, body, Object.fromEntries(upstream.headers.entries()));
     if (mapped.retryAfter) res.setHeader("Retry-After", String(mapped.retryAfter));
-    return res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    return res.status(mapped.status).json({
+      error: { code: mapped.code, message: mapped.message },
+      upstreamStatus: upstream.status,
+      upstreamCode: typeof body?.code === "string" ? body.code : null,
+    });
   }
 
   // A 2xx error-shaped body must not become a fake empty result set.
   if (isErrorBody(body)) {
     const mapped = mapUpstreamError(400, body, {});
-    return res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    return res.status(mapped.status).json({
+      error: { code: mapped.code, message: mapped.message },
+      upstreamStatus: upstream.status,
+      upstreamCode: typeof body?.code === "string" ? body.code : null,
+    });
   }
 
   const data = normalizeSearchResponse(body);
