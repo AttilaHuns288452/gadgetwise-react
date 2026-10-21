@@ -172,6 +172,12 @@ test("isErrorBody detects 2xx error-shaped payloads", () => {
   assert.equal(isErrorBody(null), false);
 });
 
+test("isErrorBody catches the generic upstream {message} shape (regression)", () => {
+  // OmkarCloud returns 500/200 with just { message: 'Server Error' } and no code.
+  assert.equal(isErrorBody({ message: "Server Error" }), true, "message-only with no data = error");
+  assert.equal(isErrorBody({ message: "ok", products: [] }), false, "message + data keys = not error");
+});
+
 test("all-null product must not be treated as success (regression)", () => {
   // This is the exact bug: upstream 2xx with an unrecognizable body.
   const fake = normalizeProduct({});
