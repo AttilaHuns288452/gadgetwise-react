@@ -91,6 +91,7 @@ export default async function handler(req, res) {
       upstreamCode: typeof body?.code === "string" ? body.code : null,
       // safe shape-only diagnostic: top-level keys, never values
       upstreamBodyKeys: body && typeof body === "object" ? Object.keys(body).slice(0, 12) : typeof body,
+      upstreamMessage: typeof body?.message === "string" ? body.message.slice(0, 200) : null,
     });
   }
 
