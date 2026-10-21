@@ -182,15 +182,20 @@ function Scatter({ list = GW.gadgets }) {
         <text x={padL + iw / 2} y={H - 12} fontSize="10" fill="#3e4c61" textAnchor="middle">Price — lower is better ↓</text>
         {list.map((g) => {
           const v = ownIndex(g), isP = pareto.includes(g.id);
+          const label = GW.displayName(g).length > 15 ? GW.displayName(g).slice(0, 14) + "…" : GW.displayName(g);
           return (
             <a key={g.id} href={`#/g/${g.id}`} className="cursor-pointer">
               <circle cx={sx(g.price)} cy={sy(v)} r={isP ? 8 : 6} fill={isP ? '#c2872f' : '#14213a'} fillOpacity={isP ? 1 : 0.7} />
               <circle cx={sx(g.price)} cy={sy(v)} r={16} fill="transparent" />
-              {isP && (
-                <text x={sx(g.price) + 11} y={sy(v) + 4} fontSize="11" fill="#3e4c61" fontWeight="600">
-                  {GW.displayName(g)}
-                </text>
-              )}
+              <text
+                x={sx(g.price) + 10}
+                y={sy(v) + 3}
+                fontSize="9"
+                fill={isP ? '#8a5a1c' : '#64748b'}
+                fontWeight={isP ? '700' : '500'}
+              >
+                {label}
+              </text>
             </a>
           );
         })}
