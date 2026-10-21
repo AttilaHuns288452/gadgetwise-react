@@ -180,17 +180,24 @@ function Scatter({ list = GW.gadgets }) {
         ))}
         <text x={padL - 40} y={padT + ih / 2} fontSize="10" fill="#3e4c61" transform={`rotate(-90 ${padL - 40} ${padT + ih / 2})`} textAnchor="middle">Performance to Cost — higher is better ↑</text>
         <text x={padL + iw / 2} y={H - 12} fontSize="10" fill="#3e4c61" textAnchor="middle">Price — lower is better ↓</text>
-        {list.map((g) => {
+        {list.map((g, i) => {
           const v = ownIndex(g), isP = pareto.includes(g.id);
-          const label = GW.displayName(g).length > 15 ? GW.displayName(g).slice(0, 14) + "…" : GW.displayName(g);
+          const full = GW.displayName(g);
+          const label = full.length > 17 ? full.slice(0, 16) + "…" : full;
+          const cx = sx(g.price), cy = sy(v);
+          // Near the right edge, flip the label to the left so it never clips.
+          const flip = cx > W - padR - 110;
+          // Stagger above/below to break collisions in dense clusters.
+          const dy = i % 2 === 0 ? -9 : 14;
           return (
             <a key={g.id} href={`#/g/${g.id}`} className="cursor-pointer">
-              <circle cx={sx(g.price)} cy={sy(v)} r={isP ? 8 : 6} fill={isP ? '#c2872f' : '#14213a'} fillOpacity={isP ? 1 : 0.7} />
-              <circle cx={sx(g.price)} cy={sy(v)} r={16} fill="transparent" />
+              <circle cx={cx} cy={cy} r={isP ? 8 : 6} fill={isP ? '#c2872f' : '#14213a'} fillOpacity={isP ? 1 : 0.7} />
+              <circle cx={cx} cy={cy} r={16} fill="transparent" />
               <text
-                x={sx(g.price) + 10}
-                y={sy(v) + 3}
+                x={flip ? cx - 10 : cx + 10}
+                y={cy + dy}
                 fontSize="9"
+                textAnchor={flip ? "end" : "start"}
                 fill={isP ? '#8a5a1c' : '#64748b'}
                 fontWeight={isP ? '700' : '500'}
               >
