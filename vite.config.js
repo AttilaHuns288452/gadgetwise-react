@@ -2,10 +2,17 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// Static site on GitHub Pages (project site): base = repo name, build straight
-// into docs/ so Pages can serve "Deploy from a branch" with no Actions.
+// Two deploy targets share one build:
+//   - GitHub Pages project site  -> base "/gadgetwise-react/", output docs/
+//   - Vercel (site at domain root) -> base "/", output dist/
+// VERCEL=1 is set automatically by Vercel at build time, so no config duplication.
+const onVercel = !!process.env.VERCEL;
+
 export default defineConfig({
-  base: "/gadgetwise-react/",
+  base: onVercel ? "/" : "/gadgetwise-react/",
   plugins: [react(), tailwindcss()],
-  build: { outDir: "docs", emptyOutDir: true },
+  build: {
+    outDir: onVercel ? "dist" : "docs",
+    emptyOutDir: true,
+  },
 });
