@@ -89,6 +89,8 @@ export default async function handler(req, res) {
       error: { code: mapped.code, message: mapped.message },
       upstreamStatus: upstream.status,
       upstreamCode: typeof body?.code === "string" ? body.code : null,
+      // safe shape-only diagnostic: top-level keys, never values
+      upstreamBodyKeys: body && typeof body === "object" ? Object.keys(body).slice(0, 12) : typeof body,
     });
   }
 
