@@ -22,6 +22,7 @@ function readDemoUser() {
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(!supabaseConfigured); // demo mode is ready immediately
+  const [admin, setAdmin] = useState(false);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -50,6 +51,26 @@ export function useAuth() {
       sub?.subscription?.unsubscribe();
     };
   }, []);
+
+  // Ask the database whether this user is an admin (source of truth, not client state).
+  useEffect(() => {
+    if (!supabaseConfigured || !user) {
+      setAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .rpc("is_admin")
+      .then(({ data }) => {
+        if (!cancelled) setAdmin(data === true);
+      })
+      .catch(() => {
+        if (!cancelled) setAdmin(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const signIn = useCallback(async (email, password) => {
     if (!supabaseConfigured) {
@@ -87,5 +108,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, ready, configured: supabaseConfigured, signIn, signUp, signOut };
+  return { user, ready, admin, configured: supabaseConfigured, signIn, signUp, signOut };
 }

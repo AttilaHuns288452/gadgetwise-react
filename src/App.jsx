@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import Home from "./pages/Home.jsx";
 import Catalog from "./pages/Catalog.jsx";
@@ -13,6 +13,7 @@ import Profile from "./pages/Profile.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
+import { useAuth } from "./lib/auth.js";
 
 const NAV = [
   ["/", "Home"],
@@ -125,7 +126,8 @@ export default function App() {
   const [compare, setCompare] = useState(new Set());
   const [q, setQ] = useState("");
   const { pathname } = useLocation();
-  const isAdmin = pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith("/admin");
+  const { admin: isAdminUser } = useAuth();
 
   const onCompare = (id) =>
     setCompare((prev) => {
@@ -139,7 +141,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
-      {!isAdmin && (
+      {!isAdminRoute && (
       <header className="sticky top-0 z-20 border-b border-line bg-white">
         <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-5 gap-y-3 px-6 lg:px-12 2xl:px-16 py-4">
           {/* logo */}
@@ -170,14 +172,16 @@ export default function App() {
             >
               <ScaleIcon />
             </Link>
-            <button
-              type="button"
-              onClick={() => navigate("/admin")}
-              title="Open the staff console"
-              className="ml-1 rounded-lg border border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:border-[#2563EB] hover:text-[#2563EB]"
-            >
-              Dev
-            </button>
+            {isAdminUser && (
+              <button
+                type="button"
+                onClick={() => navigate("/admin")}
+                title="Open the staff console"
+                className="ml-1 rounded-lg border border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:border-[#2563EB] hover:text-[#2563EB]"
+              >
+                Dev
+              </button>
+            )}
             <span className="mx-2 h-6 w-px bg-line-strong" aria-hidden="true" />
             <Link
               to="/profile"
@@ -257,11 +261,11 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/review-history" element={<ReviewHistory />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={isAdminUser ? <Admin /> : <Navigate to="/" replace />} />
         </Routes>
       </main>
 
-      {!isAdmin && (
+      {!isAdminRoute && (
       <footer className="bg-[#14213A]">
         <div className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 py-12">
           <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
