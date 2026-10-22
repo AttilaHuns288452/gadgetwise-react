@@ -295,7 +295,7 @@ function Reports() {
   );
 }
 
-function Gadgets({ tab, rows, setRows, editIn, toast }) {
+function Gadgets({ tab, rows, setRows, editIn, toast, categories }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -354,6 +354,39 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
                     <Link to={`/g/${g.id}`} className={iconBtn} title="View public page"><Ico n="eye" /></Link>
+                    <button
+                      className="rounded-md border border-[#D9DEE7] px-2 py-1 text-xs font-semibold text-[#344054] hover:bg-[#F5F8FF]"
+                      title={g.status === "published" ? "Unpublish gadget" : "Publish gadget"}
+                      onClick={async () => {
+                        const publishing = g.status !== "published";
+                        if (publishing) {
+                          const requiredScores = ["performance", "battery", "durability", "portability", "display", "camera", "storage", "repairability"];
+                          const selectedCategory = (categories || []).find((category) => category.id === g.category);
+                          if (!selectedCategory || !selectedCategory.is_published) {
+                            toast("Publish this gadget's category first.", "alert");
+                            return;
+                          }
+                          if (!/^https?:\/\//i.test(g.source_url || "")) {
+                            toast("Add a valid HTTP(S) source URL before publishing.", "alert");
+                            return;
+                          }
+                          if (requiredScores.some((key) => !Number.isFinite(Number(g.scored?.[key])) || Number(g.scored[key]) < 0 || Number(g.scored[key]) > 10)) {
+                            toast("Edit this gadget and complete all eight scoring fields before publishing.", "alert");
+                            return;
+                          }
+                        }
+                        const nextRows = rows.map((row) => row.id === g.id
+                          ? {
+                              ...row,
+                              status: publishing ? "published" : "draft",
+                              data_source: publishing ? "admin_verified" : (row.data_source || "admin_entered_unverified"),
+                              price_verified_at: publishing ? new Date().toISOString() : null,
+                            }
+                          : row);
+                        const saved = await setRows(nextRows);
+                        if (saved) toast(publishing ? "Gadget published." : "Gadget unpublished.");
+                      }}
+                    >{g.status === "published" ? "Unpublish" : "Publish"}</button>
                     <button className={iconBtn} title="Edit" onClick={() => editIn(g)}><Ico n="pencil" /></button>
                     <button className={iconBtn} title="Delete" onClick={() => setDel(g)}><Ico n="trash" /></button>
                   </div>
@@ -1071,7 +1104,7 @@ export default function Admin() {
     <Shell tabKey={tabKey} tab={tab} onOut={onOut}>
       {tabKey === "dashboard" && <AdminOverview gadgets={gadgets} categories={cats} reviews={reviews} />}
       {tabKey === "reports" && <AdminNotice title="Reports not yet connected" body="The former reports used static demo metrics. Live analytics need real event collection before they can be shown truthfully." />}
-      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgetsPersistently} editIn={editIn} toast={toast} />}
+      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgetsPersistently} editIn={editIn} toast={toast} categories={cats} />}
       {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} categories={cats} />}
       {tabKey === "categories" && <Categories rows={cats} gadgets={gadgets} setRows={setCategoriesPersistently} toast={toast} />}
       {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviewsPersistently} toast={toast} />}
