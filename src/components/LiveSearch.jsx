@@ -20,11 +20,23 @@ export default function LiveSearch({ query }) {
     let cancelled = false;
     setState((s) => ({ ...s, status: "loading" }));
 
-    // Fetch several pages so a search shows a deep catalog (40/page upstream).
-    const pages = [1, 2, 3, 4, 5, 6];
+    // Fetch several query variants + pages so a search shows a deep catalog.
+    // ponytail: the upstream caps at ~43 unique items per query regardless of
+    // pagination (start_key keeps re-serving the same ~40), so diversity comes
+    // from query variants, not page depth. Each variant = 1 upstream call.
+    const variants = [
+      q,
+      `gaming ${q}`,
+      `cheap ${q}`,
+      `best ${q}`,
+      `${q} 2026`,
+      `popular ${q}`,
+      `professional ${q}`,
+      `student ${q}`,
+    ];
     Promise.all(
-      pages.map((page) =>
-        fetch(`/api/lazada/search?q=${encodeURIComponent(q)}&marketplace=ph&page=${page}`)
+      variants.map((v) =>
+        fetch(`/api/lazada/search?q=${encodeURIComponent(v)}&marketplace=ph&page=1`)
           .then((r) => (r.ok ? r.json() : { products: [] }))
           .catch(() => ({ products: [] }))
       )
