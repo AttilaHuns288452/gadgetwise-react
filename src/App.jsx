@@ -146,7 +146,10 @@ export default function App() {
   // the marketplace is down, so a visitor can always sign in. Only the
   // product-discovery routes show the catalog error state.
   const needsCatalog = !["/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history"].includes(pathname);
-  const { admin: isAdminUser } = useAuth();
+  const { user, ready, admin: isAdminUser, signOut } = useAuth();
+  // Real identity for the navbar avatar (no hardcoded initials).
+  const authName = user?.user_metadata?.full_name || user?.email || "";
+  const authInitials = (authName || "?").trim().slice(0, 2).toUpperCase();
 
   const onCompare = (id) =>
     setCompare((prev) => {
@@ -195,20 +198,57 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => navigate("/admin")}
-                title="Open the staff console"
+                title="Open the admin console"
                 className="ml-1 rounded-lg border border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:border-[#2563EB] hover:text-[#2563EB]"
               >
-                Dev
+                Admin
               </button>
             )}
             <span className="mx-2 h-6 w-px bg-line-strong" aria-hidden="true" />
-            <Link
-              to="/profile"
-              aria-label="Profile"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-base font-semibold text-[#14213A]"
-            >
-              AV
-            </Link>
+            {!ready ? null : user ? (
+              // Signed in: real initials, role, and a sign-out affordance.
+              <div className="flex items-center gap-1">
+                {isAdminUser && (
+                  <span className="rounded-full bg-[#EFF6FF] px-2 py-0.5 text-xs font-semibold text-[#2563EB]">
+                    Admin
+                  </span>
+                )}
+                <Link
+                  to="/profile"
+                  aria-label="Profile"
+                  title={authName}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-base font-semibold text-[#14213A]"
+                >
+                  {authInitials}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    signOut();
+                    navigate("/");
+                  }}
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:text-[#2563EB]"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              // Signed out: real sign-in / sign-up entry points.
+              <div className="flex items-center gap-1">
+                <Link
+                  to="/login"
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:text-[#2563EB]"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-lg bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1D4ED8]"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* nav links (horizontally scrollable on small screens) */}
