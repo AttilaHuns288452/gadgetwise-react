@@ -16,6 +16,7 @@ import ReviewHistory from "./pages/ReviewHistory.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import { clearRuntimeCatalog, loadPublishedCatalog } from "./lib/catalog-runtime.js";
 import { supabaseConfigured } from "./lib/supabase.js";
+import { useAuth } from "./lib/auth.js";
 
 const NAV = [
   ["/", "Home"],
@@ -48,8 +49,8 @@ const ACCOUNT = [
   ["Create account", "/register"],
 ];
 const THIS_PROJECT = [
-  "CC 116 frontend prototype",
-  "Scoring formulas in the README",
+  "Transparent scoring formulas",
+  "Product sources must be verified",
   "Not a store — nothing is sold here",
 ];
 
@@ -128,6 +129,9 @@ export default function App() {
   const navigate = useNavigate();
   const [compare, setCompare] = useState(new Set());
   const [q, setQ] = useState("");
+  const { user } = useAuth();
+  const accountName = user?.user_metadata?.full_name || user?.name || user?.email || "Guest";
+  const avatarText = accountName.split(/[\s@]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "G";
   const [catalogState, setCatalogState] = useState(() => ({
     status: supabaseConfigured ? "loading" : "demo",
     count: 0,
@@ -198,18 +202,18 @@ export default function App() {
             <button
               type="button"
               onClick={() => navigate("/admin")}
-              title="Open the staff console"
+              title="Open the administrator console"
               className="ml-1 rounded-lg border border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:border-[#2563EB] hover:text-[#2563EB]"
             >
-              Dev
+              Admin
             </button>
             <span className="mx-2 h-6 w-px bg-line-strong" aria-hidden="true" />
             <Link
               to="/profile"
-              aria-label="Profile"
+              aria-label={user ? "Profile" : "Guest profile"}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-base font-semibold text-[#14213A]"
             >
-              AV
+              {avatarText}
             </Link>
           </div>
 
