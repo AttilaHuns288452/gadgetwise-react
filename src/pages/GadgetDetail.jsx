@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
+import { useAuth } from "../lib/auth.js";
+import { submitReview as submitReviewRecord } from "../lib/store.js";
 import {
   Img,
   Stars,
@@ -139,6 +141,8 @@ function SpecPanel({ g }) {
 }
 
 function GadgetDetail({ compare, onCompare }) {
+  const { user } = useAuth();
+  const uid = user?.id || user?.email || null;
   const { id } = useParams();
   const [tab, setTab] = useState("ownership-cost");
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -193,12 +197,24 @@ function GadgetDetail({ compare, onCompare }) {
     ["Warranty (catalog)", s5(Math.min((wYears * 12) / 24, 1))],
   ];
 
-  const submitReview = () => {
-    // ponytail: no backend — submissions go to moderation, so nothing appears publicly
+  const submitReview = async () => {
+    const res = await submitReviewRecord(uid, {
+      gadget_id: g.id,
+      rating,
+      body: text.trim(),
+    });
     setReviewOpen(false);
     setText("");
     setRating(5);
-    toast("Review submitted — pending moderation (simulated)");
+    if (!res.ok) {
+      toast("Could not save review: " + res.error);
+      return;
+    }
+    toast(
+      res.local
+        ? "Review saved locally (sign in to sync across devices)."
+        : "Review submitted — pending moderation."
+    );
   };
 
   const rowCls = "flex items-baseline justify-between gap-6 border-b border-line py-2.5 text-sm last:border-0";

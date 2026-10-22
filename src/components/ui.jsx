@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { money, ownIndex, GW } from "../lib.js";
+import { useAuth } from "../lib/auth.js";
+import { loadWishlist, syncWishlist } from "../lib/store.js";
 
 /* Canonical name builder lives on GW (data.js) so moderation rows match the UI */
 export const displayName = (g) => GW.displayName(g);
@@ -114,6 +116,8 @@ function _wishWrite(set) {
 }
 export function useWishlist() {
   const [, force] = useState(0);
+  const { user } = useAuth();
+  const uid = user?.id || user?.email || null;
   useEffect(() => {
     const fn = () => force((n) => n + 1);
     _wishListeners.push(fn);
@@ -121,6 +125,16 @@ export function useWishlist() {
       _wishListeners = _wishListeners.filter((f) => f !== fn);
     };
   }, []);
+  // Signed-in users: load from the database once, then keep it as the source of
+  // truth. Guests stay on localStorage (seeded demo list).
+  useEffect(() => {
+    if (!uid) return;
+    loadWishlist(uid).then((set) => {
+      if (set) {
+        _wishWrite(set, { remote: true });
+      }
+    });
+  }, [uid]);
   const ids = _wishRead();
   return {
     ids,
@@ -129,6 +143,7 @@ export function useWishlist() {
       const s = _wishRead();
       s.has(id) ? s.delete(id) : s.add(id);
       _wishWrite(s);
+      if (uid) syncWishlist(uid, [...s]); // mirror to DB; RLS enforces ownership
     },
   };
 }

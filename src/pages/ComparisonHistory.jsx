@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { GW } from "../lib.js";
+import { useAuth } from "../lib/auth.js";
+import { loadComparisons, saveComparison } from "../lib/store.js";
 
 const KEY = "gw_compare_history";
 
@@ -37,7 +39,18 @@ function gadgetName(id) {
 }
 
 function ComparisonHistory({ compare }) {
+  const { user } = useAuth();
+  const uid = user?.id || user?.email || null;
   const [history, setHistory] = useState(readCompareHistory);
+
+  // Signed-in users: history lives in the database.
+  useEffect(() => {
+    if (!uid) return;
+    loadComparisons(uid).then((rows) => {
+      if (rows) setHistory(rows);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid]);
 
   useEffect(() => {
     if (!compare || compare.size === 0) return;
@@ -47,9 +60,11 @@ function ComparisonHistory({ compare }) {
     const first = h[0];
     // ponytail: dedupe only against the newest entry (consecutive identical sets)
     if (first && [...first.ids].sort().join(",") === key) return;
+    const titles = ids.map((i) => GW.getGadget(i) ? GW.displayName(GW.getGadget(i)) : i);
     const next = [{ ids, ts: Date.now() }, ...h].slice(0, 20);
     localStorage.setItem(KEY, JSON.stringify(next));
     setHistory(next);
+    if (uid) saveComparison(uid, ids, titles); // mirror to DB; RLS enforces ownership
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
