@@ -298,10 +298,12 @@ function Reports() {
 function Gadgets({ tab, rows, setRows, editIn, toast }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [del, setDel] = useState(null);
-  const cats = [...new Set(GW.gadgets.map((g) => g.category))];
+  const cats = [...new Set(rows.map((g) => g.category))];
   const filtered = rows.filter((g) =>
     (cat === "all" || g.category === cat) &&
+    (statusFilter === "all" || g.status === statusFilter) &&
     `${g.brand} ${g.model}`.toLowerCase().includes(q.toLowerCase())
   );
   return (
@@ -319,9 +321,10 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
           <option value="all">All categories</option>
           {cats.map((c) => <option key={c}>{c}</option>)}
         </select>
-        <select className={`${inputCls} !w-44`}>
-          <option>All statuses</option>
-          <option>Published</option>
+        <select className={`${inputCls} !w-44`} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">All statuses</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft / unpublished</option>
         </select>
       </div>
       <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
@@ -347,7 +350,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
                 <td className={cellCls}>{g.category}</td>
                 <td className={`${cellCls} font-semibold text-[#111827]`}>{money(g.price)}</td>
                 <td className={cellCls}>{g.rating}★</td>
-                <td className={cellCls}><Pill kind="published">Published</Pill></td>
+                <td className={cellCls}><span className={g.status === "published" ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800"}>{g.status}</span></td>
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
                     <Link to={`/g/${g.id}`} className={iconBtn} title="View public page"><Ico n="eye" /></Link>
@@ -384,67 +387,61 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
   );
 }
 
-function AddGadget({ tab, onSave, editing, toast }) {
+function AddGadget({ tab, onSave, editing, toast, categories }) {
   const form = useRef(null);
   const [specs, setSpecs] = useState(["Weight", "Ports"]);
-  const fillSample = () => {
-    const f = form.current;
-    if (!f) return;
-    f.brand.value = "Kaido"; f.model.value = "AirBook 14"; f.category.value = "laptops";
-    f.price.value = "39999"; f.year.value = "2026"; f.img.value = "/images/gadgets/kaido-airbook-14.jpg";
-    f.summary.value = "A thin 14-inch notebook for study, office work, and light creative tasks.";
-    f.warranty.value = "2"; f.lifespan.value = "4.5"; f.repairability.value = "5"; f.durability.value = "7.5";
-    f.repair.value = "Kaido authorized service center";
-    toast("Mock API response received — verify before saving", "info");
-  };
   return (
     <>
       <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
       <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Prefill from the sample product API, then verify every field before saving.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Enter and verify a product record, its source, and scoring data before publishing.</p>
 
-      <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
-          <span className="rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#2260D4]">Sample data source — admin verification is mandatory</span>
-        </div>
-        <p className="mt-1 text-[13px] text-[#667085]">
-          Click Fetch Product Information to call the sample product API. In production this runs on the server (the browser never calls third-party APIs directly) and returns name, brand, category, and image — which the administrator then verifies or corrects before saving.
-        </p>
-        <button className={`${btnSecondary} mt-4`} onClick={fillSample}><Ico n="refresh" size={16} /> Fetch Product Information</button>
-      </div>
-      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-        ⚠️ API data is unverified until an administrator reviews and saves it. The API never writes to the catalog by itself.
+      <div className="mt-6 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
+        Product lookup is not connected in this build. Enter a traceable source URL and verify all data; new records remain unpublished until reviewed.
       </div>
 
-      <form ref={form} className="mt-6 space-y-6" onSubmit={(e) => { e.preventDefault(); onSave(new FormData(e.target)); }}>
+      <form ref={form} className="mt-6 space-y-6" onSubmit={(e) => { e.preventDefault(); void onSave(new FormData(e.target)); }}>
         <Panel title="Core details">
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Brand"><input name="brand" className={inputCls} placeholder="e.g. Kaido" defaultValue={editing?.brand || ""} /></Field>
             <Field label="Model"><input name="model" className={inputCls} placeholder="e.g. AirBook 14" defaultValue={editing?.model || ""} /></Field>
             <Field label="Category">
               <select name="category" className={inputCls} defaultValue={editing?.category || "smartphones"}>
-                {GW.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {(categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </Field>
             <Field label="Price (₱)"><input name="price" className={inputCls} placeholder="39999" defaultValue={editing?.price ?? ""} /></Field>
-            <Field label="Release year"><input name="year" className={inputCls} placeholder="2026" /></Field>
-            <Field label="Image path"><input name="img" className={inputCls} placeholder="/images/gadgets/product-name.jpg" /></Field>
+            <Field label="Release year"><input name="year" type="number" min="1990" max="2100" className={inputCls} placeholder="2026" defaultValue={editing?.year || ""} /></Field>
+            <Field label="Image URL"><input name="img" type="url" className={inputCls} placeholder="https://…" defaultValue={editing?.img || ""} /></Field>
+            <Field label="Source URL"><input name="source_url" type="url" className={inputCls} placeholder="https://manufacturer-or-retailer…" defaultValue={editing?.source_url || ""} /></Field>
+            <Field label="Battery life (hours)"><input name="battery_hours" type="number" min="0" max="1000" step="0.1" className={inputCls} placeholder="8" defaultValue={editing?.battery ?? ""} /></Field>
           </div>
           <div className="mt-5">
             <Field label="Summary">
-              <textarea name="summary" rows="3" className={inputCls} placeholder="A short description for product pages and search results." />
+              <textarea name="summary" rows="3" className={inputCls} placeholder="A short description for product pages and search results." defaultValue={editing?.summary || ""} />
             </Field>
           </div>
         </Panel>
 
         <Panel title="Value & durability">
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-            <Field label="Warranty (years)"><input name="warranty" className={inputCls} placeholder="2" /></Field>
-            <Field label="Estimated lifespan (years)"><input name="lifespan" className={inputCls} placeholder="4.5" /></Field>
-            <Field label="Repairability (0–10)"><input name="repairability" className={inputCls} placeholder="5" /></Field>
-            <Field label="Durability (0–10)"><input name="durability" className={inputCls} placeholder="7.5" /></Field>
-            <Field label="Repair path label"><input name="repair" className={inputCls} placeholder="Kaido authorized service center" /></Field>
+            <Field label="Warranty (years)"><input name="warranty" type="number" min="0" max="20" step="0.1" className={inputCls} placeholder="2" defaultValue={editing?.value?.warrantyYears ?? ""} /></Field>
+            <Field label="Estimated lifespan (years)"><input name="lifespan" type="number" min="0" max="30" step="0.1" className={inputCls} placeholder="4.5" defaultValue={editing?.value?.lifespanYears ?? ""} /></Field>
+            <Field label="Repairability (0–10)"><input name="repairability" type="number" min="0" max="10" step="0.1" className={inputCls} placeholder="5" defaultValue={editing?.scored?.repairability ?? ""} /></Field>
+            <Field label="Durability (0–10)"><input name="durability" type="number" min="0" max="10" step="0.1" className={inputCls} placeholder="7.5" defaultValue={editing?.scored?.durability ?? ""} /></Field>
+            <Field label="Repair path label"><input name="repair" className={inputCls} placeholder="Official repair path" defaultValue={editing?.value?.repairabilityLabel || ""} /></Field>
+          </div>
+        </Panel>
+
+        <Panel title="Recommendation scoring inputs (0–10)">
+          <p className="mb-4 text-sm text-[#667085]">Complete every score before publishing. Scores should reflect documented product evidence.</p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Field label="Performance"><input name="score_performance" type="number" min="0" max="10" step="0.1" className={inputCls} defaultValue={editing?.scored?.performance ?? ""} /></Field>
+            <Field label="Battery score"><input name="score_battery" type="number" min="0" max="10" step="0.1" className={inputCls} defaultValue={editing?.scored?.battery ?? ""} /></Field>
+            <Field label="Portability"><input name="score_portability" type="number" min="0" max="10" step="0.1" className={inputCls} defaultValue={editing?.scored?.portability ?? ""} /></Field>
+            <Field label="Display"><input name="score_display" type="number" min="0" max="10" step="0.1" className={inputCls} defaultValue={editing?.scored?.display ?? ""} /></Field>
+            <Field label="Camera"><input name="score_camera" type="number" min="0" max="10" step="0.1" className={inputCls} defaultValue={editing?.scored?.camera ?? ""} /></Field>
+            <Field label="Storage"><input name="score_storage" type="number" min="0" max="10" step="0.1" className={inputCls} defaultValue={editing?.scored?.storage ?? ""} /></Field>
           </div>
         </Panel>
 
@@ -452,14 +449,19 @@ function AddGadget({ tab, onSave, editing, toast }) {
           <div className="space-y-3">
             {specs.map((label, i) => (
               <div key={i} className="flex gap-3">
-                <input className={`${inputCls} !w-56`} defaultValue={label} />
-                <input className={inputCls} placeholder="Value" />
+                <input name={"spec_key_" + i} className={`${inputCls} !w-56`} defaultValue={label} placeholder="Specification" />
+                <input name={"spec_value_" + i} className={inputCls} placeholder="Value" defaultValue={editing?.specs?.[label] || ""} />
                 <button type="button" className={iconBtn} title="Remove" onClick={() => setSpecs(specs.filter((_, j) => j !== i))}><Ico n="trash" /></button>
               </div>
             ))}
           </div>
           <button type="button" className={`${btnOutline} mt-4`} onClick={() => setSpecs([...specs, ""])}><Ico n="plus" size={16} /> Add specification row</button>
         </Panel>
+
+        <label className="flex items-start gap-3 rounded-xl border border-[#E4E7EC] bg-white p-4 text-sm">
+          <input type="checkbox" name="is_published" defaultChecked={editing?.status === "published"} className="mt-1" />
+          <span><strong className="block">Publish this gadget</strong><span className="text-[#667085]">Publishing requires an HTTP(S) source URL and all eight scores. Verify the source, price, and specifications first.</span></span>
+        </label></Panel>
 
         <div className="flex gap-3">
           <button type="submit" className={btnPrimary}>Save gadget</button>
@@ -470,24 +472,26 @@ function AddGadget({ tab, onSave, editing, toast }) {
   );
 }
 
-function Categories({ rows, setRows, toast }) {
+function Categories({ rows, setRows, gadgets, toast }) {
   const [form, setForm] = useState(null);
   const [del, setDel] = useState(null);
   const counts = Object.fromEntries(
     rows.map((c) => {
-      const inCat = GW.gadgets.filter((g) => g.category === c.id);
+      const inCat = gadgets.filter((g) => g.category === c.id);
       return [c.id, { n: inCat.length, avg: inCat.length ? (inCat.reduce((s, g) => s + g.rating, 0) / inCat.length).toFixed(1) : "0.0" }];
     })
   );
-  const save = () => {
+  const save = async () => {
     const name = form.name.trim();
     if (!name) { toast("Give the category a name", "alert"); return; }
     if (rows.some((r) => r.name.toLowerCase() === name.toLowerCase() && r.id !== form.editing)) {
       toast("A category with that name already exists", "alert"); return;
     }
-    setRows(form.editing
+    const next = form.editing
       ? rows.map((r) => (r.id === form.editing ? { ...r, name, desc: form.desc } : r))
-      : [...rows, { id: slugify(name), name, desc: form.desc }]);
+      : [...rows, { id: slugify(name), name, desc: form.desc, is_published: true }];
+    const saved = await setRows(next);
+    if (!saved) return;
     setForm(null);
     toast(form.editing ? "Category updated" : "Category added", form.editing ? "edit" : "checkCircle");
   };
@@ -577,9 +581,9 @@ function Reviews({ rows, setRows, toast }) {
   const [del, setDel] = useState(null);
   const pending = rows.filter((r) => r.status === "pending").length;
   const shown = rows.filter((r) => filter === "all" || r.status === filter);
-  const setStatus = (id, status) => {
-    setRows(rows.map((r) => (r.id === id ? { ...r, status } : r)));
-    toast(status === "approved" ? "Review approved — now visible on the gadget page" : "Review rejected — hidden from the public site",
+  const setStatus = async (id, status) => {
+    const saved = await setRows(rows.map((r) => (r.id === id ? { ...r, status } : r)));
+    if (saved) toast(status === "approved" ? "Review approved and published" : "Review rejected and hidden",
       status === "approved" ? "checkCircle" : "x");
   };
   return (
