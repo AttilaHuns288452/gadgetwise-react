@@ -114,7 +114,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                         {g.model}
                       </Link>
                       <div className="mt-1 text-xs font-normal text-ink2">
-                        {GW.getCategory(g.category).name} · {g.rating.toFixed(1)}★ ({g.reviewCount})
+                        {GW.getCategory(g.category)?.name || g.category} · {g.rating.toFixed(1)}★ ({g.reviewCount})
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button type="button" onClick={async () => { const result = await wish.toggle(g.id); if (result?.error) toast("Could not update wishlist. Check your connection and try again.", "alert"); else toast(result.adding ? "Added to wishlist" : "Removed from wishlist"); }} className={ghostBtnCls}>
