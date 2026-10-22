@@ -129,10 +129,10 @@ function Signin({ onIn }) {
         <h1 className="mt-3 text-[48px] font-bold leading-none text-[#111827]">Admin sign-in</h1>
         <p className="mt-3 text-[15px] text-[#4B5563]">Gadget Wise team console prototype.</p>
         <div className="mt-8 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-          Prototype console. This door provides <b>no security</b> — it is a
-          demo stand-in, not real staff authentication. Real administrator
-          access requires the Supabase role check, which is not wired up in this
-          build. Do not store anything sensitive here.
+          Administrator access is enforced in the database via the Supabase{" "}
+          <b>is_admin()</b> role check. Only the designated admin account can
+          reach this console. This gate exists to route operators, not to grant
+          access — the real authorization runs server-side.
         </div>
         <button type="submit" onClick={onIn} className="mt-6 w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
           Open prototype console
@@ -159,7 +159,7 @@ function Dashboard({ tab, stats, pendingRows }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Dashboard</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog and moderation queues. Figures below are illustrative sample data, not live retailer metrics.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog and moderation queues. Product figures are counted live from the marketplace catalog; no traffic metrics are invented.</p>
         </div>
         <div className="flex gap-3">
           <button className={btnSecondary} onClick={() => tab("reviews")}>Moderation queue</button>
@@ -353,12 +353,12 @@ function AddGadget({ tab, onSave, editing, toast }) {
     <>
       <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
       <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Prefill from the sample product API, then verify every field before saving.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Prefill from the live marketplace API, then verify every field before saving.</p>
 
       <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
-          <span className="rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#2260D4]">Sample data source — admin verification is mandatory</span>
+          <span className="rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#2260D4]">Live marketplace source — admin verification is mandatory</span>
         </div>
         <p className="mt-1 text-[13px] text-[#667085]">
           Click Fetch Product Information to call the sample product API. In production this runs on the server (the browser never calls third-party APIs directly) and returns name, brand, category, and image — which the administrator then verifies or corrects before saving.

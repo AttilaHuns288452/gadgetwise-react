@@ -311,8 +311,8 @@ export default function App() {
               <p className="mt-4 max-w-md text-sm leading-relaxed text-on-hero2">
                 Compare gadgets by price, specs, ownership cost, and student ratings. Made for Filipino students.{" "}
                 <span className="text-white/45">
-                  All product data in this prototype is fictional, written for demonstration. Ratings and reviews come
-                  from seeded demo users.
+                  Product data comes from the live Lazada marketplace. Specs the marketplace does not provide are shown
+                  as unavailable rather than estimated. GadgetWise is a comparison tool, not a store.
                 </span>
               </p>
             </div>
@@ -322,8 +322,8 @@ export default function App() {
             <FooterColumn title="THIS PROJECT" items={THIS_PROJECT} />
           </div>
           <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-on-hero2">
-            <span>GadgetWise — a CC 116 frontend prototype. Not a store; no products are sold here.</span>
-            <span>Estimates shown are for demonstration only.</span>
+            <span>GadgetWise — a student gadget comparison tool. Not a store; no products are sold here.</span>
+            <span>Cost estimates use a fixed 36-month window so products stay comparable.</span>
           </div>
         </div>
       </footer>
