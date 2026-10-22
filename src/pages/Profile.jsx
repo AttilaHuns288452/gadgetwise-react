@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
 import { GadgetCard, useWishlist } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
+import { readCompareHistory } from "./ComparisonHistory.jsx";
 
 function DocIcon() {
   return (
