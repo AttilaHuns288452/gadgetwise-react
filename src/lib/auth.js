@@ -110,6 +110,17 @@ export function useAuth() {
     return { error };
   }, []);
 
+  // Google OAuth: redirects to Google, returns to the app origin where the
+  // supabase client exchanges the code and onAuthStateChange fires.
+  const signInWithGoogle = useCallback(async () => {
+    if (!supabaseConfigured) return notConfigured();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    return { error };
+  }, []);
+
   const signUp = useCallback(async (name, email, password) => {
     if (!supabaseConfigured) return { ...notConfigured(), needsConfirm: false };
     const { data, error } = await supabase.auth.signUp({
@@ -125,5 +136,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, ready, admin, configured: supabaseConfigured, signIn, signUp, signOut };
+  return { user, ready, admin, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut };
 }
