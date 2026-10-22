@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
+import { useAuth } from "../lib/auth.js";
+import { supabase, supabaseConfigured } from "../lib/supabase.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
 const ICONS = {
@@ -112,40 +114,6 @@ function Field({ label, children }) {
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
-
-function Signin({ onIn }) {
-  const nav = useNavigate();
-  return (
-    <div className="admin-zoom min-h-screen bg-white px-6 lg:px-12 2xl:px-16 py-8 font-[Inter,ui-sans-serif,system-ui,sans-serif]">
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={22} /></span>
-        <span className="text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
-      </div>
-      <div className="mt-12 max-w-none">
-        <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6B7280]">▪ Staff Console</div>
-        <h1 className="mt-3 text-[48px] font-bold leading-none text-[#111827]">Admin sign-in</h1>
-        <p className="mt-3 text-[15px] text-[#4B5563]">Gadget Wise team console prototype.</p>
-        <form className="mt-8 space-y-5" onSubmit={(e) => { e.preventDefault(); onIn(); }}>
-          <Field label="Staff username">
-            <input className={inputCls} defaultValue="admin" name="username" />
-          </Field>
-          <Field label="Password">
-            <input className={inputCls} type="password" defaultValue="password" name="password" />
-          </Field>
-          <button type="submit" className="w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
-            Sign in to console
-          </button>
-        </form>
-        <div className="mt-6 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-          Prototype: any credentials work. Staff accounts are managed separately from student accounts.
-        </div>
-        <button type="button" onClick={() => nav("/")} className="mt-6 block w-full text-center text-[13px] text-[#1B6AC9] hover:underline">
-          ← Back to GadgetWise
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Dashboard({ tab }) {
   const pending = GW.admin.moderation.filter((r) => r.status === "pending").length;
@@ -812,52 +780,238 @@ function Shell({ tabKey, tab, onOut, children }) {
   );
 }
 
+function mapAdminGadget(row) {
+  const ratings = Array.isArray(row.reviews) ? row.reviews.map((r) => Number(r.rating)).filter(Number.isFinite) : [];
+  const rating = ratings.length ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length : 0;
+  return {
+    id: row.id, brand: row.brand, model: row.model, category: row.category_id,
+    price: Number(row.price), rating: Number(rating.toFixed(1)),
+    status: row.is_published ? "published" : "draft", img: row.image_url || "",
+    year: row.release_year, summary: row.summary || "", specs: row.specs || {},
+    scored: row.scored || {}, value: row.value_data || {}, data_source: row.data_source || "unverified",
+  };
+}
+function mapAdminCategory(row) {
+  return { id: row.id, name: row.name, desc: row.description || "", is_published: Boolean(row.is_published) };
+}
+function mapAdminReview(row, gadgetsById, profilesById) {
+  const g = gadgetsById.get(row.gadget_id);
+  const p = profilesById.get(row.user_id);
+  return {
+    id: row.id, gadget_id: row.gadget_id, user_id: row.user_id,
+    gadget: g ? g.brand + " " + g.model : row.gadget_id,
+    user: (p && p.display_name) || "GadgetWise user",
+    date: row.created_at ? new Date(row.created_at).toLocaleDateString("en-PH") : "",
+    rating: row.rating, text: row.body, status: row.status,
+  };
+}
+function AdminNotice({ title, body, action }) {
+  return (
+    <section className="mx-auto max-w-2xl px-6 py-16">
+      <h1 className="text-2xl font-extrabold text-[#111827]">{title}</h1>
+      <p className="mt-3 leading-6 text-[#667085]">{body}</p>
+      {action}
+    </section>
+  );
+}
+function AdminOverview({ gadgets, categories, reviews }) {
+  const pending = reviews.filter((review) => review.status === "pending").length;
+  const published = gadgets.filter((gadget) => gadget.status === "published").length;
+  return (
+    <div>
+      <h1 className="text-[30px] font-bold text-[#111827]">Dashboard</h1>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Live counts from the GadgetWise database.</p>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Catalog records", gadgets.length],
+          ["Published gadgets", published],
+          ["Categories", categories.length],
+          ["Pending reviews", pending],
+        ].map(([label, value]) => (
+          <article key={label} className="rounded-xl border border-[#E4E7EC] bg-white p-5">
+            <div className="text-sm text-[#667085]">{label}</div>
+            <div className="mt-2 text-3xl font-extrabold text-[#111827]">{value}</div>
+          </article>
+        ))}
+      </div>
+      <p className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-4 text-sm leading-6 text-[#475467]">
+        Product records default to draft/unpublished. Verify specifications and source provenance before publishing them to the public catalog.
+      </p>
+    </div>
+  );
+}
+
 export default function Admin() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [inSession, setIn] = useState(() => sessionStorage.getItem("gw-admin") === "1");
-  const tabKey = params.get("tab") || "dashboard";
-  const tab = (t) => setParams({ tab: t });
-  const [gadgets, setGadgets] = useState(GW.gadgets);
-  const [cats, setCats] = useState(() => GW.categories.map(toCat));
-  const [reviews, setReviews] = useState(GW.admin.moderation);
+  const { user, ready, configured, signOut } = useAuth();
+  const [access, setAccess] = useState("checking");
+  const [gadgets, setGadgets] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [editing, setEditing] = useState(null);
   const [toast, toastNode] = useToast();
+  const tabKey = params.get("tab") || "dashboard";
+  const tab = (t) => setParams({ tab: t });
 
-  if (!inSession) {
-    return <Signin onIn={() => { sessionStorage.setItem("gw-admin", "1"); setIn(true); }} />;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!ready) return;
+      if (!supabaseConfigured) { setAccess("unconfigured"); return; }
+      if (!user || !user.id) { setAccess("signed-out"); return; }
+      setAccess("checking");
+      const roleResult = await supabase.from("user_roles").select("role")
+        .eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      if (cancelled) return;
+      if (roleResult.error) { setAccess("error"); return; }
+      if (!roleResult.data) { setAccess("forbidden"); return; }
+      setAccess("loading-data");
+      const results = await Promise.all([
+        supabase.from("gadgets").select("id,category_id,brand,model,price,release_year,image_url,summary,specs,scored,value_data,data_source,is_published,reviews(rating)").order("brand"),
+        supabase.from("categories").select("id,name,description,is_published").order("name"),
+        supabase.from("reviews").select("id,gadget_id,user_id,rating,body,status,created_at").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id,display_name"),
+      ]);
+      if (cancelled) return;
+      const error = results.find((result) => result.error);
+      if (error) {
+        console.error("Admin data load failed:", error.error.message);
+        setAccess("data-error");
+        return;
+      }
+      const mappedGadgets = (results[0].data || []).map(mapAdminGadget);
+      const gadgetById = new Map(mappedGadgets.map((g) => [g.id, g]));
+      const profileById = new Map((results[3].data || []).map((p) => [p.user_id, p]));
+      setGadgets(mappedGadgets);
+      setCats((results[1].data || []).map(mapAdminCategory));
+      setReviews((results[2].data || []).map((r) => mapAdminReview(r, gadgetById, profileById)));
+      setAccess("admin");
+    }
+    load().catch((error) => {
+      console.error("Admin initialization failed:", error instanceof Error ? error.message : "unknown");
+      if (!cancelled) setAccess("data-error");
+    });
+    return () => { cancelled = true; };
+  }, [ready, user]);
+
+  async function saveRows(table, oldRows, nextRows, setState, toPayload, primaryKey = "id") {
+    const oldById = new Map(oldRows.map((row) => [row[primaryKey], row]));
+    const nextById = new Map(nextRows.map((row) => [row[primaryKey], row]));
+    try {
+      for (const previous of oldRows) {
+        if (!nextById.has(previous[primaryKey])) {
+          const result = await supabase.from(table).delete().eq(primaryKey, previous[primaryKey]);
+          if (result.error) throw result.error;
+        }
+      }
+      for (const next of nextRows) {
+        const previous = oldById.get(next[primaryKey]);
+        const payload = toPayload(next);
+        if (!previous) {
+          const result = await supabase.from(table).insert(payload);
+          if (result.error) throw result.error;
+        } else if (JSON.stringify(toPayload(previous)) !== JSON.stringify(payload)) {
+          const result = await supabase.from(table).update(payload).eq(primaryKey, next[primaryKey]);
+          if (result.error) throw result.error;
+        }
+      }
+      setState(nextRows);
+      return true;
+    } catch (error) {
+      console.error("Admin save failed:", table, error instanceof Error ? error.message : "unknown");
+      toast("Could not save changes to the database. Refresh the page and try again.", "alert");
+      return false;
+    }
+  }
+
+  const setGadgetsPersistently = (next) => saveRows("gadgets", gadgets, next, setGadgets, (g) => ({
+    id: g.id, category_id: g.category, brand: g.brand, model: g.model, price: g.price,
+    release_year: g.year || null, image_url: g.img || null, summary: g.summary || "",
+    specs: g.specs || {}, scored: g.scored || {}, value_data: g.value || {},
+    data_source: g.data_source || "admin_entered_unverified", is_published: g.status === "published",
+  }));
+  const setCategoriesPersistently = (next) => saveRows("categories", cats, next, setCats, (category) => ({
+    id: category.id, name: category.name, description: category.desc || "",
+    is_published: Boolean(category.is_published),
+  }));
+  const setReviewsPersistently = (next) => saveRows("reviews", reviews, next, setReviews, (review) => ({
+    id: review.id, gadget_id: review.gadget_id, user_id: review.user_id,
+    rating: review.rating, body: review.text, status: review.status,
+    moderated_by: review.status === "pending" ? null : user.id,
+    moderated_at: review.status === "pending" ? null : new Date().toISOString(),
+  }));
+
+  if (access === "checking" || access === "loading-data") {
+    return <AdminNotice title="Checking administrator access…" body="Verifying your Supabase session and loading persisted records." />;
+  }
+  if (access === "unconfigured") {
+    return <AdminNotice title="Backend not configured" body="The administrative console requires a configured Supabase project. Demo credentials are disabled." />;
+  }
+  if (access === "signed-out") {
+    return <AdminNotice title="Sign in required" body="Sign in with your real GadgetWise account. Administrator access must be assigned securely in the database."
+      action={<Link to="/login" className="mt-5 inline-block font-semibold text-[#2563EB] hover:underline">Go to login →</Link>} />;
+  }
+  if (access === "forbidden") {
+    return <AdminNotice title="Administrator access required" body="Your account is authenticated, but it does not have the admin role. A trusted project operator must grant administrator access." />;
+  }
+  if (access === "error" || access === "data-error") {
+    return <AdminNotice title="Admin data unavailable" body="Could not verify your role or load records. Check the Supabase migration, role assignment, and RLS policies, then refresh." />;
   }
 
   const editIn = (g) => { setEditing(g); tab("add"); };
-  const saveGadget = (fd) => {
+  const saveGadget = async (fd) => {
     const price = Number(fd.get("price"));
-    if (!(price > 0)) { toast("Enter a price greater than zero", "alert"); return; }
-    const cat = fd.get("category");
-    if (!GW.categories.some((c) => c.id === cat)) {
-      toast("Pick a category from the list (manage categories on the Categories page)", "alert"); return;
+    const brand = String(fd.get("brand") || "").trim();
+    const model = String(fd.get("model") || "").trim();
+    const category = String(fd.get("category") || "");
+    if (!(price > 0) || !Number.isFinite(price)) { toast("Enter a valid price greater than zero", "alert"); return; }
+    if (!brand || !model) { toast("Brand and model are required", "alert"); return; }
+    if (!cats.some((item) => item.id === category)) { toast("Choose a valid database category", "alert"); return; }
+    const payload = {
+      id: editing ? editing.id : slugify(brand + " " + model),
+      category_id: category, brand, model, price,
+      release_year: Number(fd.get("year")) || null,
+      image_url: String(fd.get("img") || "").trim() || null,
+      summary: String(fd.get("summary") || "").trim(),
+      specs: editing ? (editing.specs || {}) : {}, scored: editing ? (editing.scored || {}) : {},
+      value_data: editing ? (editing.value || {}) : {},
+      data_source: "admin_entered_unverified",
+      is_published: Boolean(editing && editing.status === "published"),
+    };
+    try {
+      const query = supabase.from("gadgets");
+      const result = editing
+        ? await query.update(payload).eq("id", editing.id).select("id").single()
+        : await query.insert(payload).select("id").single();
+      if (result.error) throw result.error;
+      const { data, error } = await supabase.from("gadgets")
+        .select("id,category_id,brand,model,price,release_year,image_url,summary,specs,scored,value_data,data_source,is_published,reviews(rating)")
+        .order("brand");
+      if (error) throw error;
+      setGadgets((data || []).map(mapAdminGadget));
+      setEditing(null);
+      tab("gadgets");
+      toast(editing ? "Gadget changes saved" : "Gadget saved as an unpublished draft; verify its source before publishing.");
+    } catch (error) {
+      console.error("Gadget save failed:", error instanceof Error ? error.message : "unknown");
+      toast("Could not save this gadget. Check required fields and database permissions.", "alert");
     }
-    const name = `${fd.get("brand") || ""} ${fd.get("model") || ""}`.trim() || "Untitled gadget";
-    if (!editing) {
-      setGadgets([...gadgets, {
-        id: slugify(name), brand: fd.get("brand") || "", model: fd.get("model") || "", category: cat,
-        price, rating: 0, status: "published",
-        img: fd.get("img") || "/images/gadgets/kaido-airbook-14.jpg",
-      }]);
-    }
-    setEditing(null);
-    tab("gadgets");
-    toast(editing ? "Changes saved" : "Gadget created — status: published");
+  };
+
+  const onOut = async () => {
+    try { await signOut(); } finally { nav("/login"); }
   };
 
   return (
-    <Shell tabKey={tabKey} tab={tab} onOut={() => { sessionStorage.removeItem("gw-admin"); setIn(false); }}>
-      {tabKey === "dashboard" && <Dashboard tab={tab} />}
-      {tabKey === "reports" && <Reports />}
-      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} toast={toast} />}
+    <Shell tabKey={tabKey} tab={tab} onOut={onOut}>
+      {tabKey === "dashboard" && <AdminOverview gadgets={gadgets} categories={cats} reviews={reviews} />}
+      {tabKey === "reports" && <AdminNotice title="Reports not yet connected" body="The former reports used static demo metrics. Live analytics need real event collection before they can be shown truthfully." />}
+      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgetsPersistently} editIn={editIn} toast={toast} />}
       {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} />}
-      {tabKey === "categories" && <Categories rows={cats} setRows={setCats} toast={toast} />}
-      {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviews} toast={toast} />}
-      {tabKey === "users" && <Users />}
+      {tabKey === "categories" && <Categories rows={cats} setRows={setCategoriesPersistently} toast={toast} />}
+      {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviewsPersistently} toast={toast} />}
+      {tabKey === "users" && <AdminNotice title="User directory not yet implemented" body="This page no longer displays fabricated accounts. A production user directory needs a secure server-side Admin API and appropriate privacy controls." />}
       {toastNode}
     </Shell>
   );
