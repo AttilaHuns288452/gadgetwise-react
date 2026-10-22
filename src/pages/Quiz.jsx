@@ -1,10 +1,12 @@
 // Quiz — /recommend · "Get Recommendations"
 // 5-step flow: category → budget → academic use → priorities → ranked results.
 // Scoring engine is recommend() in lib.js — this file is UI + copy only.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GW, money, FACTOR_META, recommend } from "../lib.js";
 import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
+import { useAuth } from "../lib/auth.js";
+import { supabase, supabaseConfigured } from "../lib/supabase.js";
 
 const CATS = [
   { id: "smartphones", name: "Smartphones", blurb: "Everyday carry, notes, hotspot" },
@@ -58,6 +60,8 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const lastSavedRecommendation = useRef("");
 
   // ponytail: App renders <Quiz /> bare today; fall back to local toggles if props ever arrive
   const [localCompare, setLocalCompare] = useState(new Set());
