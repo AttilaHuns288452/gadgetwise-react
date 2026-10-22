@@ -145,7 +145,10 @@ export default function App() {
   // Auth and account routes need no product data — keep them reachable even if
   // the marketplace is down, so a visitor can always sign in. Only the
   // product-discovery routes show the catalog error state.
-  const needsCatalog = !["/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history"].includes(pathname);
+  // /admin is excluded too: the admin console must always render (its route
+  // guard redirects non-admins, and its moderation/users panels work without the
+  // marketplace). Only product-discovery routes are gated on the catalog.
+  const needsCatalog = ![ "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin" ].includes(pathname);
   const { user, ready, admin: isAdminUser, signOut } = useAuth();
   // Real identity for the navbar avatar (no hardcoded initials).
   const authName = user?.user_metadata?.full_name || user?.email || "";
