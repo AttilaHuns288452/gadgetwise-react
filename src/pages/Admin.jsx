@@ -523,7 +523,7 @@ function AddGadget({ tab, onSave, editing, toast, categories }) {
                   <div className="min-w-0 flex-1">
                     <div className="line-clamp-2 text-sm font-semibold text-[#111827]">{product.title}</div>
                     <div className="mt-1 text-xs text-[#667085]">{product.brandName || product.sellerName || "Brand not provided"}</div>
-                    <div className="mt-1 font-mono text-sm font-bold text-[#111827]">{product.price != null ? money(Number(product.price)) : "Price unavailable"}</div>
+                    <div className="mt-1 font-mono text-sm font-bold text-[#111827]">{product.price != null && Number.isFinite(Number(product.price)) ? money(Number(product.price)) : "Price unavailable"}</div>
                     {product.rating != null && <div className="text-xs text-[#667085]">{product.rating}/5 · {product.reviewCount || 0} reviews</div>}
                   </div>
                 </div>
