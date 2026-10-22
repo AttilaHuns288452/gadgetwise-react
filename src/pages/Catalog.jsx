@@ -70,7 +70,7 @@ export default function Catalog({ compare, onCompare }) {
   };
 
   const scope = cat ? GW.gadgetsInCategory(cat) : GW.gadgets;
-  const brandList = [...new Set(scope.map((g) => g.brand))].sort();
+  const brandList = [...new Set(scope.map((g) => g.brand))].filter((b) => b && b !== "Unknown").sort();
 
   const min = minPrice === "" ? null : +minPrice;
   const max = maxPrice === "" ? null : +maxPrice;
