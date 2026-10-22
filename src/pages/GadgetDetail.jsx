@@ -251,6 +251,10 @@ function GadgetDetail({ compare, onCompare }) {
         ? "Review saved locally (sign in to sync across devices)."
         : "Review submitted — pending moderation."
     );
+    // Refresh the list so the author sees their own review immediately.
+    loadReviews(g.id).then((rows) => {
+      if (rows) setExtra(rows);
+    });
   };
 
   const rowCls = "flex items-baseline justify-between gap-6 border-b border-line py-2.5 text-sm last:border-0";
