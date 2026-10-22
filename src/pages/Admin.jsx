@@ -422,14 +422,125 @@ function Gadgets({ tab, rows, setRows, editIn, toast, categories }) {
 function AddGadget({ tab, onSave, editing, toast, categories }) {
   const form = useRef(null);
   const [specs, setSpecs] = useState(() => Object.keys(editing?.specs || {}).length ? Object.keys(editing.specs) : ["Weight", "Ports"]);
+  const [lookupQuery, setLookupQuery] = useState("");
+  const [lookupResults, setLookupResults] = useState([]);
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+
+  async function searchLazada(event) {
+    event.preventDefault();
+    const query = lookupQuery.trim();
+    if (query.length < 2 || query.length > 120) {
+      setLookupError("Enter a search between 2 and 120 characters.");
+      return;
+    }
+    setLookupBusy(true);
+    setLookupError("");
+    try {
+      const response = await fetch("/api/lazada/search?q=" + encodeURIComponent(query) + "&marketplace=ph&page=1", {
+        headers: { Accept: "application/json" },
+      });
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("The product-search endpoint did not return JSON. It may not be deployed on this host.");
+      }
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error?.message || "Product search is unavailable right now.");
+      }
+      const results = Array.isArray(data?.products) ? data.products.filter((item) => item && typeof item.title === "string" && item.title.trim()) : [];
+      setLookupResults(results);
+      if (results.length === 0) setLookupError("No listings were returned. Try another query or check the Lazada API configuration.");
+    } catch (error) {
+      setLookupResults([]);
+      setLookupError(error instanceof Error ? error.message : "Product search could not be reached.");
+    } finally {
+      setLookupBusy(false);
+    }
+  }
+
+  function fillFromListing(product) {
+    const f = form.current;
+    if (!f) return;
+    const safeUrl = (value) => {
+      try {
+        const parsed = new URL(value);
+        return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : "";
+      } catch {
+        return "";
+      }
+    };
+    f.brand.value = product.brandName || "";
+    f.model.value = product.title || "";
+    f.price.value = product.price != null && Number.isFinite(Number(product.price)) ? String(product.price) : "";
+    f.img.value = safeUrl(product.imageUrl || "");
+    f.source_url.value = safeUrl(product.productUrl || "");
+    setLookupError("");
+    toast("Listing copied into the form. Verify the source, category, price, and scoring before publishing.", "info");
+    f.category.focus();
+  }
+
   return (
     <>
       <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
       <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Enter and verify a product record, its source, and scoring data before publishing.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Search current Lazada listings, import verified listing fields into a draft, then review and complete the catalog fields.</p>
 
-      <div className="mt-6 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-        Product lookup is not connected in this build. Enter a traceable source URL and verify all data; new records remain unpublished until reviewed.
+      <section className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-5 shadow-[0_1px_3px_rgba(16,24,40,0.04)]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-[#111827]">Lazada product lookup</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-5 text-[#667085]">Searches the server-side /api/lazada/search endpoint. The API key stays on the server. Results can be cached and retailer listings can be inaccurate; selecting a result only pre-fills a draft and never writes to the catalog.</p>
+          </div>
+          <span className="rounded-full bg-[#EEF4FF] px-3 py-1 text-xs font-semibold text-[#2260D4]">Marketplace: Philippines</span>
+        </div>
+        <form onSubmit={searchLazada} className="mt-4 flex flex-wrap gap-2">
+          <input
+            value={lookupQuery}
+            onChange={(event) => setLookupQuery(event.target.value)}
+            maxLength={120}
+            minLength={2}
+            placeholder="Search e.g. Lenovo LOQ 15, Redmi Note 14…"
+            aria-label="Search Lazada listings"
+            className={inputCls + " min-w-[220px] flex-1"}
+          />
+          <button type="submit" disabled={lookupBusy} className={btnPrimaryCls + " disabled:opacity-60"}>
+            {lookupBusy ? "Searching…" : "Search Lazada"}
+          </button>
+        </form>
+        {lookupError && <p role="alert" className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{lookupError}</p>}
+        {lookupResults.length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {lookupResults.map((product, index) => (
+              <article key={product.productId || product.productUrl || product.title + "-" + index} className="overflow-hidden rounded-lg border border-[#E4E7EC]">
+                <div className="flex gap-3 p-3">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt="" loading="lazy" className="h-20 w-20 shrink-0 rounded-md bg-[#F9FAFB] object-contain" />
+                  ) : (
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-[#F9FAFB] text-xs text-[#667085]">No image</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-2 text-sm font-semibold text-[#111827]">{product.title}</div>
+                    <div className="mt-1 text-xs text-[#667085]">{product.brandName || product.sellerName || "Brand not provided"}</div>
+                    <div className="mt-1 font-mono text-sm font-bold text-[#111827]">{product.price != null ? money(Number(product.price)) : "Price unavailable"}</div>
+                    {product.rating != null && <div className="text-xs text-[#667085]">{product.rating}/5 · {product.reviewCount || 0} reviews</div>}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-[#E4E7EC] bg-[#FCFCFD] p-3">
+                  {product.productUrl && /^https?:\/\//i.test(product.productUrl) ? (
+                    <a href={product.productUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#2260D4] hover:underline">Open listing</a>
+                  ) : <span className="text-xs text-[#667085]">No listing URL</span>}
+                  <button type="button" onClick={() => fillFromListing(product)} className="rounded-md bg-[#1D4E8F] px-3 py-2 text-xs font-semibold text-white hover:bg-[#163c72]">Use this listing</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
+        Search data is not a verified product specification sheet. Confirm the exact model, seller, price, and specifications. The listing’s source URL and price are recorded only when you save the form.
       </div>
 
       <form ref={form} className="mt-6 space-y-6" onSubmit={(e) => { e.preventDefault(); void onSave(new FormData(e.target)); }}>
@@ -438,7 +549,7 @@ function AddGadget({ tab, onSave, editing, toast, categories }) {
             <Field label="Brand"><input name="brand" className={inputCls} placeholder="e.g. Kaido" defaultValue={editing?.brand || ""} /></Field>
             <Field label="Model"><input name="model" className={inputCls} placeholder="e.g. AirBook 14" defaultValue={editing?.model || ""} /></Field>
             <Field label="Category">
-              <select name="category" className={inputCls} defaultValue={editing?.category || categories?.[0]?.id || ""}>
+              <select name="category" className={inputCls} defaultValue={editing?.category || ""}>
                 {(categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </Field>
