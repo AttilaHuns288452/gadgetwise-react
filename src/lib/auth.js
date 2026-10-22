@@ -35,11 +35,19 @@ export function useAuth() {
     let cancelled = false;
 
     // Restore any persisted session first, then track changes.
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      setUser(data?.session?.user ?? null);
-      setReady(true);
-    });
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.error("Session restoration failed:", error.message);
+        setUser(data?.session?.user ?? null);
+        setReady(true);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Session restoration failed:", error instanceof Error ? error.message : "unknown");
+        setUser(null);
+        setReady(true);
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
@@ -116,10 +124,12 @@ export function useAuth() {
     if (!supabaseConfigured) {
       if (demoAuthEnabled) localStorage.removeItem(DEMO_KEY);
       setUser(null);
-      return;
+      return { error: null };
     }
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) return { error };
     setUser(null);
+    return { error: null };
   }, []);
 
   return { user, ready, configured: supabaseConfigured, demoEnabled: demoAuthEnabled, signIn, signUp, signInWithGoogle, requestPasswordReset, updatePassword, signOut };
