@@ -14,6 +14,8 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
 import { useAuth } from "./lib/auth.js";
+import { loadCatalog } from "./lib/catalog.js";
+import { btnPrimaryCls } from "./components/ui.jsx";
 
 const NAV = [
   ["/", "Home"],
@@ -124,6 +126,19 @@ function FooterColumn({ title, items, links }) {
 export default function App() {
   const navigate = useNavigate();
   const [compare, setCompare] = useState(new Set());
+  // Real catalog load. Every product page reads the GW.gadgets global, so we
+  // fill it before the routes render and force one re-render when it's ready.
+  const [, setCatalogReady] = useState(false);
+  const [catalogError, setCatalogError] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    loadCatalog()
+      .then(() => alive && setCatalogReady(true))
+      .catch((e) => alive && setCatalogError(e.message || "catalog unavailable"));
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [q, setQ] = useState("");
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
@@ -249,6 +264,24 @@ export default function App() {
       )}
 
       <main className="flex-1">
+        {catalogError ? (
+          <section className="section">
+            <div className="card max-w-xl p-8 text-center">
+              <h1 className="text-2xl">Couldn't load live products</h1>
+              <p className="mt-3 text-ink2">
+                GadgetWise pulls real listings from the marketplace and it looks like
+                that request failed. Nothing here is being faked. Try again in a moment.
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className={btnPrimaryCls + " mt-5"}
+              >
+                Retry
+              </button>
+            </div>
+          </section>
+        ) : (
         <Routes>
           <Route path="/" element={<Home compare={compare} onCompare={onCompare} />} />
           <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} />} />
@@ -263,6 +296,7 @@ export default function App() {
           <Route path="/review-history" element={<ReviewHistory />} />
           <Route path="/admin" element={isAdminUser ? <Admin /> : <Navigate to="/" replace />} />
         </Routes>
+        )}
       </main>
 
       {!isAdminRoute && (

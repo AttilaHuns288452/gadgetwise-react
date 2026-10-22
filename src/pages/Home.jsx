@@ -4,7 +4,11 @@ import { GW, money, ownIndex } from '../lib.js';
 import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls } from '../components/ui.jsx';
 
 function Hero() {
-  const g = GW.getGadget('apple-macbook-air-m1');
+  // Real catalog: feature the top-rated real product with an image. Falls back
+  // to any product, and renders nothing if the catalog is still empty.
+  const g =
+    [...GW.gadgets].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0] || null;
+  if (!g) return null;
   return (
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
