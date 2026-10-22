@@ -125,20 +125,15 @@ function Signin({ onIn }) {
         <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6B7280]">▪ Staff Console</div>
         <h1 className="mt-3 text-[48px] font-bold leading-none text-[#111827]">Admin sign-in</h1>
         <p className="mt-3 text-[15px] text-[#4B5563]">Gadget Wise team console prototype.</p>
-        <form className="mt-8 space-y-5" onSubmit={(e) => { e.preventDefault(); onIn(); }}>
-          <Field label="Staff username">
-            <input className={inputCls} defaultValue="admin" name="username" />
-          </Field>
-          <Field label="Password">
-            <input className={inputCls} type="password" defaultValue="password" name="password" />
-          </Field>
-          <button type="submit" className="w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
-            Sign in to console
-          </button>
-        </form>
-        <div className="mt-6 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-          Prototype: any credentials work. Staff accounts are managed separately from student accounts.
+        <div className="mt-8 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
+          Prototype console. This door provides <b>no security</b> — it is a
+          demo stand-in, not real staff authentication. Real administrator
+          access requires the Supabase role check, which is not wired up in this
+          build. Do not store anything sensitive here.
         </div>
+        <button type="submit" onClick={onIn} className="mt-6 w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
+          Open prototype console
+        </button>
         <button type="button" onClick={() => nav("/")} className="mt-6 block w-full text-center text-[13px] text-[#1B6AC9] hover:underline">
           ← Back to GadgetWise
         </button>
@@ -161,7 +156,7 @@ function Dashboard({ tab }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Dashboard</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Live overview of the catalog and moderation queues.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog and moderation queues. Figures below are illustrative sample data, not live retailer metrics.</p>
         </div>
         <div className="flex gap-3">
           <button className={btnSecondary} onClick={() => tab("reviews")}>Moderation queue</button>
@@ -226,7 +221,7 @@ function Reports() {
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Reports</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Internal analytics — content performance and catalog trends.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Illustrative sample analytics for the prototype — these are seeded demo figures, not measured traffic.</p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
         {panels.map(([id, title, sub, rows, count]) => (
