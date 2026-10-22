@@ -42,26 +42,34 @@ export default function LiveSearch({ query }) {
     let cancelled = false;
     setState((s) => ({ ...s, status: "loading" }));
 
-    // ponytail: the upstream caps at ~43 unique items per query regardless of
-    // pagination (start_key keeps re-serving the same ~40), so diversity comes
-    // from query variants. But firing them all at once trips the upstream rate
-    // limiter (HTTP 429), so fetch them staggered.
-    const variants = [q, `gaming ${q}`, `${q} 2026`, `cheap ${q}`];
+    // Walk real pages with the cursor. The upstream has thousands of results per
+    // query (count: 3247 for "laptop"); `page` + `start_key` together advance it.
+    // ponytail: paced (not parallel) to stay under the upstream rate limit, and
+    // capped at 6 pages so one search can't exhaust the monthly quota.
+    const MAX_PAGES = 6;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     (async () => {
       const results = [];
-      for (let i = 0; i < variants.length; i++) {
+      let cursor = "";
+      for (let page = 1; page <= MAX_PAGES; page++) {
         if (cancelled) return;
-        if (i > 0) await sleep(700); // gentle pacing: avoid burst 429s
+        if (page > 1) {
+          if (!cursor) break; // no more pages
+          await sleep(500); // gentle pacing: avoid burst 429s
+        }
+        const qs = new URLSearchParams({ q, marketplace: "ph", page: String(page) });
+        if (cursor) qs.set("start_key", cursor);
         try {
-          const r = await fetch(`/api/lazada/search?q=${encodeURIComponent(variants[i])}&marketplace=ph&page=1`);
+          const r = await fetch(`/api/lazada/search?${qs}`);
           const d = await r.json();
           results.push(r.ok ? d : { error: d?.error, products: [] });
+          cursor = r.ok ? (d.next || "") : "";
         } catch {
           results.push({ products: [] });
+          cursor = "";
         }
-        // Show results as they arrive instead of waiting for every variant.
+        // Show results as they arrive instead of waiting for every page.
         const merged = merge(results);
         if (!cancelled) {
           if (merged.items.length) {

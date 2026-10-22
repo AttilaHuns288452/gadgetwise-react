@@ -193,6 +193,18 @@ test("mapUpstreamError never leaks secrets or upstream text", () => {
   assert.equal(JSON.stringify(r).includes("sk-secret123"), false);
 });
 
+test("buildSearchUrl sends BOTH page and start_key (cursor stalls otherwise)", () => {
+  // regression: page and start_key were either/or, so the cursor never advanced
+  // and every call re-served the same 40 items despite count: 3247.
+  const s = new URL(buildSearchUrl({ query: "laptop", marketplace: "ph", page: 2, startKey: "1792628854318107", base: "https://api.tmapi.top/lazada" }));
+  assert.equal(s.searchParams.get("page"), "2", "page must always advance");
+  assert.equal(s.searchParams.get("start_key"), "1792628854318107", "cursor rides along with page");
+
+  const first = new URL(buildSearchUrl({ query: "laptop", marketplace: "ph", page: 1, base: "https://api.tmapi.top/lazada" }));
+  assert.equal(first.searchParams.get("page"), null, "page 1 omits page param");
+  assert.equal(first.searchParams.get("start_key"), null, "page 1 has no cursor");
+});
+
 test("buildSearchUrl + buildProductUrl use the TMAPI paths and params", () => {
   const s = new URL(buildSearchUrl({ query: "gaming laptop", marketplace: "ph", page: 2, base: "https://api.tmapi.top/lazada" }));
   assert.equal(s.pathname, "/lazada/search/items");
