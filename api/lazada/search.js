@@ -50,14 +50,15 @@ export default async function handler(req, res) {
   }
 
   const page = normalizePage(req.query.page);
-  const cacheKey = `${marketplace}|${page}|${query.toLowerCase()}`;
+  const startKey = typeof req.query.start_key === "string" ? req.query.start_key.trim() : "";
+  const cacheKey = `${marketplace}|${page}|${startKey}|${query.toLowerCase()}`;
   const cached = CACHE.get(cacheKey);
   if (cached && Date.now() - cached.at < TTL_MS) {
     res.setHeader("X-Cache", "hit");
     return res.status(200).json({ ...cached.data, cachedAt: new Date(cached.at).toISOString(), cache: "hit" });
   }
 
-  const url = buildSearchUrl({ query, marketplace, page });
+  const url = buildSearchUrl({ query, marketplace, page, startKey });
   let upstream;
   try {
     upstream = await fetchUpstream(url, buildAuthHeaders(key));
