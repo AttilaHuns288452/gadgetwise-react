@@ -697,16 +697,20 @@ function GadgetDetail({ compare, onCompare }) {
       {reviewOpen && (
         <Modal
           title="Write a review"
-          sub="Reviews go to the moderation queue before appearing publicly."
-          onClose={() => setReviewOpen(false)}
+          sub={user ? "Reviews go to the moderation queue before appearing publicly." : "Sign in before submitting a review."}
+          onClose={() => { setReviewOpen(false); setReviewError(""); }}
           actions={
             <>
-              <button type="button" className={btnOutlineCls} onClick={() => setReviewOpen(false)}>
+              <button type="button" className={btnOutlineCls} onClick={() => { setReviewOpen(false); setReviewError(""); }}>
                 Cancel
               </button>
-              <button type="button" className={btnPrimaryCls} onClick={submitReview}>
-                Submit for moderation
-              </button>
+              {user ? (
+                <button type="button" className={btnPrimaryCls} disabled={reviewBusy} onClick={submitReview}>
+                  {reviewBusy ? "Submitting…" : "Submit for moderation"}
+                </button>
+              ) : (
+                <Link to="/login" className={btnPrimaryCls}>Log in to review</Link>
+              )}
             </>
           }
         >
