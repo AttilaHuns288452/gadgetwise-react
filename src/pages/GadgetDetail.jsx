@@ -274,7 +274,7 @@ function GadgetDetail({ compare, onCompare }) {
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => wish.toggle(g.id)}
+              onClick={async () => { const result = await wish.toggle(g.id); if (result?.error) toast("Could not update wishlist. Check your connection and try again.", "alert"); }}
               aria-pressed={wish.has(g.id)}
               className={wish.has(g.id) ? "btn-primary" : "btn-ghost"}
             >
