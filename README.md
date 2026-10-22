@@ -57,6 +57,10 @@ Do not put AI-provider keys, service-role keys, or other privileged secrets in \
 
 The migrations do not insert fictional product entries. Once Supabase is configured in the frontend, the app deliberately does not silently fall back to demo products if live catalog requests fail.
 
+## Live Lazada search
+
+The app includes a server-side Lazada search adapter at `/api/lazada/search` for Vercel deployments. Configure `LAZADA_API_KEY` or `OMKAR_LAZADA_API_KEY` as a server-side Vercel environment variable; never prefix it with `VITE_`. The admin product lookup copies the selected retailer listing into an editable draft only. Retailer output may be cached or incomplete, so verify every listing and specification before publishing it. GitHub Pages is static and cannot execute this serverless route without a separately deployed API.
+
 ## Deployment
 
 The app uses HashRouter so the same frontend can be hosted as a GitHub Pages project site or a Vercel root deployment. \`vite.config.js\` writes GitHub Pages output to \`docs/\` and Vercel output to \`dist/\`.
