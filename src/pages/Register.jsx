@@ -62,6 +62,9 @@ function Register() {
             <input
               id="reg-name"
               type="text"
+              autoComplete="name"
+              minLength={2}
+              maxLength={100}
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -74,6 +77,7 @@ function Register() {
             <input
               id="reg-email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -86,6 +90,9 @@ function Register() {
             <input
               id="reg-password"
               type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
