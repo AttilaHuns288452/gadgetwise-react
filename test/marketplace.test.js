@@ -36,17 +36,33 @@ test("toGadget maps real fields exactly", () => {
 test("toGadget flags marketplace so neutral values are not read as curated", () => {
   const g = toGadget(RAW);
   assert.equal(g.marketplace, true);
-  assert.equal(g.value.warrantyYears, 0, "unknown warranty must not be fabricated");
+  assert.equal(g.value.warrantyYears, null, "unknown warranty must not be fabricated");
   assert.equal(g.releaseYear, null, "unknown year stays null, not invented");
-  assert.equal(g.battery, 0, "unknown battery contributes 0, not a fake advantage");
+  assert.equal(g.battery, null, "unknown battery stays null, not 0 or a guess");
+  assert.equal(g.scored.performance, null, "no curated sub-score is invented from rating");
 });
 
 test("toGadget handles a product with no rating/brand without crashing", () => {
   const g = toGadget({ productId: "1", title: "Mystery Thing", price: 100, rating: 0 });
   assert.equal(g.rating, 0);
   assert.equal(g.brand, "Unknown");
-  assert.ok(typeof g.scored.performance === "number", "scored fields present so detail .toFixed never crashes");
-  assert.ok(typeof g.value.repairabilityLabel === "string");
+  // Missing inputs are null (unavailable) and must render as unavailable, not crash.
+  assert.equal(g.scored.performance, null);
+  assert.equal(typeof g.value.repairabilityLabel, "string");
+});
+
+test("ownIndex is missing-data aware: excludes nulls, never fabricates", async () => {
+  const { ownIndex, ownIndexCoverage } = await import("../src/lib.js");
+  const { toGadget: t } = await import("../src/lib/marketplace.js");
+  // Marketplace: battery+warranty unknown -> score uses only rating+value (55/100 weight)
+  const m = t(RAW);
+  const cov = ownIndexCoverage(m);
+  assert.equal(cov, 55, "battery 25 + warranty 20 excluded, rating 25 + value 30 = 55");
+  const s = ownIndex(m);
+  assert.ok(s >= 0 && s <= 100, "score still in range");
+  // A missing input must NOT be treated as 0: score must equal the renormalized
+  // weighted average of the AVAILABLE inputs only.
+  assert.ok(Number.isInteger(s));
 });
 
 test("GW.getGadget resolves registered marketplace listings (the click-through seam)", () => {

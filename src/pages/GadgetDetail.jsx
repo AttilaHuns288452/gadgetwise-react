@@ -182,7 +182,7 @@ function GadgetDetail({ compare, onCompare }) {
   // Ownership cost numbers (same 36-month formula everywhere).
   const over1 = money(monthly * 12);
   const over3 = money(g.price);
-  const coverPct = Math.round((wYears / (GW.MONTHS_WINDOW / 12)) * 100);
+  const coverPct = wYears == null ? null : Math.round((wYears / (GW.MONTHS_WINDOW / 12)) * 100);
   const costScore = (() => {
     const ms = GW.gadgetsInCategory(g.category).map(GW.monthlyCost);
     const lo = Math.min(...ms);
@@ -317,7 +317,7 @@ function GadgetDetail({ compare, onCompare }) {
               <div className={rowCls}>
                 <dt className="text-ink2">Warranty</dt>
                 <dd className="font-semibold text-ink">
-                  {wYears} year{wYears === 1 ? "" : "s"}
+                  {wYears == null ? "Not specified" : `${wYears} year${wYears === 1 ? "" : "s"}`}
                 </dd>
               </div>
               <div className={rowCls}>
@@ -401,7 +401,7 @@ function GadgetDetail({ compare, onCompare }) {
                   <div className={rowCls}>
                     <dt className="text-ink2">Warranty</dt>
                     <dd className="font-semibold text-ink">
-                      {wYears} year{wYears === 1 ? "" : "s"}
+                      {wYears == null ? "Not specified" : `${wYears} year${wYears === 1 ? "" : "s"}`}
                     </dd>
                   </div>
                   <div className={rowCls}>
@@ -496,19 +496,19 @@ function GadgetDetail({ compare, onCompare }) {
               <dl className="mt-4">
                 <div className={rowCls}>
                   <dt className="text-ink2">Performance</dt>
-                  <dd className="mono font-semibold text-ink">{g.scored.performance.toFixed(1)}/10</dd>
+                  <dd className="mono font-semibold text-ink">{g.scored.performance == null ? "—" : `${g.scored.performance.toFixed(1)}/10`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Battery</dt>
-                  <dd className="mono font-semibold text-ink">{g.scored.battery.toFixed(1)}/10</dd>
+                  <dd className="mono font-semibold text-ink">{g.scored.battery == null ? "—" : `${g.scored.battery.toFixed(1)}/10`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Portability</dt>
-                  <dd className="mono font-semibold text-ink">{g.scored.portability.toFixed(1)}/10</dd>
+                  <dd className="mono font-semibold text-ink">{g.scored.portability == null ? "—" : `${g.scored.portability.toFixed(1)}/10`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Warranty</dt>
-                  <dd className="font-semibold text-ink">{wYears} yr</dd>
+                  <dd className="font-semibold text-ink">{wYears == null ? "—" : `${wYears} yr`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Cost per month</dt>
@@ -550,7 +550,7 @@ function GadgetDetail({ compare, onCompare }) {
                 <div className={rowCls}>
                   <dt className="text-ink2">Warranty coverage</dt>
                   <dd className="font-semibold text-ink">
-                    {wYears} yr — {coverPct}% of the window
+                    {wYears == null ? "Not specified for marketplace listings" : `${wYears} yr — ${coverPct}% of the window`}
                   </dd>
                 </div>
               </dl>

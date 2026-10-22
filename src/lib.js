@@ -15,26 +15,35 @@ export function money(n) {
 /* Performance to Cost index
    battery 25 (catalog battery spec) + student rating 25 + value 30
    (price vs category median monthly cost) + warranty 20. */
+// Missing-data policy: when a required input is unknown (null), EXCLUDE it and
+// renormalize the remaining weights to the full 0-100 scale. An unknown is never
+// treated as 0 (which would unfairly penalize) or as a guessed value (which
+// would fabricate). `ownIndexCoverage` reports how much of the formula had real
+// inputs so the UI can say what the score actually measures.
+export function ownIndexCoverage(g) {
+  return ownIndexParts(g).filter((p) => p.v != null).reduce((n, p) => n + p.pts, 0);
+}
+
 export function ownIndex(g) {
-  const med = GW.categoryMedianMonthly(g.category) || GW.monthlyCost(g);
-  const value = Math.max(0, Math.min(1, 1 - (GW.monthlyCost(g) / med - 0.6) / 0.8));
-  const s =
-    Math.min(g.battery / 12, 1) * 25 +
-    (g.rating / 5) * 25 +
-    value * 30 +
-    Math.min((g.value.warrantyYears * 12) / 24, 1) * 20;
-  return Math.round(s);
+  const parts = ownIndexParts(g);
+  const avail = parts.filter((p) => p.v != null);
+  const weight = avail.reduce((n, p) => n + p.pts, 0);
+  if (!weight) return 0;
+  const earned = avail.reduce((n, p) => n + p.v * p.pts, 0);
+  return Math.round((earned / weight) * 100);
 }
 
 /* Index breakdown (0-1 per component) for the detail page */
+const isNum = (x) => typeof x === "number" && Number.isFinite(x);
+
 export function ownIndexParts(g) {
   const med = GW.categoryMedianMonthly(g.category) || GW.monthlyCost(g);
   const value = Math.max(0, Math.min(1, 1 - (GW.monthlyCost(g) / med - 0.6) / 0.8));
   return [
-    { key: "battery", label: "Battery", pts: 25, v: Math.min(g.battery / 12, 1) },
-    { key: "rating", label: "Student rating", pts: 25, v: g.rating / 5 },
+    { key: "battery", label: "Battery", pts: 25, v: isNum(g.battery) ? Math.min(g.battery / 12, 1) : null },
+    { key: "rating", label: "Student rating", pts: 25, v: isNum(g.rating) ? g.rating / 5 : null },
     { key: "value", label: "Value vs category", pts: 30, v: value },
-    { key: "warranty", label: "Warranty", pts: 20, v: Math.min((g.value.warrantyYears * 12) / 24, 1) },
+    { key: "warranty", label: "Warranty", pts: 20, v: isNum(g.value?.warrantyYears) ? Math.min((g.value.warrantyYears * 12) / 24, 1) : null },
   ];
 }
 

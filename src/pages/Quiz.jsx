@@ -400,7 +400,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         </summary>
                         <div className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                           {SCORE_BARS.map(([k, label]) => (
-                            <Bar key={k} v={g.scored[k]} label={label} />
+                            <Bar key={k} v={g.scored[k] ?? 0} label={label} unavailable={g.scored[k] == null} />
                           ))}
                         </div>
                       </details>

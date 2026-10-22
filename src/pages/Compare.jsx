@@ -22,22 +22,22 @@ const ROWS = [
     label: "Cost per month", better: "low", badge: "Cheaper per month",
     num: (g) => GW.monthlyCost(g), val: (g) => `≈ ${money(GW.monthlyCost(g))}/mo`,
   },
-  { label: "Warranty", better: null, badge: null, num: null, val: (g) => `${g.value.warrantyYears} yr` },
+  { label: "Warranty", better: null, badge: null, num: null, val: (g) => g.value?.warrantyYears == null ? "—" : `${g.value.warrantyYears} yr` },
   {
     label: "Performance", better: "high", badge: "Faster",
-    num: (g) => g.scored.performance, val: (g) => `${g.scored.performance.toFixed(1)}/10`,
+    num: (g) => g.scored.performance, val: (g) => g.scored.performance == null ? "—" : `${g.scored.performance.toFixed(1)}/10`,
   },
   {
     label: "Battery", better: "high", badge: "Better battery",
-    num: (g) => g.scored.battery, val: (g) => `${g.scored.battery.toFixed(1)}/10`,
+    num: (g) => g.scored.battery, val: (g) => g.scored.battery == null ? "—" : `${g.scored.battery.toFixed(1)}/10`,
   },
   {
     label: "Portability", better: "high", badge: "More portable",
-    num: (g) => g.scored.portability, val: (g) => `${g.scored.portability.toFixed(1)}/10`,
+    num: (g) => g.scored.portability, val: (g) => g.scored.portability == null ? "—" : `${g.scored.portability.toFixed(1)}/10`,
   },
   {
     label: "Display", better: "high", badge: "Better display",
-    num: (g) => g.scored.display, val: (g) => `${g.scored.display.toFixed(1)}/10`,
+    num: (g) => g.scored.display, val: (g) => g.scored.display == null ? "—" : `${g.scored.display.toFixed(1)}/10`,
   },
   { label: "Repair path", better: null, badge: null, num: null, val: (g) => g.value.repairabilityLabel },
 ];

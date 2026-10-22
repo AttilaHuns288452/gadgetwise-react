@@ -79,7 +79,18 @@ export function Oidx({ g, size = "md", compact = false, className = "" }) {
   );
 }
 
-export function Bar({ v, max = 10, label, mono = false }) {
+export function Bar({ v, max = 10, label, mono = false, unavailable = false }) {
+  if (unavailable || v == null || !Number.isFinite(v)) {
+    return (
+      <div>
+        <div className="flex items-baseline justify-between text-sm">
+          <span className="text-ink2">{label}</span>
+          <span className="text-ink3">Not available</span>
+        </div>
+        <div className="mt-1 h-1.5 rounded-full bg-surface2" />
+      </div>
+    );
+  }
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm">

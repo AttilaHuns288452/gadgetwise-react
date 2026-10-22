@@ -52,10 +52,9 @@ export function toGadget(p) {
   const rating = typeof p.rating === "number" && p.rating > 0 ? p.rating : 0;
   const category = inferCategory(p.title);
 
-  // Neutral sub-scores: the marketplace sends no curated ratings. Derive a
-  // single 0-10 signal from the real user rating only, and leave the rest at a
-  // flat neutral so we never fabricate an advantage. Flagged marketplace:true.
-  const signal = rating > 0 ? (rating / 5) * 10 : 5;
+  // Unknown for marketplace listings: the upstream sends no battery, warranty,
+  // or curated sub-scores. Set them to null (unavailable) — never fabricated.
+  // The scoring engine excludes null inputs and renormalizes (see lib.js).
   const g = {
     id,
     brand,
@@ -79,19 +78,19 @@ export function toGadget(p) {
     specs: p.brandName ? { Brand: p.brandName } : {},
     specList: p.brandName ? [`Brand: ${p.brandName}`] : [],
     scored: {
-      performance: signal,
-      battery: signal,
-      durability: signal,
-      portability: signal,
-      display: signal,
-      camera: signal,
-      storage: signal,
-      repairability: 5,
+      performance: null,
+      battery: null,
+      durability: null,
+      portability: null,
+      display: null,
+      camera: null,
+      storage: null,
+      repairability: null,
     },
-    battery: 0, // unknown; contributes 0 to the battery sub-score rather than a fake advantage
+    battery: null, // unknown — excluded from scoring, never fabricated
     value: {
-      warrantyYears: 0, // unknown for marketplace listings
-      lifespanYears: 0,
+      warrantyYears: null, // unknown for marketplace listings
+      lifespanYears: null,
       repairabilityLabel: "Not specified for marketplace listings",
     },
     strengths: [],
