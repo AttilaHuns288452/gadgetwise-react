@@ -714,45 +714,31 @@ function GadgetDetail({ compare, onCompare }) {
             </>
           }
         >
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-rating">
-              Rating
-            </label>
-            <select
-              id="rv-rating"
-              className={fieldInputCls}
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-            >
-              <option value={5}>Excellent</option>
-              <option value={4}>Good</option>
-              <option value={3}>Fair</option>
-              <option value={2}>Poor</option>
-            </select>
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-usage">
-              Usage context (optional)
-            </label>
-            <input
-              id="rv-usage"
-              className={fieldInputCls}
-              placeholder="e.g., Programming + Online class · 8 months"
-            />
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-text">
-              Your review
-            </label>
-            <textarea
-              id="rv-text"
-              rows={4}
-              className={fieldInputCls}
-              placeholder="How has it held up for schoolwork? Battery? Durability?"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-          </div>
+          {user && (
+            <>
+              <div>
+                <label className={fieldLabelCls} htmlFor="rv-rating">Rating</label>
+                <select id="rv-rating" className={fieldInputCls} value={rating} onChange={(e) => setRating(Number(e.target.value))}>
+                  <option value={5}>Excellent</option>
+                  <option value={4}>Good</option>
+                  <option value={3}>Fair</option>
+                  <option value={2}>Poor</option>
+                  <option value={1}>Very poor</option>
+                </select>
+              </div>
+              <div>
+                <label className={fieldLabelCls} htmlFor="rv-usage">Usage context (optional)</label>
+                <input id="rv-usage" className={fieldInputCls} placeholder="e.g., Programming + online class · 8 months" />
+              </div>
+              <div>
+                <label className={fieldLabelCls} htmlFor="rv-text">Your review</label>
+                <textarea id="rv-text" rows={4} className={fieldInputCls}
+                  placeholder="How has it held up for schoolwork? Battery? Durability?"
+                  value={text} onChange={(e) => setText(e.target.value)} />
+              </div>
+            </>
+          )}
+          {reviewError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700">{reviewError}</p>}
         </Modal>
       )}
       {toastNode}
