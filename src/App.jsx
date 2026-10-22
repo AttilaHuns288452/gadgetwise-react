@@ -14,6 +14,8 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
 import Assistant from "./pages/Assistant.jsx";
+import { clearRuntimeCatalog, loadPublishedCatalog } from "./lib/catalog-runtime.js";
+import { supabaseConfigured } from "./lib/supabase.js";
 
 const NAV = [
   ["/", "Home"],
@@ -126,8 +128,29 @@ export default function App() {
   const navigate = useNavigate();
   const [compare, setCompare] = useState(new Set());
   const [q, setQ] = useState("");
+  const [catalogState, setCatalogState] = useState(() => ({
+    status: supabaseConfigured ? "loading" : "demo",
+    count: 0,
+    message: "",
+  }));
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith("/admin");
+
+  useEffect(() => {
+    let active = true;
+    if (supabaseConfigured) clearRuntimeCatalog();
+    loadPublishedCatalog()
+      .then((result) => { if (active) setCatalogState({ ...result, message: "" }); })
+      .catch((error) => {
+        clearRuntimeCatalog();
+        if (active) setCatalogState({
+          status: "error",
+          count: 0,
+          message: error instanceof Error ? error.message : "The live catalog could not be loaded.",
+        });
+      });
+    return () => { active = false; };
+  }, []);
 
   const onCompare = (id) =>
     setCompare((prev) => {
@@ -247,7 +270,24 @@ export default function App() {
       )}
 
       <main className="flex-1">
-        <Routes>
+        {catalogState.status === "loading" ? (
+          <div className="mx-auto max-w-3xl px-6 py-20 text-center">
+            <h1 className="text-2xl font-bold">Loading GadgetWise catalog…</h1>
+            <p className="mt-2 text-ink2">Connecting to the configured database.</p>
+          </div>
+        ) : (
+          <>
+            {catalogState.status === "empty" && (
+              <div role="status" className="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-950">
+                The database is connected, but no published gadgets are available yet. Add products in the admin console, verify their source and scoring fields, then publish them.
+              </div>
+            )}
+            {catalogState.status === "error" && (
+              <div role="alert" className="border-b border-red-200 bg-red-50 px-6 py-3 text-sm text-red-800">
+                {catalogState.message} The demo catalog has been disabled because Supabase is configured but unavailable.
+              </div>
+            )}
+            <Routes>
           <Route path="/" element={<Home compare={compare} onCompare={onCompare} />} />
           <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} />} />
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
@@ -261,7 +301,9 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/review-history" element={<ReviewHistory />} />
           <Route path="/admin" element={<Admin />} />
-        </Routes>
+            </Routes>
+          </>
+        )}
       </main>
 
       {!isAdmin && (
@@ -276,8 +318,9 @@ export default function App() {
               <p className="mt-4 max-w-md text-sm leading-relaxed text-on-hero2">
                 Compare gadgets by price, specs, ownership cost, and student ratings. Made for Filipino students.{" "}
                 <span className="text-white/45">
-                  All product data in this prototype is fictional, written for demonstration. Ratings and reviews come
-                  from seeded demo users.
+                  {catalogState.status === "demo"
+                    ? "The app is in local demo-data mode. Product specifications and sample reviews are illustrative, not verified retailer listings."
+                    : "Catalog entries are loaded from the configured database. Verify each product's source and freshness before purchase."}
                 </span>
               </p>
             </div>
@@ -287,7 +330,7 @@ export default function App() {
             <FooterColumn title="THIS PROJECT" items={THIS_PROJECT} />
           </div>
           <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-on-hero2">
-            <span>GadgetWise — a CC 116 frontend prototype. Not a store; no products are sold here.</span>
+            <span>GadgetWise helps students compare gadgets. Not a store; no products are sold here.</span>
             <span>Estimates shown are for demonstration only.</span>
           </div>
         </div>
