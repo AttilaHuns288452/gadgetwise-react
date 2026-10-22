@@ -114,7 +114,6 @@ function Field({ label, children }) {
   );
 }
 
-const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
 
 function Dashboard({ tab, stats, pendingRows }) {
@@ -135,7 +134,7 @@ function Dashboard({ tab, stats, pendingRows }) {
         </div>
         <div className="flex gap-3">
           <button className={btnSecondary} onClick={() => tab("reviews")}>Moderation queue</button>
-          <button className={btnPrimary} onClick={() => tab("add")}><Ico n="plus" size={16} /> Add gadget</button>
+          <button className={btnPrimary} onClick={() => tab("gadgets")}><Ico n="cube" size={16} /> View catalog</button>
         </div>
       </div>
       <hr className="mt-6 border-[#EAECF0]" />
@@ -219,11 +218,11 @@ function Reports({ stats }) {
   );
 }
 
-function Gadgets({ tab, rows, setRows, editIn, toast }) {
+function Gadgets() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
-  const [del, setDel] = useState(null);
   const cats = [...new Set(GW.gadgets.map((g) => g.category))];
+  const rows = GW.gadgets;
   const filtered = rows.filter((g) =>
     (cat === "all" || g.category === cat) &&
     `${g.brand} ${g.model}`.toLowerCase().includes(q.toLowerCase())
@@ -233,9 +232,10 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog records the recommendation engine and comparison tool rely on.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">
+            Live marketplace catalog the recommendation engine and comparison tool use. These are managed upstream and are read-only here.
+          </p>
         </div>
-        <button className={btnPrimary} onClick={() => tab("add")}><Ico n="plus" size={16} /> Add gadget</button>
       </div>
       <div className="mt-6 flex flex-wrap gap-3">
         <input className={`${inputCls} !w-72`} placeholder="Search brand or model..." value={q} onChange={(e) => setQ(e.target.value)} />
@@ -261,7 +261,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
               <tr key={g.id} className="border-b border-[#F2F4F7] last:border-0">
                 <td className={cellCls}>
                   <div className="flex items-center gap-3">
-                    <img src={g.img} alt="" className="h-11 w-11 shrink-0 rounded-md border border-[#E4E7EC] bg-white object-contain p-0.5" />
+                    <img src={g.image || g.img} alt="" className="h-11 w-11 shrink-0 rounded-md border border-[#E4E7EC] bg-white object-contain p-0.5" />
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#111827]">{displayName(g)}</div>
                       <div className="truncate text-[13px] text-[#6B7280]">{g.id}</div>
@@ -275,8 +275,6 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
                     <Link to={`/g/${g.id}`} className={iconBtn} title="View public page"><Ico n="eye" /></Link>
-                    <button className={iconBtn} title="Edit" onClick={() => editIn(g)}><Ico n="pencil" /></button>
-                    <button className={iconBtn} title="Delete" onClick={() => setDel(g)}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
@@ -287,186 +285,28 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
           </tbody>
         </table>
       </div>
-      {del && (
-        <Modal
-          title="Delete gadget"
-          sub="Removes the record from the catalog — public pages, comparisons, and the recommender stop showing it."
-          onClose={() => setDel(null)}
-          actions={<>
-            <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-            <button className={btnDangerCls} onClick={() => {
-              setRows(rows.filter((r) => r.id !== del.id));
-              setDel(null);
-              toast("Gadget deleted", "trash");
-            }}>Delete</button>
-          </>}
-        >
-          <p className="text-[17px] text-[#111827]">Remove <b>{displayName(del)}</b> from the catalog?</p>
-        </Modal>
-      )}
     </>
   );
 }
 
-function AddGadget({ tab, onSave, editing, toast }) {
-  const form = useRef(null);
-  const [specs, setSpecs] = useState(["Weight", "Ports"]);
-  const fillSample = () => {
-    const f = form.current;
-    if (!f) return;
-    f.brand.value = "Kaido"; f.model.value = "AirBook 14"; f.category.value = "laptops";
-    f.price.value = "39999"; f.year.value = "2026"; f.img.value = "/images/gadgets/kaido-airbook-14.jpg";
-    f.summary.value = "A thin 14-inch notebook for study, office work, and light creative tasks.";
-    f.warranty.value = "2"; f.lifespan.value = "4.5"; f.repairability.value = "5"; f.durability.value = "7.5";
-    f.repair.value = "Kaido authorized service center";
-    toast("Mock API response received — verify before saving", "info");
-  };
-  return (
-    <>
-      <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
-      <h1 className="mt-3 text-[30px] font-bold text-[#111827]">{editing ? "Edit Gadget" : "Add Gadget"}</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Prefill from the live marketplace API, then verify every field before saving.</p>
-
-      <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h2 className="text-[20px] font-bold text-[#111827]">External product API</h2>
-          <span className="rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#2260D4]">Live marketplace source — admin verification is mandatory</span>
-        </div>
-        <p className="mt-1 text-[13px] text-[#667085]">
-          Click Fetch Product Information to call the sample product API. In production this runs on the server (the browser never calls third-party APIs directly) and returns name, brand, category, and image — which the administrator then verifies or corrects before saving.
-        </p>
-        <button className={`${btnSecondary} mt-4`} onClick={fillSample}><Ico n="refresh" size={16} /> Fetch Product Information</button>
-      </div>
-      <div className="mt-4 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-        ⚠️ API data is unverified until an administrator reviews and saves it. The API never writes to the catalog by itself.
-      </div>
-
-      <form ref={form} className="mt-6 space-y-6" onSubmit={(e) => { e.preventDefault(); onSave(new FormData(e.target)); }}>
-        <Panel title="Core details">
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            <Field label="Brand"><input name="brand" className={inputCls} placeholder="e.g. Kaido" defaultValue={editing?.brand || ""} /></Field>
-            <Field label="Model"><input name="model" className={inputCls} placeholder="e.g. AirBook 14" defaultValue={editing?.model || ""} /></Field>
-            <Field label="Category">
-              <select name="category" className={inputCls} defaultValue={editing?.category || "smartphones"}>
-                {GW.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Price (₱)"><input name="price" className={inputCls} placeholder="39999" defaultValue={editing?.price ?? ""} /></Field>
-            <Field label="Release year"><input name="year" className={inputCls} placeholder="2026" /></Field>
-            <Field label="Image path"><input name="img" className={inputCls} placeholder="/images/gadgets/product-name.jpg" /></Field>
-          </div>
-          <div className="mt-5">
-            <Field label="Summary">
-              <textarea name="summary" rows="3" className={inputCls} placeholder="A short description for product pages and search results." />
-            </Field>
-          </div>
-        </Panel>
-
-        <Panel title="Value & durability">
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-            <Field label="Warranty (years)"><input name="warranty" className={inputCls} placeholder="2" /></Field>
-            <Field label="Estimated lifespan (years)"><input name="lifespan" className={inputCls} placeholder="4.5" /></Field>
-            <Field label="Repairability (0–10)"><input name="repairability" className={inputCls} placeholder="5" /></Field>
-            <Field label="Durability (0–10)"><input name="durability" className={inputCls} placeholder="7.5" /></Field>
-            <Field label="Repair path label"><input name="repair" className={inputCls} placeholder="Kaido authorized service center" /></Field>
-          </div>
-        </Panel>
-
-        <Panel title="Specifications">
-          <div className="space-y-3">
-            {specs.map((label, i) => (
-              <div key={i} className="flex gap-3">
-                <input className={`${inputCls} !w-56`} defaultValue={label} />
-                <input className={inputCls} placeholder="Value" />
-                <button type="button" className={iconBtn} title="Remove" onClick={() => setSpecs(specs.filter((_, j) => j !== i))}><Ico n="trash" /></button>
-              </div>
-            ))}
-          </div>
-          <button type="button" className={`${btnOutline} mt-4`} onClick={() => setSpecs([...specs, ""])}><Ico n="plus" size={16} /> Add specification row</button>
-        </Panel>
-
-        <div className="flex gap-3">
-          <button type="submit" className={btnPrimary}>Save gadget</button>
-          <button type="button" className={btnOutline} onClick={() => tab("gadgets")}>Cancel</button>
-        </div>
-      </form>
-    </>
-  );
-}
-
-function Categories({ rows, setRows, toast }) {
-  const [form, setForm] = useState(null);
-  const [del, setDel] = useState(null);
+function Categories() {
+  const rows = GW.categories.map(toCat);
   const counts = Object.fromEntries(
     rows.map((c) => {
       const inCat = GW.gadgets.filter((g) => g.category === c.id);
       return [c.id, { n: inCat.length, avg: inCat.length ? (inCat.reduce((s, g) => s + g.rating, 0) / inCat.length).toFixed(1) : "0.0" }];
     })
   );
-  const save = () => {
-    const name = form.name.trim();
-    if (!name) { toast("Give the category a name", "alert"); return; }
-    if (rows.some((r) => r.name.toLowerCase() === name.toLowerCase() && r.id !== form.editing)) {
-      toast("A category with that name already exists", "alert"); return;
-    }
-    setRows(form.editing
-      ? rows.map((r) => (r.id === form.editing ? { ...r, name, desc: form.desc } : r))
-      : [...rows, { id: slugify(name), name, desc: form.desc }]);
-    setForm(null);
-    toast(form.editing ? "Category updated" : "Category added", form.editing ? "edit" : "checkCircle");
-  };
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Categories</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Organization labels for the catalog.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">
+            Structural categories that organize the catalog. These are system configuration, shown here with their live catalog counts.
+          </p>
         </div>
-        <button className={btnPrimary} onClick={() => setForm({ name: "", desc: "" })}><Ico n="plus" size={16} /> Add category</button>
       </div>
-
-      {form && (
-        <Modal
-          title={form.editing ? "Edit category" : "Add category"}
-          sub="Category names appear in browse filters, the recommender, and the admin console."
-          onClose={() => setForm(null)}
-          actions={<>
-            <button className={btnOutlineCls} onClick={() => setForm(null)}>Cancel</button>
-            <button className={btnPrimaryCls} onClick={save}>{form.editing ? "Save" : "Add"}</button>
-          </>}
-        >
-          <div>
-            <label className={fieldLabelCls} htmlFor="catName">Name</label>
-            <input id="catName" className={fieldInputCls} placeholder="e.g., Cameras" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="catDesc">Description</label>
-            <input id="catDesc" className={fieldInputCls} placeholder="One line on what belongs here." value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} />
-          </div>
-        </Modal>
-      )}
-
-      {del && (() => {
-        const n = counts[del.id]?.n ?? 0;
-        return (
-          <Modal
-            title="Delete category"
-            sub={n ? `It still holds ${n} gadgets — move them to another category first.` : "The category is empty and will be removed."}
-            onClose={() => setDel(null)}
-            actions={<>
-              <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-              <button className={`${btnDangerCls} disabled:cursor-not-allowed disabled:bg-[#D0D5DD] disabled:text-[#667085]`} disabled={n > 0} onClick={() => {
-                setRows(rows.filter((r) => r.id !== del.id));
-                setDel(null);
-                toast("Category deleted", "trash");
-              }}>Delete</button>
-            </>}
-          >
-            <p className="text-[17px] text-[#111827]">Delete <b>{del.name}</b>?</p>
-          </Modal>
-        );
-      })()}
-
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {rows.map((c) => {
           const s = counts[c.id] || { n: 0, avg: "0.0" };
@@ -482,8 +322,6 @@ function Categories({ rows, setRows, toast }) {
                 </div>
                 <div className="flex gap-2">
                   <Link to="/gadgets" className={iconBtn} title="View catalog"><Ico n="eye" /></Link>
-                  <button className={iconBtn} title="Edit" onClick={() => setForm({ name: c.name, desc: c.desc, editing: c.id })}><Ico n="pencil" /></button>
-                  <button className={iconBtn} title="Delete" onClick={() => setDel(c)}><Ico n="trash" /></button>
                 </div>
               </div>
               <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.desc}</p>
@@ -769,12 +607,9 @@ export default function Admin() {
   const { signOut } = useAuth();
   const tabKey = params.get("tab") || "dashboard";
   const tab = (t) => setParams({ tab: t });
-  const [gadgets, setGadgets] = useState(GW.gadgets);
-  const [cats, setCats] = useState(() => GW.categories.map(toCat));
   // Real reviews from the database (never the fixture). Loaded on mount.
   const [reviews, setReviews] = useState([]);
   const [reviewsLoaded, setReviewsLoaded] = useState(false);
-  const [editing, setEditing] = useState(null);
   const [toast, toastNode] = useToast();
   const stats = catalogStats(GW.gadgets);
 
@@ -795,36 +630,14 @@ export default function Admin() {
     if (res.ok) setReviews(res.rows);
   };
 
-  const editIn = (g) => { setEditing(g); tab("add"); };
-  const saveGadget = (fd) => {
-    const price = Number(fd.get("price"));
-    if (!(price > 0)) { toast("Enter a price greater than zero", "alert"); return; }
-    const cat = fd.get("category");
-    if (!GW.categories.some((c) => c.id === cat)) {
-      toast("Pick a category from the list (manage categories on the Categories page)", "alert"); return;
-    }
-    const name = `${fd.get("brand") || ""} ${fd.get("model") || ""}`.trim() || "Untitled gadget";
-    if (!editing) {
-      setGadgets([...gadgets, {
-        id: slugify(name), brand: fd.get("brand") || "", model: fd.get("model") || "", category: cat,
-        price, rating: 0, status: "published",
-        img: fd.get("img") || "/images/gadgets/kaido-airbook-14.jpg",
-      }]);
-    }
-    setEditing(null);
-    tab("gadgets");
-    toast(editing ? "Changes saved" : "Gadget created — status: published");
-  };
-
   return (
     <Shell tabKey={tabKey} tab={tab} onOut={async () => { await signOut(); nav("/"); }}>
       {tabKey === "dashboard" && (
         <Dashboard tab={tab} stats={stats} pendingRows={reviews.filter((r) => r.status === "pending")} />
       )}
       {tabKey === "reports" && <Reports stats={stats} />}
-      {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} toast={toast} />}
-      {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} />}
-      {tabKey === "categories" && <Categories rows={cats} setRows={setCats} toast={toast} />}
+      {tabKey === "gadgets" && <Gadgets />}
+      {tabKey === "categories" && <Categories />}
       {tabKey === "reviews" && (
         <Reviews rows={reviews} setRows={setReviews} loaded={reviewsLoaded} reload={reloadReviews} toast={toast} />
       )}
