@@ -8,7 +8,6 @@ function Hero() {
   // to any product, and renders nothing if the catalog is still empty.
   const g =
     [...GW.gadgets].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0] || null;
-  if (!g) return null;
   return (
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
@@ -35,20 +34,22 @@ function Hero() {
             ))}
           </ul>
         </div>
-        <div className="card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-          <div className="relative">
-            <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Student favorite</span>
-            <Img gadget={g} className="w-full" imgClass="object-cover" eager />
+        {g && (
+          <div className="card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+            <div className="relative">
+              <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Student favorite</span>
+              <Img gadget={g} className="w-full" imgClass="object-cover" eager />
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 pt-4">
+              <p className="font-display text-lg font-bold text-ink">{g.model}</p>
+              <p className="mono text-xl font-bold text-ink">{money(g.price)}</p>
+            </div>
+            <div className="mt-4 flex items-center gap-3 bg-primary-wash px-5 py-3">
+              <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}</span>
+              <span className="text-sm font-medium text-ink2">Performance to Cost</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-3 px-5 pt-4">
-            <p className="font-display text-lg font-bold text-ink">{g.model}</p>
-            <p className="mono text-xl font-bold text-ink">{money(g.price)}</p>
-          </div>
-          <div className="mt-4 flex items-center gap-3 bg-primary-wash px-5 py-3">
-            <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}</span>
-            <span className="text-sm font-medium text-ink2">Performance to Cost</span>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );
