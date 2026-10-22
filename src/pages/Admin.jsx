@@ -373,10 +373,9 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
           onClose={() => setDel(null)}
           actions={<>
             <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-            <button className={btnDangerCls} onClick={() => {
-              setRows(rows.filter((r) => r.id !== del.id));
-              setDel(null);
-              toast("Gadget deleted", "trash");
+            <button className={btnDangerCls} onClick={async () => {
+              const saved = await setRows(rows.filter((r) => r.id !== del.id));
+              if (saved) { setDel(null); toast("Gadget deleted", "trash"); }
             }}>Delete</button>
           </>}
         >
@@ -535,10 +534,9 @@ function Categories({ rows, setRows, gadgets, toast }) {
             onClose={() => setDel(null)}
             actions={<>
               <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-              <button className={`${btnDangerCls} disabled:cursor-not-allowed disabled:bg-[#D0D5DD] disabled:text-[#667085]`} disabled={n > 0} onClick={() => {
-                setRows(rows.filter((r) => r.id !== del.id));
-                setDel(null);
-                toast("Category deleted", "trash");
+              <button className={`${btnDangerCls} disabled:cursor-not-allowed disabled:bg-[#D0D5DD] disabled:text-[#667085]`} disabled={n > 0} onClick={async () => {
+                const saved = await setRows(rows.filter((r) => r.id !== del.id));
+                if (saved) { setDel(null); toast("Category deleted", "trash"); }
               }}>Delete</button>
             </>}
           >
@@ -652,11 +650,10 @@ function Reviews({ rows, setRows, toast }) {
           onClose={() => setEdit(null)}
           actions={<>
             <button className={btnOutlineCls} onClick={() => setEdit(null)}>Cancel</button>
-            <button className={btnPrimaryCls} onClick={() => {
-              if (!edit.text.trim()) { toast("Review text cannot be empty", "alert"); return; }
-              setRows(rows.map((r) => (r.id === edit.id ? { ...r, text: edit.text, rating: edit.rating } : r)));
-              setEdit(null);
-              toast("Review edited", "edit");
+            <button className={btnPrimaryCls} onClick={async () => {
+              if (edit.text.trim().length < 10 || edit.text.trim().length > 2000) { toast("Review text must be 10–2,000 characters", "alert"); return; }
+              const saved = await setRows(rows.map((r) => (r.id === edit.id ? { ...r, text: edit.text.trim(), rating: edit.rating } : r)));
+              if (saved) { setEdit(null); toast("Review edited", "edit"); }
             }}>Save</button>
           </>}
         >
@@ -679,10 +676,9 @@ function Reviews({ rows, setRows, toast }) {
           onClose={() => setDel(null)}
           actions={<>
             <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-            <button className={btnDangerCls} onClick={() => {
-              setRows(rows.filter((x) => x.id !== del.id));
-              setDel(null);
-              toast("Review deleted", "trash");
+            <button className={btnDangerCls} onClick={async () => {
+              const saved = await setRows(rows.filter((x) => x.id !== del.id));
+              if (saved) { setDel(null); toast("Review deleted", "trash"); }
             }}>Delete</button>
           </>}
         >
@@ -793,6 +789,8 @@ function mapAdminGadget(row) {
     status: row.is_published ? "published" : "draft", img: row.image_url || "",
     year: row.release_year, summary: row.summary || "", specs: row.specs || {},
     scored: row.scored || {}, value: row.value_data || {}, data_source: row.data_source || "unverified",
+    source_url: row.source_url || "", battery: row.battery_hours == null ? 0 : Number(row.battery_hours),
+    legacy_data: row.legacy_data || {}, price_verified_at: row.price_verified_at || null,
   };
 }
 function mapAdminCategory(row) {
@@ -803,6 +801,7 @@ function mapAdminReview(row, gadgetsById, profilesById) {
   const p = profilesById.get(row.user_id);
   return {
     id: row.id, gadget_id: row.gadget_id, user_id: row.user_id,
+    moderated_by: row.moderated_by || null, moderated_at: row.moderated_at || null,
     gadget: g ? g.brand + " " + g.model : row.gadget_id,
     user: (p && p.display_name) || "GadgetWise user",
     date: row.created_at ? new Date(row.created_at).toLocaleDateString("en-PH") : "",
@@ -872,9 +871,9 @@ export default function Admin() {
       if (!roleResult.data) { setAccess("forbidden"); return; }
       setAccess("loading-data");
       const results = await Promise.all([
-        supabase.from("gadgets").select("id,category_id,brand,model,price,release_year,image_url,summary,specs,scored,value_data,data_source,is_published,reviews(rating)").order("brand"),
+        supabase.from("gadgets").select("id,category_id,brand,model,price,release_year,image_url,summary,specs,scored,value_data,legacy_data,battery_hours,data_source,source_url,price_verified_at,is_published,reviews(rating)").order("brand"),
         supabase.from("categories").select("id,name,description,is_published").order("name"),
-        supabase.from("reviews").select("id,gadget_id,user_id,rating,body,status,created_at").order("created_at", { ascending: false }),
+        supabase.from("reviews").select("id,gadget_id,user_id,rating,body,status,created_at,moderated_by,moderated_at").order("created_at", { ascending: false }),
         supabase.from("profiles").select("user_id,display_name"),
       ]);
       if (cancelled) return;
@@ -933,6 +932,7 @@ export default function Admin() {
     id: g.id, category_id: g.category, brand: g.brand, model: g.model, price: g.price,
     release_year: g.year || null, image_url: g.img || null, summary: g.summary || "",
     specs: g.specs || {}, scored: g.scored || {}, value_data: g.value || {},
+    legacy_data: g.legacy_data || {}, battery_hours: g.battery || null, source_url: g.source_url || null,
     data_source: g.data_source || "admin_entered_unverified", is_published: g.status === "published",
   }));
   const setCategoriesPersistently = (next) => saveRows("categories", cats, next, setCats, (category) => ({
@@ -942,8 +942,8 @@ export default function Admin() {
   const setReviewsPersistently = (next) => saveRows("reviews", reviews, next, setReviews, (review) => ({
     id: review.id, gadget_id: review.gadget_id, user_id: review.user_id,
     rating: review.rating, body: review.text, status: review.status,
-    moderated_by: review.status === "pending" ? null : user.id,
-    moderated_at: review.status === "pending" ? null : new Date().toISOString(),
+    moderated_by: review.status === "pending" ? null : (review.moderated_by || user.id),
+    moderated_at: review.status === "pending" ? null : (review.moderated_at || new Date().toISOString()),
   }));
 
   if (access === "checking" || access === "loading-data") {
@@ -969,19 +969,63 @@ export default function Admin() {
     const brand = String(fd.get("brand") || "").trim();
     const model = String(fd.get("model") || "").trim();
     const category = String(fd.get("category") || "");
+    const sourceUrl = String(fd.get("source_url") || "").trim();
+    const imageUrl = String(fd.get("img") || "").trim();
+    const shouldPublish = fd.get("is_published") === "on";
     if (!(price > 0) || !Number.isFinite(price)) { toast("Enter a valid price greater than zero", "alert"); return; }
     if (!brand || !model) { toast("Brand and model are required", "alert"); return; }
     if (!cats.some((item) => item.id === category)) { toast("Choose a valid database category", "alert"); return; }
+    if (imageUrl && !/^https?:\/\//i.test(imageUrl)) { toast("Use a complete HTTP(S) image URL", "alert"); return; }
+    if (shouldPublish && !/^https?:\/\//i.test(sourceUrl)) { toast("Add an HTTP(S) source URL before publishing", "alert"); return; }
+
+    const scoreInputs = [
+      ["performance", "score_performance"], ["battery", "score_battery"],
+      ["durability", "durability"], ["portability", "score_portability"],
+      ["display", "score_display"], ["camera", "score_camera"],
+      ["storage", "score_storage"], ["repairability", "repairability"],
+    ];
+    const scored = {};
+    for (const [key, field] of scoreInputs) {
+      const raw = fd.get(field);
+      if (raw === null || String(raw).trim() === "") {
+        if (shouldPublish) { toast("Complete all eight scoring inputs before publishing", "alert"); return; }
+        continue;
+      }
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0 || value > 10) { toast("All scoring inputs must be between 0 and 10", "alert"); return; }
+      scored[key] = value;
+    }
+
+    const specs = {};
+    for (let i = 0; i < 50; i += 1) {
+      const keyField = "spec_key_" + i;
+      const valueField = "spec_value_" + i;
+      if (!fd.has(keyField)) break;
+      const key = String(fd.get(keyField) || "").trim();
+      const value = String(fd.get(valueField) || "").trim();
+      if (key && value) specs[key] = value;
+    }
+    const numberOrZero = (key) => {
+      const value = Number(fd.get(key));
+      return Number.isFinite(value) && value >= 0 ? value : 0;
+    };
+    const valueData = {
+      warrantyYears: numberOrZero("warranty"),
+      lifespanYears: numberOrZero("lifespan"),
+      repairabilityLabel: String(fd.get("repair") || "").trim(),
+    };
     const payload = {
       id: editing ? editing.id : slugify(brand + " " + model),
       category_id: category, brand, model, price,
       release_year: Number(fd.get("year")) || null,
-      image_url: String(fd.get("img") || "").trim() || null,
+      image_url: imageUrl || null,
       summary: String(fd.get("summary") || "").trim(),
-      specs: editing ? (editing.specs || {}) : {}, scored: editing ? (editing.scored || {}) : {},
-      value_data: editing ? (editing.value || {}) : {},
+      specs, scored, value_data: valueData,
+      battery_hours: numberOrZero("battery_hours") || null,
+      source_url: sourceUrl || null,
       data_source: "admin_entered_unverified",
-      is_published: Boolean(editing && editing.status === "published"),
+      legacy_data: editing ? (editing.legacy_data || {}) : {},
+      is_published: shouldPublish,
     };
     try {
       const query = supabase.from("gadgets");
@@ -990,16 +1034,16 @@ export default function Admin() {
         : await query.insert(payload).select("id").single();
       if (result.error) throw result.error;
       const { data, error } = await supabase.from("gadgets")
-        .select("id,category_id,brand,model,price,release_year,image_url,summary,specs,scored,value_data,data_source,is_published,reviews(rating)")
+        .select("id,category_id,brand,model,price,release_year,image_url,summary,specs,scored,value_data,legacy_data,battery_hours,data_source,source_url,price_verified_at,is_published,reviews(rating)")
         .order("brand");
       if (error) throw error;
       setGadgets((data || []).map(mapAdminGadget));
       setEditing(null);
       tab("gadgets");
-      toast(editing ? "Gadget changes saved" : "Gadget saved as an unpublished draft; verify its source before publishing.");
+      toast(shouldPublish ? "Gadget published" : "Gadget saved as an unpublished draft");
     } catch (error) {
       console.error("Gadget save failed:", error instanceof Error ? error.message : "unknown");
-      toast("Could not save this gadget. Check required fields and database permissions.", "alert");
+      toast("Could not save this gadget. Check the validation message and database permissions.", "alert");
     }
   };
 
@@ -1012,8 +1056,8 @@ export default function Admin() {
       {tabKey === "dashboard" && <AdminOverview gadgets={gadgets} categories={cats} reviews={reviews} />}
       {tabKey === "reports" && <AdminNotice title="Reports not yet connected" body="The former reports used static demo metrics. Live analytics need real event collection before they can be shown truthfully." />}
       {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgetsPersistently} editIn={editIn} toast={toast} />}
-      {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} />}
-      {tabKey === "categories" && <Categories rows={cats} setRows={setCategoriesPersistently} toast={toast} />}
+      {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} categories={cats} />}
+      {tabKey === "categories" && <Categories rows={cats} gadgets={gadgets} setRows={setCategoriesPersistently} toast={toast} />}
       {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviewsPersistently} toast={toast} />}
       {tabKey === "users" && <AdminNotice title="User directory not yet implemented" body="This page no longer displays fabricated accounts. A production user directory needs a secure server-side Admin API and appropriate privacy controls." />}
       {toastNode}
