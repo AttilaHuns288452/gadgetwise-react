@@ -18,3 +18,7 @@ This is a schema foundation, not proof that the migration has been applied to a 
 ## Required follow-through
 
 The remaining application must migrate each catalog and account page from demo arrays/localStorage to the database services and add a proper administrator setup procedure. The AI assistant page needs a deployed Supabase function and matching secrets before live requests can succeed. Live RLS behavior must be tested against an isolated Supabase project.
+
+## Retailer data adapter
+
+Live Lazada search is separate from the curated recommendation catalog. The existing `api/lazada/search.js` route keeps the API key server-side and normalizes the third-party response via `lib/lazada.js`. Admin lookup can prefill brand, listing title, price, image and source URL, but a person must verify the listing and complete missing attributes/scoring before publication. Static GitHub Pages cannot host the serverless API route; use Vercel or host the route elsewhere.
