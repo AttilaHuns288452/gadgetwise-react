@@ -5,11 +5,24 @@ import { useAuth } from "../lib/auth.js";
 
 function Login() {
   const navigate = useNavigate();
-  const { signIn, configured, demoEnabled } = useAuth();
+  const { signIn, signInWithGoogle, configured, demoEnabled } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setBusy(true);
+    try {
+      const { error: err } = await signInWithGoogle();
+      if (err) setError(err.message || "Google sign-in could not be started.");
+    } catch {
+      setError("Google sign-in could not be started. Check the Supabase Google provider configuration.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -61,8 +74,20 @@ function Login() {
               className={fieldInputCls}
             />
           </div>
+          <div className="-mt-3 text-right text-sm">
+            <Link to="/reset-password" className="font-semibold text-primary hover:underline">Forgot password?</Link>
+          </div>
           <button type="submit" disabled={busy || (!configured && !demoEnabled)} className="btn-primary w-full disabled:opacity-60">
             {busy ? "Signing in…" : "Log in"}
+          </button>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-ink3">
+            <span className="h-px flex-1 bg-line" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          <button type="button" disabled={busy || !configured} onClick={handleGoogleSignIn}
+            className="btn-outline w-full disabled:cursor-not-allowed disabled:opacity-50">
+            Continue with Google
           </button>
           {error && (
             <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
