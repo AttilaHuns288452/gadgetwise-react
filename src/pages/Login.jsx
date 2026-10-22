@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 
+// Only allow a same-app path as a return destination (blocks open redirects).
+function safeNext(raw) {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
+}
+
 function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = safeNext(searchParams.get("next"));
   const { signIn, configured } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +28,7 @@ function Login() {
       setError(err.message || "Could not sign in. Check your email and password.");
       return;
     }
-    navigate("/profile");
+    navigate(next);
   };
 
   return (

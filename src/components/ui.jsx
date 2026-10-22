@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { money, ownIndex, GW } from "../lib.js";
-import { useAuth } from "../lib/auth.js";
+import { useAuth, useAuthPrompt, requireAuth } from "../lib/auth.js";
 import { loadWishlist, syncWishlist } from "../lib/store.js";
 
 /* Canonical name builder lives on GW (data.js) so moderation rows match the UI */
@@ -150,6 +151,8 @@ export function useWishlist() {
     ids,
     has: (id) => ids.has(id),
     toggle: (id) => {
+      // Account-gated: favourites are user data, so a guest must sign in first.
+      if (!requireAuth("save gadgets to your wishlist")) return;
       const s = _wishRead();
       s.has(id) ? s.delete(id) : s.add(id);
       _wishWrite(s);
@@ -257,6 +260,42 @@ export function Modal({ title, sub, children, actions, onClose }) {
         <div className="mt-6 flex justify-end gap-2.5">{actions}</div>
       </div>
     </div>
+  );
+}
+
+/* Shared sign-in prompt for guests who attempt an account-gated action
+   (favorite, review, ...). Rendered once in App; every gated action routes
+   through requireAuth() so the prompt and return-to stay consistent. */
+export function AuthPromptHost() {
+  const [prompt, close] = useAuthPrompt();
+  const { pathname, search } = useLocation();
+  if (!prompt) return null;
+  const next = encodeURIComponent(pathname + search);
+  return (
+    <Modal
+      title="Sign in to continue"
+      sub={`You need an account to ${prompt.action}.`}
+      onClose={close}
+      actions={
+        <>
+          <button type="button" className={btnOutlineCls} onClick={close}>
+            Not now
+          </button>
+          <Link to={`/login?next=${next}`} className={btnPrimaryCls} onClick={close}>
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <p className="text-sm leading-relaxed text-ink2">
+        Create a free account to save favourites, write reviews, and keep your
+        comparisons across devices. Browsing, search, and recommendations stay
+        open to everyone.
+      </p>
+      <Link to={`/register?next=${next}`} className="text-sm font-semibold text-[#2563EB]" onClick={close}>
+        Create an account instead →
+      </Link>
+    </Modal>
   );
 }
 

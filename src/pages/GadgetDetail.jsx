@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
-import { useAuth } from "../lib/auth.js";
+import { useAuth, requireAuth } from "../lib/auth.js";
 import { submitReview as submitReviewRecord } from "../lib/store.js";
 import { isListingId, fetchListing } from "../lib/marketplace.js";
 import {
@@ -223,6 +223,7 @@ function GadgetDetail({ compare, onCompare }) {
   ];
 
   const submitReview = async () => {
+    if (!requireAuth("write a review")) return;
     const res = await submitReviewRecord(uid, {
       gadget_id: g.id,
       rating,
@@ -283,7 +284,7 @@ function GadgetDetail({ compare, onCompare }) {
             >
               Add to Compare
             </button>
-            <button type="button" onClick={() => setReviewOpen(true)} className="btn-primary">
+            <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className="btn-primary">
               Write Review
             </button>
             {g.productUrl && (
@@ -638,7 +639,7 @@ function GadgetDetail({ compare, onCompare }) {
               ))}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              <button type="button" onClick={() => setReviewOpen(true)} className="btn-primary">
+              <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className="btn-primary">
                 Write a review
               </button>
               <span className="text-sm text-ink3">

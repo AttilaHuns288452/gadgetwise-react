@@ -1,36 +1,68 @@
 /**
- * Auth state for the app. Real Supabase auth when configured; otherwise falls
- * back to the demo localStorage user so the prototype stays browsable offline.
+ * Auth state for the app. Real Supabase auth only — there is NO demo or
+ * localStorage fallback identity. If Supabase is not configured, authentication
+ * is simply unavailable and sign-in attempts fail safely (never a fabricated
+ * "logged in" state from an arbitrary email/password).
  *
- * Session restoration: subscribes to onAuthStateChange and reads the persisted
- * session once on mount, so a refresh does not flash the logged-out screen.
+ * Session restoration: reads the persisted Supabase session once on mount and
+ * tracks onAuthStateChange, so a refresh does not flash the logged-out screen.
  */
 import { useEffect, useState, useCallback } from "react";
 import { supabase, supabaseConfigured } from "./supabase.js";
 
-const DEMO_KEY = "gw_user";
+// ---- shared auth gate -----------------------------------------------------
+// One place to ask "is a signed-in user required for this action?" so every
+// protected action (favorite, review, ...) routes through the same prompt
+// instead of each page inventing its own gate.
+let _authUser = null;
+const _promptListeners = new Set();
 
-function readDemoUser() {
-  try {
-    const raw = localStorage.getItem(DEMO_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+export function setAuthUser(u) {
+  _authUser = u;
 }
+
+/** Returns true when a user is signed in. Otherwise opens the sign-in prompt. */
+export function requireAuth(action) {
+  if (_authUser) return true;
+  const payload = { action };
+  _promptListeners.forEach((fn) => fn(payload));
+  return false;
+}
+
+/** Host hook: renders the shared sign-in prompt for guests. */
+export function useAuthPrompt() {
+  const [prompt, setPrompt] = useState(null);
+  useEffect(() => {
+    const fn = (p) => setPrompt(p);
+    _promptListeners.add(fn);
+    return () => {
+      _promptListeners.delete(fn);
+    };
+  }, []);
+  return [prompt, () => setPrompt(null)];
+}
+// ---------------------------------------------------------------------------
+
+const notConfigured = () => ({
+  error: { message: "Sign-in is unavailable: authentication is not configured." },
+});
 
 export function useAuth() {
   const [user, setUser] = useState(null);
-  const [ready, setReady] = useState(!supabaseConfigured); // demo mode is ready immediately
+  const [ready, setReady] = useState(false);
   const [admin, setAdmin] = useState(false);
+
+  // Keep the shared gate's notion of the current user in sync.
+  useEffect(() => {
+    setAuthUser(user);
+  }, [user]);
 
   useEffect(() => {
     if (!supabaseConfigured) {
-      setUser(readDemoUser());
+      // No auth provider wired: stay signed out, treat auth as ready.
       setReady(true);
       return;
     }
-
     let cancelled = false;
 
     // Restore any persisted session first, then track changes.
@@ -73,23 +105,13 @@ export function useAuth() {
   }, [user]);
 
   const signIn = useCallback(async (email, password) => {
-    if (!supabaseConfigured) {
-      const u = { name: "AV Demo", email };
-      localStorage.setItem(DEMO_KEY, JSON.stringify(u));
-      setUser(u);
-      return { error: null };
-    }
+    if (!supabaseConfigured) return notConfigured();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   }, []);
 
   const signUp = useCallback(async (name, email, password) => {
-    if (!supabaseConfigured) {
-      const u = { name: name.trim() || "AV Demo", email };
-      localStorage.setItem(DEMO_KEY, JSON.stringify(u));
-      setUser(u);
-      return { error: null };
-    }
+    if (!supabaseConfigured) return { ...notConfigured(), needsConfirm: false };
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -99,12 +121,7 @@ export function useAuth() {
   }, []);
 
   const signOut = useCallback(async () => {
-    if (!supabaseConfigured) {
-      localStorage.removeItem(DEMO_KEY);
-      setUser(null);
-      return;
-    }
-    await supabase.auth.signOut();
+    if (supabaseConfigured) await supabase.auth.signOut();
     setUser(null);
   }, []);
 

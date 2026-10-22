@@ -4,6 +4,7 @@ import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { loadAllReviews, setReviewStatus, editReview, deleteReview } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
+import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
 const ICONS = {
@@ -115,35 +116,6 @@ function Field({ label, children }) {
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
-
-function Signin({ onIn }) {
-  const nav = useNavigate();
-  return (
-    <div className="admin-zoom min-h-screen bg-white px-6 lg:px-12 2xl:px-16 py-8 font-[Inter,ui-sans-serif,system-ui,sans-serif]">
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2563EB] text-white"><Ico n="box" size={22} /></span>
-        <span className="text-[19px] font-bold text-[#111827]">Gadget<span className="text-[#2563EB]">Wise</span></span>
-      </div>
-      <div className="mt-12 max-w-none">
-        <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6B7280]">▪ Staff Console</div>
-        <h1 className="mt-3 text-[48px] font-bold leading-none text-[#111827]">Admin sign-in</h1>
-        <p className="mt-3 text-[15px] text-[#4B5563]">Gadget Wise team console prototype.</p>
-        <div className="mt-8 rounded-lg border border-[#F0D8A8] bg-[#FCF3E4] px-4 py-3 text-[13px] text-[#8A6520]">
-          Administrator access is enforced in the database via the Supabase{" "}
-          <b>is_admin()</b> role check. Only the designated admin account can
-          reach this console. This gate exists to route operators, not to grant
-          access — the real authorization runs server-side.
-        </div>
-        <button type="submit" onClick={onIn} className="mt-6 w-full rounded-lg bg-[#1D4E8F] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#163c72]">
-          Open prototype console
-        </button>
-        <button type="button" onClick={() => nav("/")} className="mt-6 block w-full text-center text-[13px] text-[#1B6AC9] hover:underline">
-          ← Back to GadgetWise
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Dashboard({ tab, stats, pendingRows }) {
   const s = stats;
@@ -794,7 +766,7 @@ function Shell({ tabKey, tab, onOut, children }) {
 export default function Admin() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [inSession, setIn] = useState(() => sessionStorage.getItem("gw-admin") === "1");
+  const { signOut } = useAuth();
   const tabKey = params.get("tab") || "dashboard";
   const tab = (t) => setParams({ tab: t });
   const [gadgets, setGadgets] = useState(GW.gadgets);
@@ -823,10 +795,6 @@ export default function Admin() {
     if (res.ok) setReviews(res.rows);
   };
 
-  if (!inSession) {
-    return <Signin onIn={() => { sessionStorage.setItem("gw-admin", "1"); setIn(true); }} />;
-  }
-
   const editIn = (g) => { setEditing(g); tab("add"); };
   const saveGadget = (fd) => {
     const price = Number(fd.get("price"));
@@ -849,7 +817,7 @@ export default function Admin() {
   };
 
   return (
-    <Shell tabKey={tabKey} tab={tab} onOut={() => { sessionStorage.removeItem("gw-admin"); setIn(false); }}>
+    <Shell tabKey={tabKey} tab={tab} onOut={async () => { await signOut(); nav("/"); }}>
       {tabKey === "dashboard" && (
         <Dashboard tab={tab} stats={stats} pendingRows={reviews.filter((r) => r.status === "pending")} />
       )}

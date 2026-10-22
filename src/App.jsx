@@ -15,7 +15,7 @@ import Register from "./pages/Register.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
 import { useAuth } from "./lib/auth.js";
 import { loadCatalog } from "./lib/catalog.js";
-import { btnPrimaryCls } from "./components/ui.jsx";
+import { btnPrimaryCls, AuthPromptHost } from "./components/ui.jsx";
 
 const NAV = [
   ["/", "Home"],
@@ -372,6 +372,7 @@ export default function App() {
         </div>
       </footer>
       )}
+      <AuthPromptHost />
     </div>
   );
 }

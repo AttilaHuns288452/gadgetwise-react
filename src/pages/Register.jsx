@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 
+// Only allow a same-app path as a return destination (blocks open redirects).
+function safeNext(raw) {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
+}
+
 function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = safeNext(searchParams.get("next"));
   const { signUp, configured } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,7 +35,7 @@ function Register() {
       setNotice("Check your email to confirm your account, then sign in.");
       return;
     }
-    navigate("/profile");
+    navigate(next);
   };
 
   return (
