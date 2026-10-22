@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
 import { useAuth } from "../lib/auth.js";
 import { submitReview as submitReviewRecord } from "../lib/store.js";
+import { isListingId, fetchListing } from "../lib/marketplace.js";
 import {
   Img,
   Stars,
@@ -151,7 +152,31 @@ function GadgetDetail({ compare, onCompare }) {
   const [extra, setExtra] = useState([]);
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
-  const g = GW.getGadget(id);
+  const [fetched, setFetched] = useState(null);
+  // Marketplace listings live in an in-memory registry; a deep-link or refresh
+  // would 404. Fetch-on-miss so /g/lazada-<id> always resolves.
+  const [loadingListing, setLoadingListing] = useState(isListingId(id));
+  useEffect(() => {
+    if (!isListingId(id)) return;
+    let cancelled = false;
+    setLoadingListing(true);
+    fetchListing(id).then((found) => {
+      if (cancelled) return;
+      setFetched(found);
+      setLoadingListing(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  const g = GW.getGadget(id) || fetched;
+  if (!g && loadingListing) {
+    return (
+      <section className="section">
+        <h1>Loading…</h1>
+      </section>
+    );
+  }
   if (!g) {
     return (
       <section className="section">

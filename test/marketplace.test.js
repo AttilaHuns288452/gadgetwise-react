@@ -51,6 +51,42 @@ test("toGadget handles a product with no rating/brand without crashing", () => {
   assert.equal(typeof g.value.repairabilityLabel, "string");
 });
 
+test("fetchListing: deep-links resolve via API when registry is cold", async () => {
+  // Simulate a cold registry (fresh browser on a deep link) by stubbing fetch.
+  const { fetchListing, isListingId, getListing } = await import("../src/lib/marketplace.js");
+  assert.equal(isListingId("lazada-777"), true);
+  assert.equal(getListing("lazada-777"), null, "starts unregistered");
+
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ product: { productId: "777", title: "Cold Load", price: 500, rating: 4 } }),
+  });
+  const g = await fetchListing("lazada-777");
+  globalThis.fetch = realFetch;
+
+  assert.ok(g, "fetch-on-miss returns the product");
+  assert.equal(g.id, "lazada-777");
+  assert.equal(getListing("lazada-777")?.model, "Cold Load", "registered after fetch so it renders");
+
+  // Non-marketplace id must not touch the network.
+  let called = false;
+  globalThis.fetch = async () => { called = true; return { ok: true, json: async () => ({}) }; };
+  await fetchListing("apple-macbook-air-m1");
+  globalThis.fetch = realFetch;
+  assert.equal(called, false, "curated ids never hit the API");
+});
+
+test("fetchListing returns null on upstream failure (no fake product)", async () => {
+  const { fetchListing, getListing } = await import("../src/lib/marketplace.js");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, json: async () => ({ error: { code: "rate_limited" } }) });
+  const g = await fetchListing("lazada-888");
+  globalThis.fetch = realFetch;
+  assert.equal(g, null, "failed fetch must not fabricate a product");
+  assert.equal(getListing("lazada-888"), null);
+});
+
 test("ownIndex is missing-data aware: excludes nulls, never fabricates", async () => {
   const { ownIndex, ownIndexCoverage } = await import("../src/lib.js");
   const { toGadget: t } = await import("../src/lib/marketplace.js");

@@ -120,3 +120,24 @@ export function getListing(id) {
 export function isListingId(id) {
   return typeof id === "string" && id.startsWith("lazada-");
 }
+
+/**
+ * Fetch-on-miss: load a marketplace listing by id from the API and register it.
+ * The registry is in-memory, so a deep-link or refresh would otherwise 404.
+ * Returns the gadget, or null when unavailable (deleted, upstream down, etc).
+ */
+export async function fetchListing(id) {
+  if (!isListingId(id)) return null;
+  const existing = REGISTRY.get(id);
+  if (existing) return existing;
+  const productId = id.slice("lazada-".length);
+  try {
+    const r = await fetch(`/api/lazada/product?id=${encodeURIComponent(productId)}&marketplace=ph`);
+    const d = await r.json();
+    const p = d?.product;
+    if (!r.ok || !p) return null;
+    return toGadget(p);
+  } catch {
+    return null;
+  }
+}
