@@ -9,6 +9,8 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase, supabaseConfigured } from "./supabase.js";
 
 const DEMO_KEY = "gw_user";
+// Demo identities are opt-in and development-only; never silently trust browser storage.
+const demoAuthEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_AUTH === "true";
 
 function readDemoUser() {
   try {
@@ -25,7 +27,7 @@ export function useAuth() {
 
   useEffect(() => {
     if (!supabaseConfigured) {
-      setUser(readDemoUser());
+      setUser(demoAuthEnabled ? readDemoUser() : null);
       setReady(true);
       return;
     }
@@ -53,6 +55,7 @@ export function useAuth() {
 
   const signIn = useCallback(async (email, password) => {
     if (!supabaseConfigured) {
+      if (!demoAuthEnabled) return { error: new Error("Authentication is unavailable because Supabase is not configured.") };
       const u = { name: "AV Demo", email };
       localStorage.setItem(DEMO_KEY, JSON.stringify(u));
       setUser(u);
@@ -64,6 +67,7 @@ export function useAuth() {
 
   const signUp = useCallback(async (name, email, password) => {
     if (!supabaseConfigured) {
+      if (!demoAuthEnabled) return { error: new Error("Registration is unavailable because Supabase is not configured."), needsConfirm: false };
       const u = { name: name.trim() || "AV Demo", email };
       localStorage.setItem(DEMO_KEY, JSON.stringify(u));
       setUser(u);
@@ -79,7 +83,7 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     if (!supabaseConfigured) {
-      localStorage.removeItem(DEMO_KEY);
+      if (demoAuthEnabled) localStorage.removeItem(DEMO_KEY);
       setUser(null);
       return;
     }
@@ -87,5 +91,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, ready, configured: supabaseConfigured, signIn, signUp, signOut };
+  return { user, ready, configured: supabaseConfigured, demoEnabled: demoAuthEnabled, signIn, signUp, signOut };
 }
