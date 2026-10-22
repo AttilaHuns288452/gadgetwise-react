@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { toGadget, isRealProduct, registerListings, isListingId } from "../src/lib/marketplace.js";
+import { toGadget, registerListings, isListingId, getListing } from "../src/lib/marketplace.js";
 
 // Admin authorization is enforced in the database (migration 0003). These tests
 // pin the client-visible contract: the admin gate must depend on the DB is_admin()
@@ -12,7 +12,8 @@ test("admin gate contract: is_admin() is the only source of truth", async () => 
   const fakeRpc = (result) => Promise.resolve({ data: result });
   const deriveAdmin = async (rpc) => {
     try {
-      return (await rpc()) === true;
+      const { data } = await rpc();
+      return data === true;
     } catch {
       return false;
     }
@@ -28,5 +29,5 @@ test("marketplace listing id never collides with curated ids", () => {
   assert.equal(isListingId(g.id), true, "marketplace ids are namespaced lazada-");
   assert.equal(isListingId("apple-macbook-air-m1"), false, "curated ids are not");
   registerListings([{ productId: "99999", title: "Y", price: 5 }]);
-  assert.equal(isRealProduct(g), true);
+  assert.equal(getListing("lazada-12345"), g, "listing registered by id");
 });
