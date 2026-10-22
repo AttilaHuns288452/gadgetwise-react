@@ -147,6 +147,9 @@ function GadgetDetail({ compare, onCompare }) {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
   const [extra, setExtra] = useState([]);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const { user } = useAuth();
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
   const g = GW.getGadget(id);
