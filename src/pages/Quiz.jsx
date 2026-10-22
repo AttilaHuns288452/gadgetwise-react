@@ -88,6 +88,27 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   const summary = cat && band && useCase ? `${catName(cat)} · ${band.label} · ${useCase.label}` : "";
 
   useEffect(() => {
+    if (step !== 5 || !engine || !results.length || !user?.id || !supabaseConfigured || !supabase) return;
+    const resultIds = results.map((row) => row.gadget.id);
+    const key = JSON.stringify([user.id, cat, band?.id, useId, prio, resultIds]);
+    if (lastSavedRecommendation.current === key) return;
+    lastSavedRecommendation.current = key;
+    supabase.from("user_recommendations").insert({
+      user_id: user.id,
+      input: { category: cat, budget: band, useCase: useId, priorities: prio },
+      result_gadget_ids: resultIds,
+    }).then(({ error }) => {
+      if (error) {
+        lastSavedRecommendation.current = "";
+        console.error("Recommendation history save failed:", error.message);
+      }
+    }).catch((error) => {
+      lastSavedRecommendation.current = "";
+      console.error("Recommendation history save failed:", error instanceof Error ? error.message : "unknown");
+    });
+  }, [step, engine, user?.id]);
+
+  useEffect(() => {
     if (step === 5 && engine && results.length) {
       toast(`Shortlist ready — showing the top ${results.length} of ${engine.results.length}`);
     }
