@@ -1,4 +1,4 @@
-import { GW } from "./lib.js";
+import { GW } from "../lib.js";
 import { supabase, supabaseConfigured } from "./supabase.js";
 
 function replaceContents(target, items) {
