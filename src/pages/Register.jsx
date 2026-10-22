@@ -5,7 +5,7 @@ import { useAuth } from "../lib/auth.js";
 
 function Register() {
   const navigate = useNavigate();
-  const { signUp, configured } = useAuth();
+  const { signUp, configured, demoEnabled } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,17 +18,22 @@ function Register() {
     setError("");
     setNotice("");
     setBusy(true);
-    const { error: err, needsConfirm } = await signUp(name, email, password);
-    setBusy(false);
-    if (err) {
-      setError(err.message || "Could not create your account. Try again.");
-      return;
+    try {
+      const { error: err, needsConfirm } = await signUp(name.trim(), email.trim(), password);
+      if (err) {
+        setError(err.message || "Could not create your account. Try again.");
+        return;
+      }
+      if (needsConfirm) {
+        setNotice("Check your email to confirm your account, then sign in.");
+        return;
+      }
+      navigate("/profile");
+    } catch {
+      setError("Registration failed because the authentication service could not be reached. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    if (needsConfirm) {
-      setNotice("Check your email to confirm your account, then sign in.");
-      return;
-    }
-    navigate("/profile");
   };
 
   return (
@@ -75,7 +80,7 @@ function Register() {
               className={fieldInputCls}
             />
           </div>
-          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+          <button type="submit" disabled={busy || (!configured && !demoEnabled)} className="btn-primary w-full disabled:opacity-60">
             {busy ? "Creating account…" : "Create account"}
           </button>
           {error && (
@@ -88,10 +93,11 @@ function Register() {
               {notice}
             </p>
           )}
-          {!configured && (
-            <p className="text-center text-xs text-ink2">
-              Demo mode: no account is created; sign-in stays on this device.
-            </p>
+          {demoEnabled && (
+            <p className="text-center text-xs text-ink2">Development demo mode is enabled. No real account is created.</p>
+          )}
+          {!configured && !demoEnabled && (
+            <p role="status" className="rounded-lg bg-amber-50 px-4 py-2.5 text-sm text-amber-900">Registration is not configured. Set up Supabase to create real accounts.</p>
           )}
           <p className="text-center text-sm text-ink2">
             Already have an account? <Link to="/login" className="font-semibold text-primary hover:text-primary-dark">Log in</Link>
