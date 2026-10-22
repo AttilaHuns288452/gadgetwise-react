@@ -142,6 +142,10 @@ export default function App() {
   const [q, setQ] = useState("");
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
+  // Auth and account routes need no product data — keep them reachable even if
+  // the marketplace is down, so a visitor can always sign in. Only the
+  // product-discovery routes show the catalog error state.
+  const needsCatalog = !["/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history"].includes(pathname);
   const { admin: isAdminUser } = useAuth();
 
   const onCompare = (id) =>
@@ -264,7 +268,7 @@ export default function App() {
       )}
 
       <main className="flex-1">
-        {catalogError ? (
+        {catalogError && needsCatalog ? (
           <section className="section">
             <div className="card max-w-xl p-8 text-center">
               <h1 className="text-2xl">Couldn't load live products</h1>
