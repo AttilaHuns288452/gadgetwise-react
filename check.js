@@ -1,5 +1,9 @@
 // One runnable check for the ported scoring logic. `node check.js`
 import assert from "node:assert";
+// Populate GW with the test fixture (fictional catalog) before asserting — this
+// validates the scoring engine against known inputs without the fixture ever
+// shipping in the production bundle (it lives in test/fixture.js).
+import "./test/fixture.js";
 import { GW, money, ownIndex, frontier, recommend } from "./src/lib.js";
 
 assert.ok(GW.gadgets.length >= 10, "catalog should have at least 10 gadgets");

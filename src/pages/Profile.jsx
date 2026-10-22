@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
 import { GadgetCard, useWishlist } from "../components/ui.jsx";
-import { myReviews } from "./ReviewHistory.jsx";
-import { readCompareHistory } from "./ComparisonHistory.jsx";
+import { useAuth } from "../lib/auth.js";
 
 function DocIcon() {
   return (
@@ -42,25 +41,33 @@ function ExitIcon() {
   );
 }
 
-function recUseLabel(use) {
-  return use.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-}
-
 export default function Profile({ compare, onCompare }) {
   const navigate = useNavigate();
   const wish = useWishlist();
-  const u = GW.currentUser;
+  const { user, ready, configured, signOut } = useAuth();
 
   useEffect(() => {
     document.title = "GadgetWise — Profile";
   }, []);
 
+  // Real account only. In Supabase mode a signed-out visitor is sent to login;
+  // demo mode (no Supabase) shows the local preview identity.
+  if (configured && ready && !user) return <Navigate to="/login" replace />;
+
+  const email = user?.email || "";
+  const displayName = user?.user_metadata?.name || email || "Guest";
+  const initials = (email || displayName).slice(0, 2).toUpperCase();
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })
+    : "—";
+
   const saved = GW.gadgetsByIds([...wish.ids]);
+  const compareCount = readCompareHistory().length;
   const stats = [
-    ["Member since", u.memberSince],
-    ["Reviews written", String(myReviews.length)],
-    ["Comparisons run", String(readCompareHistory().length)],
+    ["Member since", memberSince],
     ["Wishlist", String(wish.ids.size)],
+    ["Comparisons run", String(compareCount)],
+    ["Account", configured ? "Signed in" : "Local preview"],
   ];
 
   return (
@@ -73,14 +80,13 @@ export default function Profile({ compare, onCompare }) {
         <aside className="card h-fit p-6 lg:col-span-4">
           <div className="flex items-center gap-4">
             <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-[#DBEAFE] text-xl font-semibold text-[#14213A]">
-              {u.avatarInitials}
+              {initials}
             </div>
             <div className="min-w-0">
-              <div className="text-lg font-semibold text-ink">{u.name}</div>
-              <div className="text-sm text-ink2">{u.program}</div>
+              <div className="text-lg font-semibold text-ink break-words">{displayName}</div>
+              <div className="text-sm text-ink2 break-words">{email || "Not signed in"}</div>
             </div>
           </div>
-          <p className="mt-3 text-sm text-ink3">{u.school}</p>
 
           <dl className="mt-5 space-y-2.5 border-t border-line pt-4 text-sm">
             {stats.map(([label, value]) => (
@@ -103,10 +109,13 @@ export default function Profile({ compare, onCompare }) {
             </Link>
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={async () => {
+                await signOut();
+                navigate("/");
+              }}
               className="mt-2 flex w-full items-center justify-center gap-2 text-sm font-semibold text-[#2563EB] hover:underline"
             >
-              <ExitIcon /> Sign out (simulated)
+              <ExitIcon /> Sign out
             </button>
           </div>
         </aside>
@@ -138,30 +147,16 @@ export default function Profile({ compare, onCompare }) {
               Run a new one
             </Link>
           </div>
-          <ul className="mt-4 space-y-3">
-            {GW.seedRecommendationHistory.map((rh) => {
-              const g = GW.getGadget(rh.top.id);
-              return (
-                <li key={rh.id} className="card flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#DBEAFE] text-lg font-bold text-[#14213A]">
-                    {rh.top.score}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-ink break-words">
-                      {g ? GW.displayName(g) : rh.top.id}{" "}
-                      <span className="font-normal text-ink2">top pick · {rh.top.score}/100</span>
-                    </div>
-                    <div className="text-sm text-ink3">
-                      ₱{rh.budget.toLocaleString()} · {recUseLabel(rh.use)} · {rh.date}
-                    </div>
-                  </div>
-                  <Link to={`/g/${rh.top.id}`} className="btn-outline px-4 py-2 text-sm">
-                    View
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          {/* Recommendation runs are not persisted yet, so we show a real empty
+              state instead of seeding fabricated history. */}
+          <div className="card mt-4 p-8 text-center">
+            <p className="font-semibold text-ink">No recommendation runs saved yet.</p>
+            <p className="mt-1 text-sm text-ink2">
+              Run the recommendation wizard to get scored picks. Your runs will appear here once
+              recommendation history is saved to your account.
+            </p>
+            <Link to="/recommend" className="btn-primary mt-4 inline-flex">Find my gadget</Link>
+          </div>
         </div>
       </div>
     </section>

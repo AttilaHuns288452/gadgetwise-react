@@ -110,14 +110,11 @@ export function Bar({ v, max = 10, label, mono = false, unavailable = false }) {
    share one list without prop drilling. */
 let _wishListeners = [];
 function _wishRead() {
+  // Real wishlist only: whatever the user actually saved. No seeded demo items —
+  // a fresh account starts empty instead of showing gadgets they never saved.
   try {
     const raw = localStorage.getItem("gw_wishlist");
-    if (raw === null) {
-      // ponytail: seeded demo wishlist (the Figma account page's 3 saved gadgets)
-      const seeded = ["apple-macbook-air-m1", "samsung-galaxy-s23", "xiaomi-pad-7"];
-      localStorage.setItem("gw_wishlist", JSON.stringify(seeded));
-      return new Set(seeded);
-    }
+    if (raw === null) return new Set();
     return new Set(JSON.parse(raw));
   } catch {
     return new Set();

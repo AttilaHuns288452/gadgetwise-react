@@ -7,14 +7,11 @@ import { loadComparisons, saveComparison } from "../lib/store.js";
 const KEY = "gw_compare_history";
 
 export function readCompareHistory() {
+  // Real history only: whatever this browser has actually compared. No seeded
+  // demo sessions — a fresh account starts empty instead of showing fiction.
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw === null) {
-      // ponytail: seeded demo sessions (the Figma account page's "Comparisons run")
-      const seeded = GW.seedCompareHistory.map((c) => ({ ids: c.items, ts: Date.parse(c.date) }));
-      localStorage.setItem(KEY, JSON.stringify(seeded));
-      return seeded;
-    }
+    if (raw === null) return [];
     const v = JSON.parse(raw);
     return Array.isArray(v) ? v : [];
   } catch {

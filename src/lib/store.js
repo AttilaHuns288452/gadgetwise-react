@@ -53,6 +53,16 @@ export async function submitReview(userId, { gadget_id, rating, body }) {
   return { ok: true, pending: true };
 }
 
+export async function loadMyReviews(userId) {
+  if (!live(userId)) return null; // caller shows an empty/demo state
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, gadget_id, rating, body, status, created_at")
+    .order("created_at", { ascending: false });
+  if (error) return null;
+  return data || [];
+}
+
 export async function loadReviews(gadget_id) {
   if (!supabaseConfigured) return null;
   const { data, error } = await supabase
