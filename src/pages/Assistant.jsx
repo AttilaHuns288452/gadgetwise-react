@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, supabaseConfigured } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
+import { GW } from "../lib.js";
 
 const EXAMPLES = [
   "I need a laptop for computer science under ₱40,000.",
@@ -116,7 +117,7 @@ export default function Assistant() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     {message.productIds.map((id) => (
                       <Link key={id} to={"/g/" + encodeURIComponent(id)} className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-primary hover:border-primary">
-                        View {id} →
+                        View {GW.getGadget(id) ? GW.displayName(GW.getGadget(id)) : id} →
                       </Link>
                     ))}
                   </div>
