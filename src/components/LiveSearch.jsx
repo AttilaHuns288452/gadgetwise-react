@@ -20,16 +20,33 @@ export default function LiveSearch({ query }) {
     let cancelled = false;
     setState((s) => ({ ...s, status: "loading" }));
 
-    const url = `/api/lazada/search?q=${encodeURIComponent(q)}&marketplace=ph`;
-    fetch(url)
-      .then(async (r) => {
-        const data = await r.json();
+    // Fetch several pages so a search shows a deep catalog (40/page upstream).
+    const pages = [1, 2, 3, 4, 5, 6];
+    Promise.all(
+      pages.map((page) =>
+        fetch(`/api/lazada/search?q=${encodeURIComponent(q)}&marketplace=ph&page=${page}`)
+          .then((r) => (r.ok ? r.json() : { products: [] }))
+          .catch(() => ({ products: [] }))
+      )
+    )
+      .then((results) => {
         if (cancelled) return;
-        if (!r.ok) {
-          setState({ status: "error", items: [], error: data?.error?.message || "Search is unavailable right now." });
+        const firstErr = results.find((d) => d?.error);
+        if (firstErr && results.every((d) => !(d?.products || []).length)) {
+          setState({ status: "error", items: [], error: firstErr.error?.message || "Search is unavailable right now." });
           return;
         }
-        const items = data.products || [];
+        // dedupe by productId across pages
+        const seen = new Set();
+        const items = [];
+        for (const d of results) {
+          for (const p of d.products || []) {
+            if (p.productId && !seen.has(p.productId)) {
+              seen.add(p.productId);
+              items.push(p);
+            }
+          }
+        }
         registerListings(items); // map + register so /#/g/:id resolves on our detail page
         setState({ status: "ready", items, error: null });
       })
@@ -67,14 +84,14 @@ export default function LiveSearch({ query }) {
       )}
 
       {state.items.length > 0 && (
-        <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {state.items.map((p) => (
             <a
               key={p.productId || p.productUrl}
               href={`#/g/lazada-${p.productId}`}
               className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-white transition-shadow hover:shadow-md"
             >
-              <div className="aspect-[4/3] w-full overflow-hidden bg-[#F9FAFB]">
+              <div className="aspect-[16/10] w-full overflow-hidden bg-[#F9FAFB]">
                 {p.imageUrl ? (
                   <img
                     src={p.imageUrl}
@@ -86,24 +103,24 @@ export default function LiveSearch({ query }) {
                   <div className="flex h-full w-full items-center justify-center text-xs text-ink3">No image</div>
                 )}
               </div>
-              <div className="flex flex-1 flex-col p-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink3">
+              <div className="flex flex-1 flex-col p-2.5">
+                <div className="text-[0.65rem] font-semibold uppercase tracking-wide text-ink3">
                   {p.brandName || p.sellerName || "Lazada"}
                 </div>
-                <div className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-ink">{p.title}</div>
-                <div className="mt-2">
+                <div className="mt-0.5 line-clamp-2 text-xs font-medium leading-snug text-ink">{p.title}</div>
+                <div className="mt-1">
                   {typeof p.rating === "number" && p.rating > 0 ? (
                     <Stars rating={p.rating} count={p.reviewCount ?? 0} />
                   ) : (
-                    <span className="text-xs text-ink3">No ratings yet</span>
+                    <span className="text-[0.65rem] text-ink3">No ratings yet</span>
                   )}
                 </div>
-                <div className="mt-auto pt-2">
-                  <div className="mono text-lg font-bold text-ink">
+                <div className="mt-auto pt-1.5">
+                  <div className="mono text-base font-bold text-ink">
                     {p.price != null ? money(p.price) : "Price unavailable"}
                   </div>
                   {p.originalPrice != null && p.originalPrice > (p.price || 0) && (
-                    <div className="text-xs text-ink3 line-through">{money(p.originalPrice)}</div>
+                    <div className="text-[0.65rem] text-ink3 line-through">{money(p.originalPrice)}</div>
                   )}
                 </div>
               </div>
