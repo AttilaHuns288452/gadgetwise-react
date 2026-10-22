@@ -198,12 +198,53 @@ function GadgetDetail({ compare, onCompare }) {
     ["Warranty (catalog)", s5(Math.min((wYears * 12) / 24, 1))],
   ];
 
-  const submitReview = () => {
-    // ponytail: no backend — submissions go to moderation, so nothing appears publicly
-    setReviewOpen(false);
-    setText("");
-    setRating(5);
-    toast("Review submitted — pending moderation (simulated)");
+  const submitReview = async () => {
+    setReviewError("");
+    if (!user || !user.id) {
+      setReviewError("Sign in with a real GadgetWise account before submitting a review.");
+      return;
+    }
+    if (!supabaseConfigured || !supabase) {
+      setReviewError("Reviews are unavailable because the database is not configured.");
+      return;
+    }
+    const body = text.trim();
+    if (body.length < 10 || body.length > 2000) {
+      setReviewError("Your review must be between 10 and 2,000 characters.");
+      return;
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      setReviewError("Choose a rating from 1 to 5.");
+      return;
+    }
+    setReviewBusy(true);
+    try {
+      const result = await supabase.from("reviews").insert({
+        gadget_id: g.id,
+        user_id: user.id,
+        rating,
+        body,
+        status: "pending",
+      });
+      if (result.error) {
+        if (result.error.code === "23505") {
+          setReviewError("You have already submitted a review for this gadget.");
+        } else {
+          setReviewError("Your review could not be saved. Check your connection and try again.");
+          console.error("Review submission failed:", result.error.message);
+        }
+        return;
+      }
+      setReviewOpen(false);
+      setText("");
+      setRating(5);
+      toast("Review saved and sent for moderation.");
+    } catch (error) {
+      console.error("Review submission failed:", error instanceof Error ? error.message : "unknown");
+      setReviewError("The review service could not be reached. Please try again.");
+    } finally {
+      setReviewBusy(false);
+    }
   };
 
   const rowCls = "flex items-baseline justify-between gap-6 border-b border-line py-2.5 text-sm last:border-0";
