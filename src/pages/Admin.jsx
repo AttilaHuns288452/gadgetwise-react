@@ -388,7 +388,7 @@ function Gadgets({ tab, rows, setRows, editIn, toast }) {
 
 function AddGadget({ tab, onSave, editing, toast, categories }) {
   const form = useRef(null);
-  const [specs, setSpecs] = useState(["Weight", "Ports"]);
+  const [specs, setSpecs] = useState(() => Object.keys(editing?.specs || {}).length ? Object.keys(editing.specs) : ["Weight", "Ports"]);
   return (
     <>
       <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("gadgets")}>← Back to list</button>
@@ -405,7 +405,7 @@ function AddGadget({ tab, onSave, editing, toast, categories }) {
             <Field label="Brand"><input name="brand" className={inputCls} placeholder="e.g. Kaido" defaultValue={editing?.brand || ""} /></Field>
             <Field label="Model"><input name="model" className={inputCls} placeholder="e.g. AirBook 14" defaultValue={editing?.model || ""} /></Field>
             <Field label="Category">
-              <select name="category" className={inputCls} defaultValue={editing?.category || "smartphones"}>
+              <select name="category" className={inputCls} defaultValue={editing?.category || categories?.[0]?.id || ""}>
                 {(categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </Field>
@@ -933,6 +933,7 @@ export default function Admin() {
     release_year: g.year || null, image_url: g.img || null, summary: g.summary || "",
     specs: g.specs || {}, scored: g.scored || {}, value_data: g.value || {},
     legacy_data: g.legacy_data || {}, battery_hours: g.battery || null, source_url: g.source_url || null,
+    price_verified_at: g.price_verified_at || null,
     data_source: g.data_source || "admin_entered_unverified", is_published: g.status === "published",
   }));
   const setCategoriesPersistently = (next) => saveRows("categories", cats, next, setCats, (category) => ({
@@ -974,7 +975,9 @@ export default function Admin() {
     const shouldPublish = fd.get("is_published") === "on";
     if (!(price > 0) || !Number.isFinite(price)) { toast("Enter a valid price greater than zero", "alert"); return; }
     if (!brand || !model) { toast("Brand and model are required", "alert"); return; }
-    if (!cats.some((item) => item.id === category)) { toast("Choose a valid database category", "alert"); return; }
+    const selectedCategory = cats.find((item) => item.id === category);
+    if (!selectedCategory) { toast("Choose a valid database category", "alert"); return; }
+    if (shouldPublish && !selectedCategory.is_published) { toast("Publish the category before publishing a gadget in it", "alert"); return; }
     if (imageUrl && !/^https?:\/\//i.test(imageUrl)) { toast("Use a complete HTTP(S) image URL", "alert"); return; }
     if (shouldPublish && !/^https?:\/\//i.test(sourceUrl)) { toast("Add an HTTP(S) source URL before publishing", "alert"); return; }
 
@@ -1023,7 +1026,8 @@ export default function Admin() {
       specs, scored, value_data: valueData,
       battery_hours: numberOrZero("battery_hours") || null,
       source_url: sourceUrl || null,
-      data_source: "admin_entered_unverified",
+      data_source: shouldPublish ? "admin_verified" : "admin_entered_unverified",
+      price_verified_at: shouldPublish ? new Date().toISOString() : null,
       legacy_data: editing ? (editing.legacy_data || {}) : {},
       is_published: shouldPublish,
     };
