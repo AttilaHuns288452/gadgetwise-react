@@ -460,7 +460,7 @@ function AddGadget({ tab, onSave, editing, toast, categories }) {
         <label className="flex items-start gap-3 rounded-xl border border-[#E4E7EC] bg-white p-4 text-sm">
           <input type="checkbox" name="is_published" defaultChecked={editing?.status === "published"} className="mt-1" />
           <span><strong className="block">Publish this gadget</strong><span className="text-[#667085]">Publishing requires an HTTP(S) source URL and all eight scores. Verify the source, price, and specifications first.</span></span>
-        </label></Panel>
+        </label>
 
         <div className="flex gap-3">
           <button type="submit" className={btnPrimary}>Save gadget</button>
