@@ -1,10 +1,12 @@
 // Quiz — /recommend · "Get Recommendations"
 // 5-step flow: category → budget → academic use → priorities → ranked results.
 // Scoring engine is recommend() in lib.js — this file is UI + copy only.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GW, money, FACTOR_META, recommend } from "../lib.js";
 import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
+import { useAuth } from "../lib/auth.js";
+import { supabase, supabaseConfigured } from "../lib/supabase.js";
 
 const CATS = [
   { id: "smartphones", name: "Smartphones", blurb: "Everyday carry, notes, hotspot" },
@@ -58,6 +60,8 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const lastSavedRecommendation = useRef("");
 
   // ponytail: App renders <Quiz /> bare today; fall back to local toggles if props ever arrive
   const [localCompare, setLocalCompare] = useState(new Set());
@@ -82,6 +86,27 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   }, [cat, band && band.id, useId, prio]);
   const results = engine ? engine.results.slice(0, 5) : [];
   const summary = cat && band && useCase ? `${catName(cat)} · ${band.label} · ${useCase.label}` : "";
+
+  useEffect(() => {
+    if (step !== 5 || !engine || !results.length || !user?.id || !supabaseConfigured || !supabase) return;
+    const resultIds = results.map((row) => row.gadget.id);
+    const key = JSON.stringify([user.id, cat, band?.id, useId, prio, resultIds]);
+    if (lastSavedRecommendation.current === key) return;
+    lastSavedRecommendation.current = key;
+    supabase.from("user_recommendations").insert({
+      user_id: user.id,
+      input: { category: cat, budget: band, useCase: useId, priorities: prio },
+      result_gadget_ids: resultIds,
+    }).then(({ error }) => {
+      if (error) {
+        lastSavedRecommendation.current = "";
+        console.error("Recommendation history save failed:", error.message);
+      }
+    }).catch((error) => {
+      lastSavedRecommendation.current = "";
+      console.error("Recommendation history save failed:", error instanceof Error ? error.message : "unknown");
+    });
+  }, [step, engine, user?.id]);
 
   useEffect(() => {
     if (step === 5 && engine && results.length) {
@@ -416,7 +441,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <div className="flex items-center gap-5">
                           <button
                             type="button"
-                            onClick={() => wish.toggle(g.id)}
+                            onClick={async () => { const result = await wish.toggle(g.id); if (result?.error) toast("Could not update wishlist. Check your connection and try again.", "alert"); else toast(result.adding ? "Added to wishlist" : "Removed from wishlist"); }}
                             className={`text-sm font-semibold ${wish.has(g.id) ? "text-primary" : "text-ink2 hover:text-primary"}`}
                           >
                             Save

@@ -5,23 +5,41 @@ import { useAuth } from "../lib/auth.js";
 
 function Login() {
   const navigate = useNavigate();
-  const { signIn, configured } = useAuth();
+  const { signIn, signInWithGoogle, configured, demoEnabled } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setBusy(true);
+    try {
+      const { error: err } = await signInWithGoogle();
+      if (err) setError(err.message || "Google sign-in could not be started.");
+    } catch {
+      setError("Google sign-in could not be started. Check the Supabase Google provider configuration.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
     setBusy(true);
-    const { error: err } = await signIn(email, password);
-    setBusy(false);
-    if (err) {
-      setError(err.message || "Could not sign in. Check your email and password.");
-      return;
+    try {
+      const { error: err } = await signIn(email.trim(), password);
+      if (err) {
+        setError(err.message || "Could not sign in. Check your email and password.");
+        return;
+      }
+      navigate("/profile");
+    } catch {
+      setError("Sign-in failed because the authentication service could not be reached. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    navigate("/profile");
   };
 
   return (
@@ -37,6 +55,7 @@ function Login() {
             <input
               id="login-email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -49,6 +68,7 @@ function Login() {
             <input
               id="login-password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -56,18 +76,31 @@ function Login() {
               className={fieldInputCls}
             />
           </div>
-          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+          <div className="-mt-3 text-right text-sm">
+            <Link to="/reset-password" className="font-semibold text-primary hover:underline">Forgot password?</Link>
+          </div>
+          <button type="submit" disabled={busy || (!configured && !demoEnabled)} className="btn-primary w-full disabled:opacity-60">
             {busy ? "Signing in…" : "Log in"}
+          </button>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-ink3">
+            <span className="h-px flex-1 bg-line" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          <button type="button" disabled={busy || !configured} onClick={handleGoogleSignIn}
+            className="btn-outline w-full disabled:cursor-not-allowed disabled:opacity-50">
+            Continue with Google
           </button>
           {error && (
             <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
               {error}
             </p>
           )}
-          {!configured && (
-            <p className="text-center text-xs text-ink2">
-              Demo mode: any email and password signs you in locally.
-            </p>
+          {demoEnabled && (
+            <p className="text-center text-xs text-ink2">Development demo mode is enabled. No real account is created.</p>
+          )}
+          {!configured && !demoEnabled && (
+            <p role="status" className="rounded-lg bg-amber-50 px-4 py-2.5 text-sm text-amber-900">Authentication is not configured. Set up Supabase to enable sign-in.</p>
           )}
           <p className="text-center text-sm text-ink2">
             New here? <Link to="/register" className="font-semibold text-primary hover:text-primary-dark">Create an account</Link>

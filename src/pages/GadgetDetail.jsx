@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuth } from "../lib/auth.js";
+import { supabase, supabaseConfigured } from "../lib/supabase.js";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
 import {
@@ -145,6 +147,9 @@ function GadgetDetail({ compare, onCompare }) {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
   const [extra, setExtra] = useState([]);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const { user } = useAuth();
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
   const g = GW.getGadget(id);
@@ -193,12 +198,53 @@ function GadgetDetail({ compare, onCompare }) {
     ["Warranty (catalog)", s5(Math.min((wYears * 12) / 24, 1))],
   ];
 
-  const submitReview = () => {
-    // ponytail: no backend — submissions go to moderation, so nothing appears publicly
-    setReviewOpen(false);
-    setText("");
-    setRating(5);
-    toast("Review submitted — pending moderation (simulated)");
+  const submitReview = async () => {
+    setReviewError("");
+    if (!user || !user.id) {
+      setReviewError("Sign in with a real GadgetWise account before submitting a review.");
+      return;
+    }
+    if (!supabaseConfigured || !supabase) {
+      setReviewError("Reviews are unavailable because the database is not configured.");
+      return;
+    }
+    const body = text.trim();
+    if (body.length < 10 || body.length > 2000) {
+      setReviewError("Your review must be between 10 and 2,000 characters.");
+      return;
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      setReviewError("Choose a rating from 1 to 5.");
+      return;
+    }
+    setReviewBusy(true);
+    try {
+      const result = await supabase.from("reviews").insert({
+        gadget_id: g.id,
+        user_id: user.id,
+        rating,
+        body,
+        status: "pending",
+      });
+      if (result.error) {
+        if (result.error.code === "23505") {
+          setReviewError("You have already submitted a review for this gadget.");
+        } else {
+          setReviewError("Your review could not be saved. Check your connection and try again.");
+          console.error("Review submission failed:", result.error.message);
+        }
+        return;
+      }
+      setReviewOpen(false);
+      setText("");
+      setRating(5);
+      toast("Review saved and sent for moderation.");
+    } catch (error) {
+      console.error("Review submission failed:", error instanceof Error ? error.message : "unknown");
+      setReviewError("The review service could not be reached. Please try again.");
+    } finally {
+      setReviewBusy(false);
+    }
   };
 
   const rowCls = "flex items-baseline justify-between gap-6 border-b border-line py-2.5 text-sm last:border-0";
@@ -228,7 +274,7 @@ function GadgetDetail({ compare, onCompare }) {
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => wish.toggle(g.id)}
+              onClick={async () => { const result = await wish.toggle(g.id); if (result?.error) toast("Could not update wishlist. Check your connection and try again.", "alert"); }}
               aria-pressed={wish.has(g.id)}
               className={wish.has(g.id) ? "btn-primary" : "btn-ghost"}
             >
@@ -651,58 +697,48 @@ function GadgetDetail({ compare, onCompare }) {
       {reviewOpen && (
         <Modal
           title="Write a review"
-          sub="Reviews go to the moderation queue before appearing publicly."
-          onClose={() => setReviewOpen(false)}
+          sub={user?.id ? "Reviews go to the moderation queue before appearing publicly." : "Sign in before submitting a review."}
+          onClose={() => { setReviewOpen(false); setReviewError(""); }}
           actions={
             <>
-              <button type="button" className={btnOutlineCls} onClick={() => setReviewOpen(false)}>
+              <button type="button" className={btnOutlineCls} onClick={() => { setReviewOpen(false); setReviewError(""); }}>
                 Cancel
               </button>
-              <button type="button" className={btnPrimaryCls} onClick={submitReview}>
-                Submit for moderation
-              </button>
+              {user ? (
+                <button type="button" className={btnPrimaryCls} disabled={reviewBusy} onClick={submitReview}>
+                  {reviewBusy ? "Submitting…" : "Submit for moderation"}
+                </button>
+              ) : (
+                <Link to="/login" className={btnPrimaryCls}>Log in to review</Link>
+              )}
             </>
           }
         >
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-rating">
-              Rating
-            </label>
-            <select
-              id="rv-rating"
-              className={fieldInputCls}
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-            >
-              <option value={5}>Excellent</option>
-              <option value={4}>Good</option>
-              <option value={3}>Fair</option>
-              <option value={2}>Poor</option>
-            </select>
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-usage">
-              Usage context (optional)
-            </label>
-            <input
-              id="rv-usage"
-              className={fieldInputCls}
-              placeholder="e.g., Programming + Online class · 8 months"
-            />
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-text">
-              Your review
-            </label>
-            <textarea
-              id="rv-text"
-              rows={4}
-              className={fieldInputCls}
-              placeholder="How has it held up for schoolwork? Battery? Durability?"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-          </div>
+          {user && (
+            <>
+              <div>
+                <label className={fieldLabelCls} htmlFor="rv-rating">Rating</label>
+                <select id="rv-rating" className={fieldInputCls} value={rating} onChange={(e) => setRating(Number(e.target.value))}>
+                  <option value={5}>Excellent</option>
+                  <option value={4}>Good</option>
+                  <option value={3}>Fair</option>
+                  <option value={2}>Poor</option>
+                  <option value={1}>Very poor</option>
+                </select>
+              </div>
+              <div>
+                <label className={fieldLabelCls} htmlFor="rv-usage">Usage context (optional)</label>
+                <input id="rv-usage" className={fieldInputCls} placeholder="e.g., Programming + online class · 8 months" />
+              </div>
+              <div>
+                <label className={fieldLabelCls} htmlFor="rv-text">Your review</label>
+                <textarea id="rv-text" rows={4} className={fieldInputCls}
+                  placeholder="How has it held up for schoolwork? Battery? Durability?"
+                  value={text} onChange={(e) => setText(e.target.value)} />
+              </div>
+            </>
+          )}
+          {reviewError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700">{reviewError}</p>}
         </Modal>
       )}
       {toastNode}

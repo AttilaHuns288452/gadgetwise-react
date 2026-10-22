@@ -1,10 +1,11 @@
 // Compare — /compare · "Compare Gadgets"
 // Frame-matched comparison table: one column per gadget, winner cells get a
 // soft badge only when the row's spread is at least 8% (near-ties stay quiet).
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
-import { Img, useWishlist, btnPrimaryCls } from "../components/ui.jsx";
+import { Img, useWishlist, useToast, btnPrimaryCls } from "../components/ui.jsx";
+import { recordComparisonHistory } from "../lib/comparison-history.js";
 
 const THRESHOLD = 0.08;
 
@@ -59,11 +60,22 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
   const [searchParams] = useSearchParams();
   const [hidden, setHidden] = useState(new Set());
   const wish = useWishlist();
+  const [toast, toastNode] = useToast();
 
   // ponytail: 'ids' query param seeds selection (App state can't be set from here)
   const seedIds = (searchParams.get("ids") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const ids = [...new Set([...compare, ...seedIds])].filter((id) => !hidden.has(id));
   const list = GW.gadgetsByIds(ids);
+  const comparisonKey = list.map((g) => g.id).join(",");
+
+  useEffect(() => {
+    if (list.length < 2) return;
+    let active = true;
+    recordComparisonHistory(list.map((g) => g.id)).catch((error) => {
+      if (active) console.error("Comparison history save failed:", error instanceof Error ? error.message : "unknown");
+    });
+    return () => { active = false; };
+  }, [comparisonKey]);
 
   const remove = (id) => {
     if (compare.has(id)) onCompare(id);
@@ -102,10 +114,10 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                         {g.model}
                       </Link>
                       <div className="mt-1 text-xs font-normal text-ink2">
-                        {GW.getCategory(g.category).name} · {g.rating.toFixed(1)}★ ({g.reviewCount})
+                        {GW.getCategory(g.category)?.name || g.category} · {g.rating.toFixed(1)}★ ({g.reviewCount})
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => wish.toggle(g.id)} className={ghostBtnCls}>
+                        <button type="button" onClick={async () => { const result = await wish.toggle(g.id); if (result?.error) toast("Could not update wishlist. Check your connection and try again.", "alert"); else toast(result.adding ? "Added to wishlist" : "Removed from wishlist"); }} className={ghostBtnCls}>
                           <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <path d="M8 13.5S2 10 2 5.9C2 3.7 3.7 2.5 5.3 2.5c1 0 2 .5 2.7 1.4.7-.9 1.7-1.4 2.7-1.4 1.6 0 3.3 1.2 3.3 3.4 0 4.1-6 7.6-6 7.6Z" />
                           </svg>
@@ -200,6 +212,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
           })()}
         </>
       )}
+      {toastNode}
     </main>
   );
 }

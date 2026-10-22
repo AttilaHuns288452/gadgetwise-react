@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { money, ownIndex, GW } from "../lib.js";
+import { supabase, supabaseConfigured } from "../lib/supabase.js";
 
 /* Canonical name builder lives on GW (data.js) so moderation rows match the UI */
 export const displayName = (g) => GW.displayName(g);
@@ -91,44 +92,129 @@ export function Bar({ v, max = 10, label, mono = false }) {
   );
 }
 
-/* Wishlist: localStorage-backed so cards, navbar and the Wishlist page
-   share one list without prop drilling. */
+/* Shared wishlist store. Authenticated users persist to Supabase; guests use a local-only list.
+   Never seed a user's personal list with another demo account's data. */
 let _wishListeners = [];
-function _wishRead() {
+let _wishState = new Set();
+let _wishOwnerId = null;
+let _wishLoaded = false;
+let _wishGeneration = 0;
+let _wishStarted = false;
+let _wishSubscription = null;
+
+function _wishReadLocal() {
   try {
     const raw = localStorage.getItem("gw_wishlist");
-    if (raw === null) {
-      // ponytail: seeded demo wishlist (the Figma account page's 3 saved gadgets)
-      const seeded = ["apple-macbook-air-m1", "samsung-galaxy-s23", "xiaomi-pad-7"];
-      localStorage.setItem("gw_wishlist", JSON.stringify(seeded));
-      return new Set(seeded);
-    }
-    return new Set(JSON.parse(raw));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : []);
   } catch {
     return new Set();
   }
 }
-function _wishWrite(set) {
-  localStorage.setItem("gw_wishlist", JSON.stringify([...set]));
-  _wishListeners.forEach((fn) => fn(set));
+function _wishNotify() {
+  _wishListeners.forEach((fn) => fn(new Set(_wishState)));
+}
+function _wishWriteLocal(set) {
+  try {
+    localStorage.setItem("gw_wishlist", JSON.stringify([...set]));
+  } catch {
+    // Private-browsing storage can be unavailable; the in-memory list still works.
+  }
+}
+async function _wishLoadSession(session) {
+  const generation = ++_wishGeneration;
+  const ownerId = session?.user?.id || null;
+  if (supabaseConfigured && supabase && ownerId) {
+    _wishOwnerId = ownerId;
+    _wishLoaded = false;
+    _wishState = new Set();
+    _wishNotify();
+    try {
+      const { data, error } = await supabase.from("wishlist_items").select("gadget_id");
+      if (generation !== _wishGeneration) return;
+      if (error) throw error;
+      _wishOwnerId = ownerId;
+      _wishState = new Set((data || []).map((row) => row.gadget_id).filter((id) => typeof id === "string"));
+      _wishLoaded = true;
+      _wishNotify();
+    } catch (error) {
+      if (generation !== _wishGeneration) return;
+      _wishOwnerId = ownerId;
+      _wishState = new Set();
+      _wishLoaded = true;
+      _wishNotify();
+      console.error("Wishlist could not be loaded:", error instanceof Error ? error.message : "unknown");
+    }
+    return;
+  }
+  _wishOwnerId = null;
+  _wishState = _wishReadLocal();
+  _wishLoaded = true;
+  _wishNotify();
+}
+function _wishStart() {
+  if (_wishStarted) return;
+  _wishStarted = true;
+  if (!supabaseConfigured || !supabase) {
+    _wishState = _wishReadLocal();
+    _wishLoaded = true;
+    return;
+  }
+  _wishSubscription = supabase.auth.onAuthStateChange((_event, session) => {
+    Promise.resolve().then(() => _wishLoadSession(session));
+  });
+  supabase.auth.getSession()
+    .then(({ data }) => _wishLoadSession(data?.session || null))
+    .catch(() => _wishLoadSession(null));
 }
 export function useWishlist() {
-  const [, force] = useState(0);
+  const [ids, setIds] = useState(() => new Set(_wishState));
   useEffect(() => {
-    const fn = () => force((n) => n + 1);
+    _wishStart();
+    const fn = (next) => setIds(new Set(next));
     _wishListeners.push(fn);
+    fn(_wishState);
     return () => {
-      _wishListeners = _wishListeners.filter((f) => f !== fn);
+      _wishListeners = _wishListeners.filter((listener) => listener !== fn);
     };
   }, []);
-  const ids = _wishRead();
   return {
     ids,
     has: (id) => ids.has(id),
-    toggle: (id) => {
-      const s = _wishRead();
-      s.has(id) ? s.delete(id) : s.add(id);
-      _wishWrite(s);
+    loaded: _wishLoaded,
+    toggle: async (id) => {
+      _wishStart();
+      if (supabaseConfigured && !_wishLoaded) {
+        await new Promise((resolve) => {
+          const onLoaded = () => {
+            if (_wishLoaded) {
+              _wishListeners = _wishListeners.filter((listener) => listener !== onLoaded);
+              resolve();
+            }
+          };
+          _wishListeners.push(onLoaded);
+          onLoaded();
+        });
+      }
+      const before = new Set(_wishState);
+      const adding = !before.has(id);
+      const next = new Set(before);
+      if (adding) next.add(id); else next.delete(id);
+      if (supabaseConfigured && supabase && _wishOwnerId) {
+        const result = adding
+          ? await supabase.from("wishlist_items").insert({ user_id: _wishOwnerId, gadget_id: id })
+          : await supabase.from("wishlist_items").delete().eq("user_id", _wishOwnerId).eq("gadget_id", id);
+        if (result.error) {
+          console.error("Wishlist update failed:", result.error.message);
+          return { error: result.error };
+        }
+      } else {
+        _wishWriteLocal(next);
+      }
+      _wishState = next;
+      _wishNotify();
+      return { error: null, adding };
     },
   };
 }
@@ -174,10 +260,11 @@ export function GadgetCard({ g, compare, onCompare }) {
             <span className="mono text-xl font-bold text-ink">{money(g.price)}</span>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const adding = !wish.has(g.id);
-                wish.toggle(g.id);
-                if (adding) toast("Added to wishlist");
+                const result = await wish.toggle(g.id);
+                if (result?.error) toast("Could not update wishlist. Sign in again or check your connection.", "alert");
+                else if (adding) toast("Added to wishlist");
               }}
               aria-pressed={wish.has(g.id)}
               aria-label={wish.has(g.id) ? "Remove from wishlist" : "Add to wishlist"}
