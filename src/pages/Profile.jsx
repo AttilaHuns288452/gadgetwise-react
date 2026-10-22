@@ -23,6 +23,7 @@ export default function Profile({ compare, onCompare }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
 
   const name = profile?.display_name || user?.user_metadata?.full_name || user?.name || user?.email?.split("@")[0] || "Guest";
   const email = user?.email || "";
@@ -77,9 +78,16 @@ export default function Profile({ compare, onCompare }) {
 
   async function handleSignOut() {
     setSigningOut(true);
+    setSignOutError("");
     try {
-      await signOut();
+      const result = await signOut();
+      if (result?.error) {
+        setSignOutError("Sign-out failed. Check your connection and try again.");
+        return;
+      }
       navigate("/login");
+    } catch {
+      setSignOutError("Sign-out failed. Check your connection and try again.");
     } finally {
       setSigningOut(false);
     }
@@ -108,6 +116,7 @@ export default function Profile({ compare, onCompare }) {
         </div>
       )}
       {error && <p role="alert" className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900">{error}</p>}
+      {signOutError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{signOutError}</p>}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-12">
         <aside className="card h-fit p-6 lg:col-span-4">
