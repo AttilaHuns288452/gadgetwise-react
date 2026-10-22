@@ -1,0 +1,120 @@
+{
+ "data": {
+  "items": [
+   {
+    "item_id": "15513537750",
+    "product_url": "https://www.lazada.com.ph/products/-i15513537750.html",
+    "title": "realme C100i 4G Smartphone \u2013 6.8\" HD+ 120Hz Display, Unisoc T7250, 7000mAh Titan Battery, 15W Charging, IP64 & MIL-STD-810H, 8MP AI Camera, 4GB+Up to 12GB RAM, Android 16, Dual SIM + 2TB Expandable Storage",
+    "img": "https://ph-live-01.slatic.net/p/7fa9206dd9409dc87213240a58d08cf4.png",
+    "category_path": [
+     5116,
+     5121
+    ],
+    "brand": "realme",
+    "brand_id": "219600",
+    "currency": "PHP",
+    "price": "6599",
+    "price_info": {
+     "sale_price": "6599",
+     "origin_price": "8999"
+    },
+    "discount": "27% Off",
+    "review_info": {
+     "average_score": "4.996108949416342",
+     "review_count": "771"
+    },
+    "comment_count": "771",
+    "shop_info": {
+     "shop_id": null,
+     "shop_name": "realme PH LUZON",
+     "shop_url": "https://www.lazada.com.ph/shop/realme-ph-luzon/",
+     "seller_id": "501859616335",
+     "seller_name": "realme PH LUZON"
+    },
+    "sold_count": "1900",
+    "delivery_info": {
+     "area_from": "Metro Manila~Paranaque"
+    },
+    "is_in_stock": true,
+    "is_ad": false
+   },
+   {
+    "item_id": "5352365924",
+    "product_url": "https://www.lazada.com.ph/products/-i5352365924.html",
+    "title": "HONOR X9d 5G All-Angle Ultra Defense (IP69K Water-resistant | 8300mAh Battery | 24GB + 256GB Storage)",
+    "img": "https://ph-live-01.slatic.net/p/3e0519fdfdb3a42d5934351f31bd549c.png",
+    "category_path": [
+     5116,
+     5121
+    ],
+    "brand": "HONOR",
+    "brand_id": "12934",
+    "currency": "PHP",
+    "price": "22499",
+    "price_info": {
+     "sale_price": "22499",
+     "origin_price": "24999"
+    },
+    "discount": "10% Off",
+    "review_info": {
+     "average_score": "4.96078431372549",
+     "review_count": "1428"
+    },
+    "comment_count": "1428",
+    "shop_info": {
+     "shop_id": null,
+     "shop_name": "HONOR Philippines",
+     "shop_url": "https://www.lazada.com.ph/shop/honor-philippines/",
+     "seller_id": "100122020",
+     "seller_name": "HONOR Philippines"
+    },
+    "sold_count": "3500",
+    "delivery_info": {
+     "area_from": "Metro Manila~Quezon City"
+    },
+    "is_in_stock": true,
+    "is_ad": false
+   },
+   {
+    "item_id": "15540295855",
+    "product_url": "https://www.lazada.com.ph/products/-i15540295855.html",
+    "title": "itel A200 8GB RAM (3+5GB Extended RAM) 128GB ROM Octa-Core Processor 120Hz 6.75\"Display 5000mAh IP65",
+    "img": "https://ph-live-01.slatic.net/p/16f69ae080374ad1b70c9b7cb31a6928.png",
+    "category_path": [
+     5116,
+     5121
+    ],
+    "brand": "itel",
+    "brand_id": "127256803",
+    "currency": "PHP",
+    "price": "6340",
+    "price_info": {
+     "sale_price": "6340",
+     "origin_price": "16239"
+    },
+    "discount": "61% Off",
+    "review_info": {
+     "average_score": "4.978378378378379",
+     "review_count": "370"
+    },
+    "comment_count": "370",
+    "shop_info": {
+     "shop_id": null,
+     "shop_name": "Itel Flagship Store Global",
+     "shop_url": "https://www.lazada.com.ph/shop/itel-flagship-store-global/",
+     "seller_id": "502016240095",
+     "seller_name": "Itel Flagship Store Global"
+    },
+    "sold_count": "1100",
+    "delivery_info": {
+     "area_from": "Bulacan"
+    },
+    "is_in_stock": true,
+    "is_ad": false
+   }
+  ],
+  "page": 1,
+  "total_count": 40,
+  "start_key": null
+ }
+}
