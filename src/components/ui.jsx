@@ -80,7 +80,9 @@ export function Oidx({ g, size = "md", compact = false, className = "" }) {
 }
 
 export function Bar({ v, max = 10, label, mono = false, unavailable = false }) {
-  if (unavailable || v == null || !Number.isFinite(v)) {
+  // Trust the explicit `unavailable` flag. `v` may be a numeric string ("5.0")
+  // from callers like s5(), so only real null/undefined counts as missing.
+  if (unavailable || v == null) {
     return (
       <div>
         <div className="flex items-baseline justify-between text-sm">
