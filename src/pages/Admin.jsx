@@ -940,12 +940,24 @@ export default function Admin() {
     id: category.id, name: category.name, description: category.desc || "",
     is_published: Boolean(category.is_published),
   }));
-  const setReviewsPersistently = (next) => saveRows("reviews", reviews, next, setReviews, (review) => ({
-    id: review.id, gadget_id: review.gadget_id, user_id: review.user_id,
-    rating: review.rating, body: review.text, status: review.status,
-    moderated_by: review.status === "pending" ? null : (review.moderated_by || user.id),
-    moderated_at: review.status === "pending" ? null : (review.moderated_at || new Date().toISOString()),
-  }));
+  const setReviewsPersistently = (next) => {
+    const prepared = next.map((review) => {
+      const existing = reviews.find((row) => row.id === review.id);
+      if (review.status === "pending") return { ...review, moderated_by: null, moderated_at: null };
+      const statusChanged = !existing || existing.status !== review.status;
+      return {
+        ...review,
+        moderated_by: statusChanged ? user.id : (review.moderated_by || existing?.moderated_by || user.id),
+        moderated_at: statusChanged ? new Date().toISOString() : (review.moderated_at || existing?.moderated_at || new Date().toISOString()),
+      };
+    });
+    return saveRows("reviews", reviews, prepared, setReviews, (review) => ({
+      id: review.id, gadget_id: review.gadget_id, user_id: review.user_id,
+      rating: review.rating, body: review.text, status: review.status,
+      moderated_by: review.moderated_by,
+      moderated_at: review.moderated_at,
+    }));
+  };
 
   if (access === "checking" || access === "loading-data") {
     return <AdminNotice title="Checking administrator access…" body="Verifying your Supabase session and loading persisted records." />;
