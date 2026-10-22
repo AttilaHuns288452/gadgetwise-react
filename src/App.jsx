@@ -13,12 +13,14 @@ import Profile from "./pages/Profile.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
+import Assistant from "./pages/Assistant.jsx";
 
 const NAV = [
   ["/", "Home"],
   ["/gadgets", "Gadgets"],
   ["/compare", "Compare"],
   ["/recommend", "Recommendations"],
+  ["/assistant", "AI Assistant"],
 ];
 
 // footer link columns — strings verbatim from the frame spec
@@ -251,6 +253,7 @@ export default function App() {
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
           <Route path="/recommend" element={<Quiz />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="/wishlist" element={<Wishlist compare={compare} onCompare={onCompare} />} />
           <Route path="/compare-history" element={<ComparisonHistory compare={compare} onCompare={onCompare} />} />
           <Route path="/profile" element={<Profile compare={compare} onCompare={onCompare} />} />
