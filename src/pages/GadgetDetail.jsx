@@ -697,7 +697,7 @@ function GadgetDetail({ compare, onCompare }) {
       {reviewOpen && (
         <Modal
           title="Write a review"
-          sub={user ? "Reviews go to the moderation queue before appearing publicly." : "Sign in before submitting a review."}
+          sub={user?.id ? "Reviews go to the moderation queue before appearing publicly." : "Sign in before submitting a review."}
           onClose={() => { setReviewOpen(false); setReviewError(""); }}
           actions={
             <>
