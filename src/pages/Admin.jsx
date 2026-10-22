@@ -1,6 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
+import { catalogStats } from "../lib/catalog.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview } from "../lib/store.js";
+import { supabase } from "../lib/supabase.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
 const ICONS = {
@@ -142,15 +145,15 @@ function Signin({ onIn }) {
   );
 }
 
-function Dashboard({ tab }) {
-  const pending = GW.admin.moderation.filter((r) => r.status === "pending").length;
-  const stats = [
-    ["Total users", GW.users.length, { text: "registered accounts" }, {}],
-    ["Gadgets listed", GW.gadgets.length, { text: "6 categories" }, {}],
-    ["Pending reviews", pending, { text: "needs moderation", down: true }, { tone: "amber" }],
-    ["Total reviews", GW.admin.moderation.length, { text: "approved + pending" }, {}],
+function Dashboard({ tab, stats, pendingRows }) {
+  const s = stats;
+  const statCards = [
+    ["Products tracked", s.total, { text: `${s.categories.length} categories` }, {}],
+    ["Avg list price", money(s.avgPrice), { text: "across live catalog" }, {}],
+    ["Rated products", s.withRating, { text: `${s.avgRating} avg rating` }, {}],
+    ["Pending reviews", pendingRows.length, { text: "needs moderation", down: true }, { tone: "amber" }],
   ];
-  const preview = GW.admin.moderation.filter((r) => r.status === "pending").slice(0, 4);
+  const preview = pendingRows.slice(0, 4);
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -166,14 +169,14 @@ function Dashboard({ tab }) {
       <hr className="mt-6 border-[#EAECF0]" />
 
       <div className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {stats.map(([label, value, trend, opts]) => (
+        {statCards.map(([label, value, trend, opts]) => (
           <StatCard key={label} label={label} value={value} trend={trend} {...opts} />
         ))}
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[52fr_44fr]">
-        <Panel title="Top viewed this month" action={<button className="text-[14px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
-          <BarList rows={GW.admin.topViewed.slice(0, 5).map(([id, v]) => [displayName(GW.getGadget(id)), v])} />
+        <Panel title="Products by category" action={<button className="text-[14px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
+          <BarList rows={stats.categories.map((c) => [c.name, c.count])} />
         </Panel>
         <Panel title="Moderation queue preview">
           <ul className="space-y-3">
@@ -190,14 +193,18 @@ function Dashboard({ tab }) {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Panel title="Popular categories">
+        <Panel title="Data sources">
           <p className="text-[15px] leading-relaxed text-[#4B5563]">
-            Smartphones and laptops draw 65% of catalog views — keep their specs and issues freshest.
+            Product counts and prices are counted live from the marketplace catalog. Review
+            counts come from the database. No traffic or engagement metrics are fabricated —
+            page-view analytics are not collected, so none are shown.
           </p>
         </Panel>
-        <Panel title="Data status">
+        <Panel title="Catalog health">
           <p className="text-[15px] leading-relaxed text-[#4B5563]">
-            Figures come from the catalog dataset plus admin edits stored in this browser.
+            {stats.withRating} of {stats.total} products carry a marketplace rating ({stats.avgRating} average).
+            Battery and warranty specs are unavailable from the marketplace and are shown as
+            "Not available" rather than estimated.
           </p>
         </Panel>
       </div>
@@ -205,118 +212,36 @@ function Dashboard({ tab }) {
   );
 }
 
-function Reports() {
+function Reports({ stats }) {
   const [dt, setDt] = useState(null);
-  const gname = (id) => displayName(GW.getGadget(id));
-  const panels = [
-    ["viewed", "Most viewed", "Top product detail pages by view count.", GW.admin.topViewed, 8],
-    ["compared", "Most compared", "Products most often placed side by side.", GW.admin.mostCompared, 6],
-    ["recommended", "Most recommended", "Most frequent results of the quiz and category flows.", GW.admin.mostRecommended, 6],
-  ];
-  const legendColors = ["#2260D4", "#5B8DEF", "#97B5EE", "#C7D8F6", "#E3A62F", "#1B2A4B"];
-  const max = Math.max(...GW.admin.weeklyViews);
-  const min = Math.min(...GW.admin.weeklyViews);
-  const pts = GW.admin.weeklyViews.map((v, i) => [40 + i * 80, 180 - ((v - min) / (max - min)) * 140]);
-  const line = pts.map(([x, y]) => `${x},${y}`).join(" ");
+  const maxCat = Math.max(1, ...stats.categories.map((c) => c.count));
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Reports</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Illustrative sample analytics for the prototype — these are seeded demo figures, not measured traffic.</p>
-
-      <div className="mt-6 grid gap-6 xl:grid-cols-3">
-        {panels.map(([id, title, sub, rows, count]) => (
-          <Panel key={id} title={title} action={
-            <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === id ? null : id)}>
-              {dt === id ? "Hide data table" : "View data table"}
-            </button>
-          }>
-            <p className="text-[13px] text-[#667085]">{sub}</p>
-            {dt === id ? (
-              <table className="mt-4 w-full text-[13px]">
-                <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Product</th><th className={headCls}>Views</th></tr></thead>
-                <tbody>
-                  {rows.slice(0, count).map(([sid, v]) => (
-                    <tr key={sid} className="border-b border-[#F2F4F7]"><td className={cellCls}>{gname(sid)}</td><td className={cellCls}>{v.toLocaleString()}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="mt-4"><BarList rows={rows.slice(0, count).map(([sid, v]) => [gname(sid), v])} /></div>
-            )}
-          </Panel>
-        ))}
-      </div>
-
+      <p className="mt-1 text-[15px] text-[#6B7280]">
+        Catalog composition counted live from {stats.total} real marketplace products.
+        No traffic, page-view, or engagement metrics are shown because none are collected —
+        presenting invented numbers here would be misleading.
+      </p>
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Panel title="Views by category" action={
-          <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "cats" ? null : "cats")}>
-            {dt === "cats" ? "Hide data table" : "View data table"}
-          </button>
-        }>
-          <p className="text-[13px] text-[#667085]">Share of product page views in the last 30 days.</p>
-          {dt === "cats" ? (
-            <table className="mt-4 w-full text-[13px]">
-              <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Category</th><th className={headCls}>Share</th></tr></thead>
-              <tbody>
-                {GW.admin.viewsByCategory.map(([name, pct]) => (
-                  <tr key={name} className="border-b border-[#F2F4F7]"><td className={cellCls}>{name}</td><td className={cellCls}>{pct}%</td></tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="mt-5 flex flex-wrap items-center gap-8">
-              <div className="h-44 w-44 shrink-0 rounded-full" style={{
-                background: `conic-gradient(${GW.admin.viewsByCategory.map(([name, pct], i) =>
-                  `${legendColors[i]} ${GW.admin.viewsByCategory.slice(0, i).reduce((s, [, p]) => s + p, 0)}% ${GW.admin.viewsByCategory.slice(0, i + 1).reduce((s, [, p]) => s + p, 0)}%`
-                ).join(",")})`,
-              }} />
-              <ul className="space-y-2">
-                {GW.admin.viewsByCategory.map(([name, pct], i) => (
-                  <li key={name} className="flex items-center gap-2.5 text-[14px] text-[#344054]">
-                    <span className="h-3 w-3 rounded-full" style={{ background: legendColors[i] }} />
-                    <span className="w-28">{name}</span>
-                    <span className="font-semibold text-[#111827]">{pct}%</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+        <Panel title="Products by category">
+          <BarList rows={stats.categories.map((c) => [c.name, c.count])} />
         </Panel>
-
-        <Panel title="Weekly page views" action={
-          <button className="text-[13px] font-semibold text-[#2260D4] hover:underline" onClick={() => setDt(dt === "week" ? null : "week")}>
-            {dt === "week" ? "Hide data table" : "View data table"}
-          </button>
-        }>
-          <p className="text-[13px] text-[#667085]">Total product page views across all categories.</p>
-          {dt === "week" ? (
-            <table className="mt-4 w-full text-[13px]">
-              <thead><tr className="border-b border-[#EAECF0]"><th className={headCls}>Week</th><th className={headCls}>Views</th></tr></thead>
-              <tbody>
-                {GW.admin.weeklyViews.map((v, i) => (
-                  <tr key={i} className="border-b border-[#F2F4F7]"><td className={cellCls}>Week {i + 1}</td><td className={cellCls}>{v.toLocaleString()}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <svg viewBox="0 0 640 220" className="mt-5 w-full">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <g key={i}>
-                  <line x1="40" x2="620" y1={40 + i * 35} y2={40 + i * 35} stroke="#EAECF0" />
-                  <text x="0" y={44 + i * 35} fontSize="12" fill="#98A2B3">{Math.round((max - ((max - min) / 4) * i) / 100) / 10}k</text>
-                </g>
-              ))}
-              <polyline points={line} fill="none" stroke="#2260D4" strokeWidth="2.5" />
-              {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3.5" fill="#2260D4" />)}
-              {["Jul 20", "Aug 3", "Aug 17", "Aug 31"].map((m, i) => (
-                <text key={m} x={40 + i * 160} y="210" fontSize="12" fill="#98A2B3">{m}</text>
-              ))}
-            </svg>
-          )}
+        <Panel title="Catalog summary">
+          <table className="w-full text-[14px]">
+            <tbody>
+              <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Total products</td><td className={`${cellCls} text-right font-semibold`}>{stats.total}</td></tr>
+              <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Categories</td><td className={`${cellCls} text-right font-semibold`}>{stats.categories.length}</td></tr>
+              <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Average list price</td><td className={`${cellCls} text-right font-semibold`}>{money(stats.avgPrice)}</td></tr>
+              <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Products with ratings</td><td className={`${cellCls} text-right font-semibold`}>{stats.withRating}</td></tr>
+              <tr><td className={cellCls}>Average rating</td><td className={`${cellCls} text-right font-semibold`}>{stats.avgRating}★</td></tr>
+            </tbody>
+          </table>
         </Panel>
       </div>
       <p className="mt-6 text-[13px] text-[#6B7280]">
-        Analytics figures are generated for the prototype dataset. Production reporting will use real page and comparison events.
+        These figures are computed from the live product catalog on page load. When real
+        event tracking is added later, view and comparison analytics can be introduced here.
       </p>
     </>
   );
@@ -598,13 +523,23 @@ function Categories({ rows, setRows, toast }) {
   );
 }
 
-function Reviews({ rows, setRows, toast }) {
+function Reviews({ rows, setRows, loaded, reload, toast }) {
   const [filter, setFilter] = useState("all");
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
+  const [busy, setBusy] = useState(null);
   const pending = rows.filter((r) => r.status === "pending").length;
   const shown = rows.filter((r) => filter === "all" || r.status === filter);
-  const setStatus = (id, status) => {
+  // Real DB write. Only report success after the database confirms — never
+  // flip local state and claim success on a failed write.
+  const setStatus = async (id, status) => {
+    setBusy(id);
+    const res = await setReviewStatus(id, status);
+    setBusy(null);
+    if (!res.ok) {
+      toast(`Could not update review: ${res.error}`, "alert");
+      return;
+    }
     setRows(rows.map((r) => (r.id === id ? { ...r, status } : r)));
     toast(status === "approved" ? "Review approved — now visible on the gadget page" : "Review rejected — hidden from the public site",
       status === "approved" ? "checkCircle" : "x");
@@ -675,8 +610,10 @@ function Reviews({ rows, setRows, toast }) {
           onClose={() => setEdit(null)}
           actions={<>
             <button className={btnOutlineCls} onClick={() => setEdit(null)}>Cancel</button>
-            <button className={btnPrimaryCls} onClick={() => {
+            <button className={btnPrimaryCls} onClick={async () => {
               if (!edit.text.trim()) { toast("Review text cannot be empty", "alert"); return; }
+              const res = await editReview(edit.id, { rating: edit.rating, body: edit.text });
+              if (!res.ok) { toast(`Could not save review: ${res.error}`, "alert"); return; }
               setRows(rows.map((r) => (r.id === edit.id ? { ...r, text: edit.text, rating: edit.rating } : r)));
               setEdit(null);
               toast("Review edited", "edit");
@@ -702,7 +639,9 @@ function Reviews({ rows, setRows, toast }) {
           onClose={() => setDel(null)}
           actions={<>
             <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-            <button className={btnDangerCls} onClick={() => {
+            <button className={btnDangerCls} onClick={async () => {
+              const res = await deleteReview(del.id);
+              if (!res.ok) { toast(`Could not delete review: ${res.error}`, "alert"); return; }
               setRows(rows.filter((x) => x.id !== del.id));
               setDel(null);
               toast("Review deleted", "trash");
@@ -718,18 +657,59 @@ function Reviews({ rows, setRows, toast }) {
 
 function Users() {
   const [q, setQ] = useState("");
-  const shown = GW.users.filter((u) => `${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
+  const [users, setUsers] = useState([]);
+  const [state, setState] = useState("loading"); // loading | ready | error
+  const [err, setErr] = useState("");
+
+  // Real registered users, fetched server-side with this admin's verified
+  // session. The fabricated demo roster is gone; if the request fails we say so.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data?.session?.access_token;
+        if (!token) throw new Error("Not signed in");
+        const r = await fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } });
+        const j = await r.json();
+        if (!alive) return;
+        if (!r.ok) throw new Error(j?.error?.message || "Could not load users");
+        setUsers(j.users || []);
+        setState("ready");
+      } catch (e) {
+        if (!alive) return;
+        setErr(e.message || "Could not load users");
+        setState("error");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—");
+  const initials = (email) => (email || "?").slice(0, 2).toUpperCase();
+  const shown = users.filter((u) => `${u.email} ${u.id}`.toLowerCase().includes(q.toLowerCase()));
   return (
     <>
       <h1 className="text-[30px] font-bold text-[#111827]">Users</h1>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Registered users and moderation status.</p>
-      <input className={`${inputCls} mt-6 !w-72`} placeholder="Search name or email..." value={q} onChange={(e) => setQ(e.target.value)} />
+      <p className="mt-1 text-[15px] text-[#6B7280]">Real registered accounts from the authentication provider. No demo or seeded users are shown.</p>
+      {state === "loading" && <p className="mt-6 text-[15px] text-[#6B7280]">Loading registered users…</p>}
+      {state === "error" && (
+        <div className="mt-6 rounded-xl border border-[#F5C6C6] bg-[#FEF3F3] p-5 text-[15px] text-[#B42318]">
+          Could not load users: {err}
+        </div>
+      )}
+      {state === "ready" && (
+      <>
+      <div className="mt-4 text-[14px] text-[#6B7280]">{users.length} registered account{users.length === 1 ? "" : "s"}</div>
+      <input className={`${inputCls} mt-4 !w-72`} placeholder="Search by email..." value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[760px]">
           <thead>
             <tr className="border-b border-[#EAECF0]">
-              <th className={headCls}>User</th><th className={headCls}>Registered</th><th className={headCls}>Status</th>
-              <th className={`${headCls} text-right`}>Reviews</th>
+              <th className={headCls}>Account</th><th className={headCls}>Registered</th><th className={headCls}>Last sign-in</th>
+              <th className={`${headCls} text-right`}>Email confirmed</th>
             </tr>
           </thead>
           <tbody>
@@ -738,17 +718,19 @@ function Users() {
                 <td className={cellCls}>
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAECF0] text-[13px] font-bold text-[#475467]">
-                      {u.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                      {initials(u.email)}
                     </span>
                     <div className="min-w-0">
-                      <div className="truncate font-semibold text-[#111827]">{u.name}</div>
-                      <div className="truncate text-[13px] text-[#6B7280]">{u.email}</div>
+                      <div className="truncate font-semibold text-[#111827]">{u.email}</div>
+                      <div className="truncate text-[13px] text-[#6B7280]">{u.id}</div>
                     </div>
                   </div>
                 </td>
-                <td className={cellCls}>{u.registered}</td>
-                <td className={cellCls}><Pill kind={u.status}>{u.status}</Pill></td>
-                <td className={`${cellCls} text-right font-semibold text-[#111827]`}>{u.reviews}</td>
+                <td className={cellCls}>{fmtDate(u.createdAt)}</td>
+                <td className={cellCls}>{fmtDate(u.lastSignIn)}</td>
+                <td className={`${cellCls} text-right`}>
+                  <Pill kind={u.confirmed ? "approved" : "pending"}>{u.confirmed ? "confirmed" : "pending"}</Pill>
+                </td>
               </tr>
             ))}
             {shown.length === 0 && (
@@ -757,6 +739,8 @@ function Users() {
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </>
   );
 }
@@ -815,9 +799,29 @@ export default function Admin() {
   const tab = (t) => setParams({ tab: t });
   const [gadgets, setGadgets] = useState(GW.gadgets);
   const [cats, setCats] = useState(() => GW.categories.map(toCat));
-  const [reviews, setReviews] = useState(GW.admin.moderation);
+  // Real reviews from the database (never the fixture). Loaded on mount.
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toast, toastNode] = useToast();
+  const stats = catalogStats(GW.gadgets);
+
+  useEffect(() => {
+    let alive = true;
+    loadAllReviews().then((res) => {
+      if (!alive) return;
+      if (res.ok) setReviews(res.rows);
+      setReviewsLoaded(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const reloadReviews = async () => {
+    const res = await loadAllReviews();
+    if (res.ok) setReviews(res.rows);
+  };
 
   if (!inSession) {
     return <Signin onIn={() => { sessionStorage.setItem("gw-admin", "1"); setIn(true); }} />;
@@ -846,12 +850,16 @@ export default function Admin() {
 
   return (
     <Shell tabKey={tabKey} tab={tab} onOut={() => { sessionStorage.removeItem("gw-admin"); setIn(false); }}>
-      {tabKey === "dashboard" && <Dashboard tab={tab} />}
-      {tabKey === "reports" && <Reports />}
+      {tabKey === "dashboard" && (
+        <Dashboard tab={tab} stats={stats} pendingRows={reviews.filter((r) => r.status === "pending")} />
+      )}
+      {tabKey === "reports" && <Reports stats={stats} />}
       {tabKey === "gadgets" && <Gadgets tab={tab} rows={gadgets} setRows={setGadgets} editIn={editIn} toast={toast} />}
       {tabKey === "add" && <AddGadget tab={tab} onSave={saveGadget} editing={editing} toast={toast} />}
       {tabKey === "categories" && <Categories rows={cats} setRows={setCats} toast={toast} />}
-      {tabKey === "reviews" && <Reviews rows={reviews} setRows={setReviews} toast={toast} />}
+      {tabKey === "reviews" && (
+        <Reviews rows={reviews} setRows={setReviews} loaded={reviewsLoaded} reload={reloadReviews} toast={toast} />
+      )}
       {tabKey === "users" && <Users />}
       {toastNode}
     </Shell>

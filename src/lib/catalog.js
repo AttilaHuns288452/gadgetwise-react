@@ -52,6 +52,35 @@ function toCatalogGadget(p) {
 }
 
 /**
+ * Real catalog statistics derived from the live product list. Every number is
+ * counted from actual loaded listings — nothing is invented. Used by the admin
+ * console in place of the old fabricated analytics.
+ */
+export function catalogStats(gadgets = GW.gadgets) {
+  const byCat = {};
+  let priceSum = 0;
+  let withRating = 0;
+  let ratingSum = 0;
+  for (const g of gadgets) {
+    byCat[g.category] = (byCat[g.category] || 0) + 1;
+    priceSum += g.price || 0;
+    if (g.rating > 0) {
+      withRating += 1;
+      ratingSum += g.rating;
+    }
+  }
+  return {
+    total: gadgets.length,
+    categories: Object.entries(byCat)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count),
+    avgPrice: gadgets.length ? Math.round(priceSum / gadgets.length) : 0,
+    withRating,
+    avgRating: withRating ? Math.round((ratingSum / withRating) * 10) / 10 : 0,
+  };
+}
+
+/**
  * Load the real catalog into GW.gadgets. Clears the fixture first so it never
  * sits in the production data path. Resolves { ok, count, cached } on success;
  * throws when the upstream returns nothing at all (caller shows an honest error,

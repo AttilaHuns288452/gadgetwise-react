@@ -64,6 +64,39 @@ export async function loadReviews(gadget_id) {
   return data || [];
 }
 
+// ---------- reviews: admin moderation ----------
+// These hit the real `reviews` table. RLS lets any signed-in user read all
+// reviews and an admin (is_admin()) update/delete any. Approve/reject writes a
+// real `status` column (migration 0004) — never React-state-only.
+
+export async function loadAllReviews() {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, user_id, gadget_id, rating, body, status, created_at")
+    .order("created_at", { ascending: false });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, rows: data || [] };
+}
+
+export async function setReviewStatus(id, status) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("reviews").update({ status }).eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function editReview(id, { rating, body }) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("reviews").update({ rating, body }).eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteReview(id) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("reviews").delete().eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 // ---------- comparison history ----------
 export async function loadComparisons(userId) {
   if (!live(userId)) return null;
