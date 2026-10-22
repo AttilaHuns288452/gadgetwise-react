@@ -8,6 +8,28 @@ import { registerListings } from "../lib/marketplace.js";
  * purpose: scraper data is real but unvetted, so it never mixes into the
  * recommendation/compare catalog. Links go straight to the Lazada listing.
  */
+/**
+ * Merge staggered search responses: dedupe by productId and surface whether
+ * the upstream rate-limited us (so we can say "busy" instead of "no results").
+ */
+function merge(results) {
+  const seen = new Set();
+  const items = [];
+  let rateLimited = false;
+  let error = null;
+  for (const d of results) {
+    if (d?.error?.code === "rate_limited") rateLimited = true;
+    else if (d?.error && !error) error = d.error.message || null;
+    for (const p of d.products || []) {
+      if (p.productId && !seen.has(p.productId)) {
+        seen.add(p.productId);
+        items.push(p);
+      }
+    }
+  }
+  return { items, rateLimited, error };
+}
+
 export default function LiveSearch({ query }) {
   const [state, setState] = useState({ status: "idle", items: [], error: null });
 
@@ -20,51 +42,40 @@ export default function LiveSearch({ query }) {
     let cancelled = false;
     setState((s) => ({ ...s, status: "loading" }));
 
-    // Fetch several query variants + pages so a search shows a deep catalog.
     // ponytail: the upstream caps at ~43 unique items per query regardless of
     // pagination (start_key keeps re-serving the same ~40), so diversity comes
-    // from query variants, not page depth. Each variant = 1 upstream call.
-    const variants = [
-      q,
-      `gaming ${q}`,
-      `cheap ${q}`,
-      `best ${q}`,
-      `${q} 2026`,
-      `popular ${q}`,
-      `professional ${q}`,
-      `student ${q}`,
-    ];
-    Promise.all(
-      variants.map((v) =>
-        fetch(`/api/lazada/search?q=${encodeURIComponent(v)}&marketplace=ph&page=1`)
-          .then((r) => (r.ok ? r.json() : { products: [] }))
-          .catch(() => ({ products: [] }))
-      )
-    )
-      .then((results) => {
+    // from query variants. But firing them all at once trips the upstream rate
+    // limiter (HTTP 429), so fetch them staggered.
+    const variants = [q, `gaming ${q}`, `${q} 2026`, `cheap ${q}`];
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    (async () => {
+      const results = [];
+      for (let i = 0; i < variants.length; i++) {
         if (cancelled) return;
-        const firstErr = results.find((d) => d?.error);
-        if (firstErr && results.every((d) => !(d?.products || []).length)) {
-          setState({ status: "error", items: [], error: firstErr.error?.message || "Search is unavailable right now." });
-          return;
+        if (i > 0) await sleep(700); // gentle pacing: avoid burst 429s
+        try {
+          const r = await fetch(`/api/lazada/search?q=${encodeURIComponent(variants[i])}&marketplace=ph&page=1`);
+          const d = await r.json();
+          results.push(r.ok ? d : { error: d?.error, products: [] });
+        } catch {
+          results.push({ products: [] });
         }
-        // dedupe by productId across pages
-        const seen = new Set();
-        const items = [];
-        for (const d of results) {
-          for (const p of d.products || []) {
-            if (p.productId && !seen.has(p.productId)) {
-              seen.add(p.productId);
-              items.push(p);
-            }
+        // Show results as they arrive instead of waiting for every variant.
+        const merged = merge(results);
+        if (!cancelled) {
+          if (merged.items.length) {
+            registerListings(merged.items);
+            setState({ status: "ready", items: merged.items, error: null });
+          } else {
+            const e = merged.rateLimited
+              ? "Marketplace is busy right now (rate limit). Please try again in a minute."
+              : merged.error || "No live listings found.";
+            setState({ status: "error", items: [], error: e });
           }
         }
-        registerListings(items); // map + register so /#/g/:id resolves on our detail page
-        setState({ status: "ready", items, error: null });
-      })
-      .catch(() => {
-        if (!cancelled) setState({ status: "error", items: [], error: "Could not reach the marketplace." });
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
