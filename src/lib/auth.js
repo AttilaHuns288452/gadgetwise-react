@@ -76,9 +76,40 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name.trim() } },
+      options: {
+        data: { full_name: name.trim() },
+        emailRedirectTo: window.location.origin + import.meta.env.BASE_URL,
+      },
     });
     return { error, needsConfirm: Boolean(data?.user && !data?.session) };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    if (!supabaseConfigured || !supabase) {
+      return { error: new Error("Google sign-in is unavailable because Supabase is not configured.") };
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + import.meta.env.BASE_URL },
+    });
+    return { error };
+  }, []);
+
+  const requestPasswordReset = useCallback(async (email) => {
+    if (!supabaseConfigured || !supabase) {
+      return { error: new Error("Password recovery is unavailable because Supabase is not configured.") };
+    }
+    const redirectTo = window.location.origin + import.meta.env.BASE_URL + "?recovery=1";
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+    return { error };
+  }, []);
+
+  const updatePassword = useCallback(async (password) => {
+    if (!supabaseConfigured || !supabase) {
+      return { error: new Error("Password updates are unavailable because Supabase is not configured.") };
+    }
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
   }, []);
 
   const signOut = useCallback(async () => {
@@ -91,5 +122,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, ready, configured: supabaseConfigured, demoEnabled: demoAuthEnabled, signIn, signUp, signOut };
+  return { user, ready, configured: supabaseConfigured, demoEnabled: demoAuthEnabled, signIn, signUp, signInWithGoogle, requestPasswordReset, updatePassword, signOut };
 }
