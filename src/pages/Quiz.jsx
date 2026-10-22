@@ -441,7 +441,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <div className="flex items-center gap-5">
                           <button
                             type="button"
-                            onClick={() => wish.toggle(g.id)}
+                            onClick={async () => { const result = await wish.toggle(g.id); if (result?.error) toast("Could not update wishlist. Check your connection and try again.", "alert"); else toast(result.adding ? "Added to wishlist" : "Removed from wishlist"); }}
                             className={`text-sm font-semibold ${wish.has(g.id) ? "text-primary" : "text-ink2 hover:text-primary"}`}
                           >
                             Save
