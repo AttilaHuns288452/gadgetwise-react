@@ -16,7 +16,7 @@ import ReviewHistory from "./pages/ReviewHistory.jsx";
 import PublicProfile from "./pages/PublicProfile.jsx";
 import { useAuth } from "./lib/auth.js";
 import { loadCatalog } from "./lib/catalog.js";
-import { btnPrimaryCls, AuthPromptHost } from "./components/ui.jsx";
+import { btnPrimaryCls, AuthPromptHost, CatalogErrorCard } from "./components/ui.jsx";
 
 const NAV = [
   ["/", "Home"],
@@ -149,7 +149,7 @@ export default function App() {
   // /admin is excluded too: the admin console must always render (its route
   // guard redirects non-admins, and its moderation/users panels work without the
   // marketplace). Only product-discovery routes are gated on the catalog.
-  const needsCatalog = ![ "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin" ].includes(pathname)
+  const needsCatalog = ![ "/", "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin" ].includes(pathname)
     && !pathname.startsWith("/u/");
   const { user, ready, admin: isAdminUser, signOut } = useAuth();
   // Real identity for the navbar avatar (no hardcoded initials).
@@ -314,25 +314,10 @@ export default function App() {
 
       <main className="flex-1">
         {catalogError && needsCatalog ? (
-          <section className="section">
-            <div className="card max-w-xl p-8 text-center">
-              <h1 className="text-2xl">Couldn't load live products</h1>
-              <p className="mt-3 text-ink2">
-                GadgetWise pulls real listings from the marketplace and it looks like
-                that request failed. Nothing here is being faked. Try again in a moment.
-              </p>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className={btnPrimaryCls + " mt-5"}
-              >
-                Retry
-              </button>
-            </div>
-          </section>
+          <CatalogErrorCard />
         ) : (
         <Routes>
-          <Route path="/" element={<Home compare={compare} onCompare={onCompare} />} />
+          <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} />} />
           <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} />} />
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />

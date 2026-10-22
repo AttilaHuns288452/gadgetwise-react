@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
-import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls } from '../components/ui.jsx';
+import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard } from '../components/ui.jsx';
 
 function Hero() {
   // Real catalog: feature the top-rated real product with an image. Falls back
@@ -352,16 +352,22 @@ function CTA() {
   );
 }
 
-export default function Home({ compare, onCompare }) {
+export default function Home({ compare, onCompare, catalogError }) {
   return (
     <>
       <Hero />
-      <Stats />
-      <Categories />
-      <Miss />
-      <TopRated compare={compare} onCompare={onCompare} />
-      <PriceChart />
-      <Cheapest />
+      {catalogError ? (
+        <CatalogErrorCard />
+      ) : (
+        <>
+          <Stats />
+          <Categories />
+          <Miss />
+          <TopRated compare={compare} onCompare={onCompare} />
+          <PriceChart />
+          <Cheapest />
+        </>
+      )}
       <Steps />
       <CTA />
     </>

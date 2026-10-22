@@ -263,6 +263,29 @@ export function Modal({ title, sub, children, actions, onClose }) {
   );
 }
 
+/* Honest "products unavailable" card. Shown when the live marketplace can't be
+   reached — never replaced by fake product data. */
+export function CatalogErrorCard() {
+  return (
+    <section className="section">
+      <div className="card max-w-xl p-8 text-center mx-auto">
+        <h2 className="text-2xl">Couldn't load live products</h2>
+        <p className="mt-3 text-ink2">
+          GadgetWise pulls real listings from the marketplace and it looks like that
+          request failed. Nothing here is being faked. Try again in a moment.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className={btnPrimaryCls + " mt-5"}
+        >
+          Retry
+        </button>
+      </div>
+    </section>
+  );
+}
+
 /* Shared sign-in prompt for guests who attempt an account-gated action
    (favorite, review, ...). Rendered once in App; every gated action routes
    through requireAuth() so the prompt and return-to stay consistent. */
