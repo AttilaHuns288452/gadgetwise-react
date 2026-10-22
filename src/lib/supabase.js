@@ -5,8 +5,9 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// optional chaining: import.meta.env is undefined in node/test context.
+const url = import.meta.env?.VITE_SUPABASE_URL;
+const anonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
 
 /** True when the app is wired to a real Supabase project. */
 export const supabaseConfigured = Boolean(url && anonKey);
