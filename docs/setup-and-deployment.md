@@ -40,3 +40,9 @@ The function currently requires an authenticated user and limits each account to
 ## Important verification boundary
 
 Creating files in the repository does not apply a migration or deploy an Edge Function. Before announcing the feature is live, test sign-in, the deployed function, provider quota/error handling, RLS with multiple test accounts, and the production frontend origin. Verify no provider secrets appear in built assets.
+
+## Lazada live product search
+
+The repository includes a server-side Vercel route at `/api/lazada/search`, with normalization and a short in-memory cache. Configure `LAZADA_API_KEY` (preferred) or the backwards-compatible `OMKAR_LAZADA_API_KEY` in Vercel project environment variables for the appropriate deployment environments. Never use a `VITE_*` name for this credential. The endpoint queries a Lazada/TMAPI-compatible provider through the existing `lib/lazada.js` adapter. Check the provider plan, rate limits, and response contract for the key you use.
+
+The endpoint is a Vercel serverless route and will not execute on GitHub Pages hosting by itself. On GitHub Pages, live search requires a separately deployed server-side API origin and an explicit frontend configuration/proxy; otherwise the UI must report the endpoint as unavailable. The Admin product lookup uses the same-origin route and only copies the selected listing into an unpublished/editable form. It does not write search results automatically into the curated catalog. Verify brand/model, source URL, category, price and specifications, and complete all recommendation scores before publication.
