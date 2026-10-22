@@ -549,7 +549,8 @@ function AddGadget({ tab, onSave, editing, toast, categories }) {
             <Field label="Brand"><input name="brand" className={inputCls} placeholder="e.g. Kaido" defaultValue={editing?.brand || ""} /></Field>
             <Field label="Model"><input name="model" className={inputCls} placeholder="e.g. AirBook 14" defaultValue={editing?.model || ""} /></Field>
             <Field label="Category">
-              <select name="category" className={inputCls} defaultValue={editing?.category || ""}>
+              <select name="category" required className={inputCls} defaultValue={editing?.category || ""}>
+                <option value="" disabled>Choose category</option>
                 {(categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </Field>
