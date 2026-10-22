@@ -87,6 +87,32 @@ test("fetchListing returns null on upstream failure (no fake product)", async ()
   assert.equal(getListing("lazada-888"), null);
 });
 
+test("recommend never penalizes missing specs as zero (the integrity bug)", async () => {
+  const { recommend, GW } = await import("../src/lib.js");
+  const { toGadget: t } = await import("../src/lib/marketplace.js");
+  // A strong real product: excellent price + rating, but NO curated specs.
+  const m = t({ productId: "9", title: "HP Pavilion Laptop", price: 12000, rating: 4.8, reviewCount: 50 });
+  const before = GW.gadgets.length;
+  GW.gadgets.push(m);
+  const r = recommend({
+    budget: { min: 8000, max: 25000, label: "test" },
+    useCase: GW.gadgets && (await import("../src/lib.js")).GW.useCases.find((u) => u.id === "general"),
+    priorities: { performance: "high" },
+    category: "laptops",
+  });
+  GW.gadgets.length = before;
+  const hit = r.results.find((x) => x.gadget.id === "lazada-9");
+  assert.ok(hit, "marketplace item is ranked");
+  assert.ok(Number.isFinite(hit.score), "score is never NaN");
+  const keys = hit.breakdown.factors.map((f) => f.key);
+  // Missing specs are EXCLUDED from the breakdown, not scored as 0.
+  assert.ok(!keys.includes("performance"), "unknown performance must not be scored as 0");
+  assert.ok(!keys.includes("battery"), "unknown battery must not be scored as 0");
+  // factors must sum to the reported total (no phantom/lost weight).
+  const sum = hit.breakdown.factors.reduce((n, f) => n + f.earned, 0);
+  assert.ok(Math.abs(Math.round(sum) - hit.score) <= 1, `factors ${sum} != score ${hit.score}`);
+});
+
 test("ownIndex is missing-data aware: excludes nulls, never fabricates", async () => {
   const { ownIndex, ownIndexCoverage } = await import("../src/lib.js");
   const { toGadget: t } = await import("../src/lib/marketplace.js");

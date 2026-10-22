@@ -66,6 +66,8 @@ function clamp01(x) {
 // Normalize a 0-10 spec score to 0-1 relative to its category pool.
 // With fewer than 3 points in a pool, fall back to the absolute scale.
 function normalize(value, pool) {
+  // Missing input is unknown, not zero. Callers exclude null from weights.
+  if (value == null || !Number.isFinite(value)) return null;
   if (!pool || pool.length < 3) return clamp01(value / 10);
   const min = Math.min(...pool), max = Math.max(...pool);
   if (max - min < 0.75) return clamp01(value / 10); // near-uniform pool
@@ -93,8 +95,10 @@ function academicFit(gadget, useCase, pool) {
   const crit = useCase.criteria;
   let sum = 0, weight = 0;
   for (const [factor, imp] of Object.entries(crit)) {
-    const v = factor === "storage" ? gadget.scored.storage : gadget.scored[factor];
-    sum += imp * normalize(v, pool[factor]);
+    const v = factor === "storage" ? gadget.scored?.storage : gadget.scored?.[factor];
+    const n = normalize(v, pool[factor]);
+    if (n == null) continue; // unknown input excluded — never scored as 0
+    sum += imp * n;
     weight += imp;
   }
   return weight ? sum / weight : 0;
@@ -110,7 +114,7 @@ function buildPools() {
   GW.categories.forEach((c) => {
     const list = GW.gadgetsInCategory(c.id);
     factors.forEach((f) => {
-      (pools[f] = pools[f] || []).push(...list.map((g) => g.scored[f]));
+      (pools[f] = pools[f] || []).push(...list.map((g) => g.scored?.[f]).filter((v) => v != null));
     });
     pools._monthly = pools._monthly || [];
     pools._monthly.push(...list.map(GW.monthlyCost));
@@ -178,18 +182,20 @@ function scoreGadget(gadget, opts) {
   });
 
   const adjust = [
-    ["performance", (g) => g.scored.performance],
-    ["battery", (g) => g.scored.battery],
+    ["performance", (g) => g.scored?.performance],
+    ["battery", (g) => g.scored?.battery],
     ["value", (g) => ownershipValue(g, catPools), "vs. category monthly cost"],
-    ["portability", (g) => g.scored.portability],
-    ["display", (g) => g.scored.display],
-    ["camera", (g) => g.scored.camera],
-    ["storage", (g) => g.scored.storage],
+    ["portability", (g) => g.scored?.portability],
+    ["display", (g) => g.scored?.display],
+    ["camera", (g) => g.scored?.camera],
+    ["storage", (g) => g.scored?.storage],
   ];
   adjust.forEach(([key, get, note]) => {
     const max = weights[key] || 0;
     if (max <= 0.01) return;
-    const v01 = key === "value" ? ownershipValue(gadget, catPools) : normalize(get(gadget), catPools[key]);
+    const raw = key === "value" ? ownershipValue(gadget, catPools) : normalize(get(gadget), catPools[key]);
+    if (raw == null) return; // unknown factor excluded — never scored as 0
+    const v01 = raw;
     factors.push({
       key, label: FACTOR_META[key].label, earned: +(v01 * max).toFixed(1), max: +max.toFixed(1),
       note: note || (typeof get(gadget) === "number" && key !== "value"
