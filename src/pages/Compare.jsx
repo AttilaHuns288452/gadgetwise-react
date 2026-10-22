@@ -1,10 +1,11 @@
 // Compare — /compare · "Compare Gadgets"
 // Frame-matched comparison table: one column per gadget, winner cells get a
 // soft badge only when the row's spread is at least 8% (near-ties stay quiet).
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { Img, useWishlist, btnPrimaryCls } from "../components/ui.jsx";
+import { recordComparisonHistory } from "../lib/comparison-history.js";
 
 const THRESHOLD = 0.08;
 
@@ -64,6 +65,16 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
   const seedIds = (searchParams.get("ids") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const ids = [...new Set([...compare, ...seedIds])].filter((id) => !hidden.has(id));
   const list = GW.gadgetsByIds(ids);
+  const comparisonKey = list.map((g) => g.id).join(",");
+
+  useEffect(() => {
+    if (list.length < 2) return;
+    let active = true;
+    recordComparisonHistory(list.map((g) => g.id)).catch((error) => {
+      if (active) console.error("Comparison history save failed:", error instanceof Error ? error.message : "unknown");
+    });
+    return () => { active = false; };
+  }, [comparisonKey]);
 
   const remove = (id) => {
     if (compare.has(id)) onCompare(id);
