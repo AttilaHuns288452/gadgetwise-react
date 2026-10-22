@@ -12,6 +12,7 @@ import ComparisonHistory from "./pages/ComparisonHistory.jsx";
 import Profile from "./pages/Profile.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import PasswordRecovery from "./pages/PasswordRecovery.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import { clearRuntimeCatalog, loadPublishedCatalog } from "./lib/catalog-runtime.js";
@@ -47,6 +48,7 @@ const ACCOUNT = [
   ["Review History", "/review-history"],
   ["Log in", "/login"],
   ["Create account", "/register"],
+  ["Reset password", "/reset-password"],
 ];
 const THIS_PROJECT = [
   "Transparent scoring formulas",
@@ -139,6 +141,13 @@ export default function App() {
   }));
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith("/admin");
+
+  useEffect(() => {
+    const recoveryCallback = new URLSearchParams(window.location.search).get("recovery") === "1";
+    if (recoveryCallback && pathname !== "/reset-password") {
+      navigate("/reset-password", { replace: true, state: { recovery: true } });
+    }
+  }, [pathname, navigate]);
 
   useEffect(() => {
     let active = true;
@@ -303,6 +312,7 @@ export default function App() {
           <Route path="/profile" element={<Profile compare={compare} onCompare={onCompare} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<PasswordRecovery />} />
           <Route path="/review-history" element={<ReviewHistory />} />
           <Route path="/admin" element={<Admin />} />
             </Routes>
