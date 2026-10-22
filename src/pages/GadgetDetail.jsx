@@ -316,7 +316,7 @@ function GadgetDetail({ compare, onCompare }) {
 
         <div className="min-w-0">
           <div className="text-xs font-semibold tracking-[0.18em] text-ink3">
-            {g.brand} · {catName}
+            {g.brand && g.brand !== "Unknown" ? `${g.brand} · ` : ""}{catName}
             {g.releaseYear ? ` · ${g.releaseYear}` : ""}
             {g.marketplace && (
               <span className="ml-2 rounded-full border border-[#C7C7CC] bg-[#F9FAFB] px-2 py-0.5 text-[0.65rem] font-semibold tracking-normal text-ink2">

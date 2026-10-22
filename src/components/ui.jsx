@@ -51,7 +51,7 @@ export function Stars({ rating, count }) {
         })}
       </span>
       <span className="mono tabular-nums text-ink2">{rating.toFixed(1)}</span>
-      {count != null && <span className="tabular-nums text-ink3">({count})</span>}
+      {count != null && <span className="tabular-nums text-ink3">({count.toLocaleString()})</span>}
     </span>
   );
 }
@@ -177,7 +177,9 @@ export function GadgetCard({ g, compare, onCompare }) {
       </a>
       <div className="flex flex-1 flex-col gap-2.5 border-t border-line p-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
+          {g.brand && g.brand !== "Unknown" && (
+            <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
+          )}
           <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary">
             {g.model}
           </a>
