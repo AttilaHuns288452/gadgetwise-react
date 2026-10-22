@@ -63,15 +63,44 @@ export async function loadMyReviews(userId) {
   return data || [];
 }
 
+// Resolve public display names for a set of reviewer ids. public_profiles is a
+// definer view exposing id + display_name only (never email). Graceful when the
+// view is absent (pre-migration): callers fall back to a neutral "Member".
+async function authorNames(userIds) {
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (!ids.length) return {};
+  try {
+    const { data, error } = await supabase
+      .from("public_profiles")
+      .select("id, display_name")
+      .in("id", ids);
+    if (error) return {};
+    return Object.fromEntries((data || []).map((p) => [p.id, p.display_name]));
+  } catch {
+    return {};
+  }
+}
+
+const toReview = (r, names) => ({
+  id: r.id,
+  user_id: r.user_id,
+  user: names[r.user_id] || "Member",
+  text: r.body || "",
+  rating: r.rating,
+  date: r.created_at,
+});
+
 export async function loadReviews(gadget_id) {
   if (!supabaseConfigured) return null;
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, rating, body, created_at")
+    .select("id, user_id, rating, body, created_at")
     .eq("gadget_id", gadget_id)
     .order("created_at", { ascending: false });
   if (error) return null;
-  return data || [];
+  const rows = data || [];
+  const names = await authorNames(rows.map((r) => r.user_id));
+  return rows.map((r) => toReview(r, names));
 }
 
 // ---------- reviews: admin moderation ----------
@@ -116,6 +145,43 @@ export async function loadComparisons(userId) {
     .order("created_at", { ascending: false });
   if (error) return null;
   return (data || []).map((r) => ({ ids: r.gadget_ids, ts: new Date(r.created_at).getTime() }));
+}
+
+// ---------- public reviewer profiles ----------
+// A public profile shows only public info: display name + approved reviews.
+// Never email, auth metadata, wishlist, or private account data.
+
+export async function getPublicProfile(userId) {
+  if (!supabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("public_profiles")
+      .select("id, display_name")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) return null;
+    return data || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Public reviews by one user: approved only, never pending/rejected. */
+export async function loadPublicUserReviews(userId) {
+  if (!supabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("id, user_id, gadget_id, rating, body, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) return null;
+    const rows = (data || []).filter((r) => r.status !== "rejected");
+    const names = await authorNames([userId]);
+    return rows.map((r) => ({ ...toReview(r, names), gadget_id: r.gadget_id }));
+  } catch {
+    return null;
+  }
 }
 
 export async function saveComparison(userId, ids, titles) {

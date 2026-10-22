@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
 import { useAuth, requireAuth } from "../lib/auth.js";
-import { submitReview as submitReviewRecord } from "../lib/store.js";
+import { submitReview as submitReviewRecord, loadReviews } from "../lib/store.js";
 import { isListingId, fetchListing } from "../lib/marketplace.js";
 import {
   Img,
@@ -164,6 +164,16 @@ function GadgetDetail({ compare, onCompare }) {
       if (cancelled) return;
       setFetched(found);
       setLoadingListing(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  // Load real reviews for this product (public + own; RLS enforces visibility).
+  useEffect(() => {
+    let cancelled = false;
+    loadReviews(id).then((rows) => {
+      if (!cancelled && rows) setExtra(rows);
     });
     return () => {
       cancelled = true;
@@ -624,7 +634,15 @@ function GadgetDetail({ compare, onCompare }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                         <div>
-                          <div className="font-semibold">{r.user}</div>
+                          <div className="font-semibold">
+                            {r.user_id ? (
+                              <Link to={`/u/${r.user_id}`} className="hover:text-primary hover:underline">
+                                {r.user}
+                              </Link>
+                            ) : (
+                              r.user
+                            )}
+                          </div>
                           {r.context && <div className="text-xs text-ink3">{r.context}</div>}
                         </div>
                         <div className="flex items-center gap-3">
