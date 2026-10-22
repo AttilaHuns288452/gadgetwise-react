@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuth } from "../lib/auth.js";
+import { supabase, supabaseConfigured } from "../lib/supabase.js";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
 import {
