@@ -188,6 +188,9 @@ function GadgetDetail({ compare, onCompare }) {
     return (
       <section className="section">
         <h1>Gadget not found</h1>
+        <p className="mt-3 text-ink2">
+          This gadget is not in the catalog. Marketplace listings can also disappear when the seller removes them.
+        </p>
         <Link to="/gadgets" className="btn-primary mt-4">
           Back to catalog
         </Link>

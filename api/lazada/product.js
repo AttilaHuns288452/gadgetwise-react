@@ -67,6 +67,15 @@ export default async function handler(req, res) {
   }
 
   if (!upstream.ok) {
+    // 417 from item_detail ("Get item detail error") that survived the transient
+    // retry means the listing itself is gone upstream: answer 404 honestly
+    // instead of a generic 502 "search failed".
+    if (upstream.status === 417) {
+      return res.status(404).json({
+        error: { code: "product_unavailable", message: "This listing is no longer available on the marketplace." },
+        upstreamStatus: 417,
+      });
+    }
     const mapped = mapUpstreamError(upstream.status, body, Object.fromEntries(upstream.headers.entries()));
     return res.status(mapped.status).json({
       error: { code: mapped.code, message: mapped.message },
