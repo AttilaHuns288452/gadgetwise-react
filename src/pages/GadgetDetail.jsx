@@ -30,15 +30,6 @@ const initials = (name) =>
     .toUpperCase()
     .slice(0, 2);
 
-/* ponytail: fixed prototype distribution copy (frame verbatim);
-   derive from a real histogram when the backend has one. */
-const DIST = [
-  ["5★", "55%"],
-  ["4★", "23%"],
-  ["3★", "12%"],
-  ["2★", "6%"],
-  ["1★", "5%"],
-];
 
 function MiniStars({ n }) {
   return (
@@ -644,25 +635,42 @@ function GadgetDetail({ compare, onCompare }) {
           <section>
             <h2 className="text-xl font-semibold">Student reviews</h2>
             <div className="mt-4 grid gap-8 lg:grid-cols-2">
-              <div className="card p-6">
-                <div className="mono text-4xl font-semibold text-primary-dark">
-                  {g.rating.toFixed(1)}
-                </div>
-                <div className="mt-2 text-ink2">{g.reviewCount} student reviews</div>
-              </div>
-              <div className="card p-6">
-                <p className="text-sm text-ink2">
-                  Distribution shaped from the average rating (prototype data) · showing the 3 most recent
-                </p>
-                <ul className="mt-3 space-y-1.5">
-                  {DIST.map(([k, pct]) => (
-                    <li key={k} className="flex items-baseline justify-between text-sm">
-                      <span className="text-ink2">{k}</span>
-                      <span className="mono font-semibold text-ink">{pct}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {(() => {
+                // Real stats computed from the loaded GadgetWise reviews (not the
+                // marketplace rating) so the summary always matches the list below.
+                const n = reviews.length;
+                const avg = n ? reviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) / n : null;
+                const dist = [5, 4, 3, 2, 1].map((star) => {
+                  const count = reviews.filter((r) => Math.round(Number(r.rating)) === star).length;
+                  return { star, count, pct: n ? Math.round((count / n) * 100) : 0 };
+                });
+                return (
+                  <>
+                    <div className="card p-6">
+                      <div className="mono text-4xl font-semibold text-primary-dark">
+                        {avg == null ? "—" : avg.toFixed(1)}
+                      </div>
+                      <div className="mt-2 text-ink2">
+                        {n} student review{n === 1 ? "" : "s"}
+                        {n ? " · average rating" : " · no reviews yet"}
+                      </div>
+                    </div>
+                    <div className="card p-6">
+                      <p className="text-sm text-ink2">
+                        {n ? "Rating distribution from the reviews below" : "No ratings yet"}
+                      </p>
+                      <ul className="mt-3 space-y-1.5">
+                        {dist.map((d) => (
+                          <li key={d.star} className="flex items-baseline justify-between text-sm">
+                            <span className="text-ink2">{d.star}★</span>
+                            <span className="mono font-semibold text-ink">{n ? `${d.count} · ${d.pct}%` : "—"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             <div className="mt-6 space-y-4">
               {reviews.map((r) => (
@@ -701,7 +709,7 @@ function GadgetDetail({ compare, onCompare }) {
                 Write a review
               </button>
               <span className="text-sm text-ink3">
-                Showing {reviews.length} of {g.reviewCount}
+                Showing {reviews.length} of {reviews.length}
               </span>
             </div>
           </section>
