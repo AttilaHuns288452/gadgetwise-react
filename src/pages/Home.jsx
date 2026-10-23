@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
-import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard } from '../components/ui.jsx';
+import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, useReveal } from '../components/ui.jsx';
 import ParetoExplorer from '../components/ParetoExplorer.jsx';
 
 function Hero() {
@@ -13,13 +13,13 @@ function Hero() {
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="flex min-w-0 flex-col justify-center">
-          <h1 className="font-display text-[clamp(38px,5vw,68px)] font-bold leading-[1.02] tracking-tight">
+          <h1 className="anim-fade-up font-display text-[clamp(38px,5vw,68px)] font-bold leading-[1.02] tracking-tight">
             Find the right gadget for <span className="text-star">school.</span>
           </h1>
-          <p className="mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2">
+          <p className="anim-fade-up mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2" style={{ animationDelay: "80ms" }}>
             Compare <strong className="font-semibold text-white">verified specifications, monthly costs, and student priorities</strong> before you buy — with recommendations whose scoring you can actually read.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="anim-fade-up mt-7 flex flex-wrap gap-3" style={{ animationDelay: "160ms" }}>
             <Link to="/recommend" className={btnPrimaryCls}>Find my gadget</Link>
             <Link to="/gadgets" className="rounded-lg border border-white/70 px-7 py-2.5 text-base font-semibold text-white transition-colors hover:bg-white/10">Browse gadgets</Link>
           </div>
@@ -228,6 +228,7 @@ function CTA() {
 }
 
 export default function Home({ compare, onCompare, catalogError }) {
+  useReveal();
   return (
     <>
       <Hero />
@@ -235,10 +236,10 @@ export default function Home({ compare, onCompare, catalogError }) {
         <CatalogErrorCard />
       ) : (
         <>
-          <Stats />
-          <Categories />
-          <Miss />
-          <TopRated compare={compare} onCompare={onCompare} />
+          <div className="reveal"><Stats /></div>
+          <div className="reveal"><Categories /></div>
+          <div className="reveal"><Miss /></div>
+          <div className="reveal"><TopRated compare={compare} onCompare={onCompare} /></div>
           <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
             <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Explore trade-offs</h2>
             <p className="mt-2 max-w-[62ch] text-base text-ink2">
@@ -246,11 +247,11 @@ export default function Home({ compare, onCompare, catalogError }) {
             </p>
             <div className="mt-6"><ParetoExplorer /></div>
           </section>
-          <Cheapest />
+          <div className="reveal"><Cheapest /></div>
         </>
       )}
-      <Steps />
-      <CTA />
+      <div className="reveal"><Steps /></div>
+      <div className="reveal"><CTA /></div>
     </>
   );
 }

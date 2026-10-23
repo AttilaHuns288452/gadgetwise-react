@@ -168,7 +168,7 @@ export function GadgetCard({ g, compare, onCompare }) {
   const catName = GW.categories.find((c) => c.id === g.category)?.name || g.category;
   const specRows = Object.entries(g.specs || {}).slice(0, 3);
   return (
-    <article className="card flex flex-col overflow-hidden transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,34,.05),0_8px_24px_rgba(15,23,34,.08)]">
+    <article className="card hover-lift flex flex-col overflow-hidden">
       <a href={`#/g/${g.id}`} className="block">
         <div className="relative">
           <Img gadget={g} />
@@ -254,8 +254,8 @@ export function Modal({ title, sub, children, actions, onClose }) {
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
+    <div className="anim-fade-in fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="anim-scale-in max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
         <h3 className="text-[calc(22px*var(--tscale,1))] font-bold leading-snug text-[#111827]">{title}</h3>
         {sub && <p className="mt-1.5 text-sm leading-relaxed text-[#6B7280]">{sub}</p>}
         <div className="mt-6 space-y-5">{children}</div>
@@ -385,4 +385,27 @@ export function Logo({ size = 20, tone = "dark", showWordmark = true, className 
       )}
     </span>
   );
+}
+
+
+/** Scroll reveal: toggles .is-visible on .reveal elements as they enter view. */
+export function useReveal() {
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll(".reveal:not(.is-visible)"));
+    if (!els.length) return;
+    if (!("IntersectionObserver" in window)) {
+      els.forEach((e) => e.classList.add("is-visible"));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        if (en.isIntersecting) {
+          en.target.classList.add("is-visible");
+          io.unobserve(en.target);
+        }
+      }
+    }, { threshold: 0.08, rootMargin: "0px 0px -5% 0px" });
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
 }

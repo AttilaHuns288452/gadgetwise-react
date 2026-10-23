@@ -139,6 +139,41 @@
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in .25s ease; }
 
+/* ---- Motion system: restrained, transform/opacity only, one easing family ---- */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 150ms;
+  --dur: 250ms;
+  --dur-slow: 450ms;
+}
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+
+.anim-fade-up { animation: fade-up var(--dur-slow) var(--ease-out) both; }
+.anim-fade-in { animation: fade-in var(--dur-slow) var(--ease-out) both; }
+.anim-scale-in { animation: scale-in var(--dur) var(--ease-out) both; }
+
+/* scroll reveal — a tiny hook toggles .is-visible */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* card / tile lift on hover */
+.hover-lift { transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(15, 23, 34, 0.10); }
+.hover-lift:active { transform: translateY(-1px); }
+
+/* button press feedback + smoother color transitions */
+.btn, .btn-primary, .btn-ghost, .btn-amber, .btn-hero, .btn-hero-ghost {
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.btn:active, .btn-primary:active, .btn-ghost:active, .btn-amber:active, .btn-hero:active, .btn-hero-ghost:active {
+  transform: scale(0.98);
+}
+
 /* keyboard focus — one ring for every interactive element */
 :focus-visible {
   outline: 2px solid var(--color-primary, #2563EB);
@@ -149,9 +184,12 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* never leave reveal content invisible when motion is off */
+  .reveal { opacity: 1 !important; transform: none !important; }
 }
 
 ::selection { background: var(--color-primary-soft, #DBEAFE); }
