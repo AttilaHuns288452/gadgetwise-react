@@ -359,15 +359,12 @@ export function useToast() {
  * One source of truth for every branded surface (header, footer, auth,
  * admin). Tone controls the wordmark contrast for light vs dark chrome.
  * ------------------------------------------------------------------ */
-export function LogoMark({ size = 20, spark = "#FDE047", className = "" }) {
+export function LogoMark({ size = 20, className = "" }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" className={className} aria-hidden="true">
-      <g stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.5 3 4 6.7v9.1l6.5 3.7 6.5-3.7V6.7L10.5 3z" />
-        <path d="M4 6.7l6.5 3.7 6.5-3.7" />
-        <path d="M10.5 10.4v9.1" />
-      </g>
-      <path d="M20 2.2l.85 1.9 1.9.85-1.9.85-.85 1.9-.85-1.9-1.9-.85 1.9-.85z" fill={spark} stroke="none" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z" />
+      <path d="M3 7l9 5 9-5" />
+      <path d="M12 12v10" />
     </svg>
   );
 }
