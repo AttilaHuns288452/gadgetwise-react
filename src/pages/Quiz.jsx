@@ -160,7 +160,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
         </nav>
 
         {/* RIGHT — current step */}
-        <section className="min-w-0">
+        <section className="order-1 min-w-0 lg:order-2">
           {step === 1 && (
             <div>
               <h2 className="text-2xl font-extrabold">What are you looking for?</h2>
