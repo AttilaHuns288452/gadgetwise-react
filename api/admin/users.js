@@ -65,6 +65,9 @@ export default async function handler(req, res) {
 
   // Authorized. Now, and only now, use the service role to list real users.
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  // Role source of truth: which auth users are in admin_users.
+  const { data: adminRows } = await admin.from("admin_users").select("user_id");
+  const adminIds = new Set((adminRows || []).map((r) => r.user_id));
   const users = [];
   let page = 1;
   try {
@@ -80,6 +83,7 @@ export default async function handler(req, res) {
           createdAt: u.created_at,
           lastSignIn: u.last_sign_in_at || null,
           confirmed: Boolean(u.email_confirmed_at),
+          isAdmin: adminIds.has(u.id),
         });
       }
       if (list.length < 200 || page >= 10) break;

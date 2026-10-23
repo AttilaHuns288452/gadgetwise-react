@@ -256,6 +256,16 @@ export async function saveMyProfile(userId, { full_name, bio, avatar_url }) {
   return { ok: true };
 }
 
+// ---------- roles (admin_users membership, DB-enforced) ----------
+export async function setUserRole(userId, makeAdmin) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.rpc("admin_set_role", {
+    target_user_id: userId,
+    make_admin: makeAdmin,
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 // ---------- site settings (admin-managed public content) ----------
 export async function loadSiteSettings() {
   if (!supabaseConfigured) return {};

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -684,6 +684,10 @@ function Users() {
   const [state, setState] = useState("loading"); // loading | ready | error
   const [err, setErr] = useState("");
   const [reload, setReload] = useState(0);
+  const [toast, toastNode] = useToast();
+  const { user: me } = useAuth();
+  const [revokeTarget, setRevokeTarget] = useState(null);
+  const [roleBusy, setRoleBusy] = useState(false);
 
   // Real registered users, fetched server-side with this admin's verified
   // session. The fabricated demo roster is gone; if the request fails we say so.
@@ -711,6 +715,25 @@ function Users() {
     };
   }, [reload]);
 
+  const grantAdmin = async (u) => {
+    setRoleBusy(true);
+    const result = await setUserRole(u.id, true);
+    setRoleBusy(false);
+    if (!result.ok) { toast(result.error || "Could not update the role", "alert"); return; }
+    setUsers((rows) => rows.map((r) => (r.id === u.id ? { ...r, isAdmin: true } : r)));
+    toast(`${u.email} is now an admin`);
+  };
+  const revokeAdmin = async () => {
+    if (!revokeTarget) return;
+    setRoleBusy(true);
+    const result = await setUserRole(revokeTarget.id, false);
+    setRoleBusy(false);
+    if (!result.ok) { toast(result.error || "Could not update the role", "alert"); return; }
+    setUsers((rows) => rows.map((r) => (r.id === revokeTarget.id ? { ...r, isAdmin: false } : r)));
+    setRevokeTarget(null);
+    toast(`${revokeTarget.email} is no longer an admin`);
+  };
+
   const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—");
   const initials = (email) => (email || "?").slice(0, 2).toUpperCase();
   const shown = users.filter((u) => `${u.email} ${u.id}`.toLowerCase().includes(q.toLowerCase()));
@@ -733,8 +756,8 @@ function Users() {
         <table className="w-full min-w-[760px]">
           <thead>
             <tr className="border-b border-[#EAECF0]">
-              <th className={headCls}>Account</th><th className={headCls}>Registered</th><th className={headCls}>Last sign-in</th>
-              <th className={`${headCls} text-right`}>Email confirmed</th>
+              <th className={headCls}>Account</th><th className={headCls}>Role</th><th className={headCls}>Registered</th><th className={headCls}>Last sign-in</th>
+              <th className={headCls}>Email confirmed</th><th className={`${headCls} text-right`}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -751,20 +774,58 @@ function Users() {
                     </div>
                   </div>
                 </td>
+                <td className={cellCls}>
+                  <Pill kind={u.isAdmin ? "active" : "inactive"}>{u.isAdmin ? "admin" : "user"}</Pill>
+                </td>
                 <td className={cellCls}>{fmtDate(u.createdAt)}</td>
                 <td className={cellCls}>{fmtDate(u.lastSignIn)}</td>
-                <td className={`${cellCls} text-right`}>
+                <td className={cellCls}>
                   <Pill kind={u.confirmed ? "approved" : "pending"}>{u.confirmed ? "confirmed" : "pending"}</Pill>
+                </td>
+                <td className={`${cellCls} text-right`}>
+                  {u.isAdmin ? (
+                    me?.id === u.id ? (
+                      <span className="text-[13px] text-[#98A2B3]">That's you</span>
+                    ) : (
+                      <button className={iconBtn} title="Remove admin" disabled={roleBusy} onClick={() => setRevokeTarget(u)}>
+                        <Ico n="exit" />
+                      </button>
+                    )
+                  ) : (
+                    <button className={iconBtn} title="Make admin" disabled={roleBusy} onClick={() => grantAdmin(u)}>
+                      <Ico n="user" />
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
             {shown.length === 0 && (
-              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={4}>No users match the search.</td></tr>
+              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={6}>No users match the search.</td></tr>
             )}
           </tbody>
         </table>
       </div>
       </>
+      )}
+      {toastNode}
+      {revokeTarget && (
+        <Modal
+          title="Remove admin access?"
+          sub="They will keep their account and reviews, but lose access to the admin console."
+          onClose={() => setRevokeTarget(null)}
+          actions={
+            <>
+              <button type="button" className={btnOutline} onClick={() => setRevokeTarget(null)}>Cancel</button>
+              <button type="button" className={btnDangerCls} onClick={revokeAdmin} disabled={roleBusy}>
+                {roleBusy ? "Removing…" : "Remove admin"}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm leading-relaxed text-[#475467]">
+            You are removing admin access from <b>{revokeTarget.email}</b>. You can grant it again at any time.
+          </p>
+        </Modal>
       )}
     </>
   );
