@@ -68,8 +68,8 @@ function Pill({ kind, children }) {
 function Panel({ title, action, children, className = "" }) {
   return (
     <section className={`w-full min-w-0 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.05)] ${className}`}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[20px] font-bold text-[#111827]">{title}</h2>
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <h2 className="min-w-0 break-words text-[20px] font-bold text-[#111827]">{title}</h2>
         {action}
       </div>
       <div className="mt-5">{children}</div>
@@ -78,11 +78,14 @@ function Panel({ title, action, children, className = "" }) {
 }
 
 function BarList({ rows }) {
-  const max = Math.max(...rows.map(([, v]) => v));
+  if (!rows.length) {
+    return <div className="rounded-lg border border-dashed border-[#D9DEE7] bg-[#FAFBFC] p-5 text-[14px] leading-relaxed text-[#667085]">No data has been recorded for this view yet.</div>;
+  }
+  const max = Math.max(1, ...rows.map(([, v]) => v));
   return (
     <ul className="space-y-3.5">
       {rows.map(([name, value]) => (
-        <li key={name} className="flex items-center gap-4">
+        <li key={name} className="flex min-w-0 items-center gap-4">
           <span className="w-28 shrink-0 truncate text-[15px] text-[#344054] sm:w-72">{name}</span>
           <span className="h-3 flex-1 overflow-hidden rounded bg-[#EDEFF3]">
             <span className="block h-full rounded bg-[#CBD5E1]" style={{ width: `${(value / max) * 100}%` }} />
@@ -327,6 +330,7 @@ function Categories({ toast }) {
   const [form, setForm] = useState(null); // {id?, name, blurb, sort_order}
   const reload = async () => { const r = await loadCategories(); if (r.ok) setRows(r.rows); };
   useEffect(() => { reload(); }, []);
+  const categoryCounts = GW.gadgets.reduce((map, g) => map.set(g.category, (map.get(g.category) || 0) + 1), new Map());
   const save = async () => {
     if (!form?.name?.trim()) { toast("Name is required", "alert"); return; }
     const res = await saveCategory(form.id || null, form);
@@ -339,12 +343,20 @@ function Categories({ toast }) {
   };
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[30px] font-bold text-[#111827]">Categories</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog categories. Add, edit, or remove them here — saved to the database.</p>
+      <div className="rounded-2xl border border-[#DCE7F8] bg-[linear-gradient(135deg,#F8FBFF_0%,#EEF5FF_100%)] p-6 shadow-[0_12px_30px_rgba(31,78,121,0.08)]">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2260D4]">Catalog structure</p>
+            <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Categories</h1>
+            <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">Categories are lightweight navigation labels for the marketplace catalog. Use them to group products and power filters, not to invent product records.</p>
+          </div>
+          <button className={btnPrimary} onClick={() => setForm({ name: "", blurb: "", sort_order: rows.length })}><Ico n="plus" size={16} /> Add category</button>
         </div>
-        <button className={btnPrimary} onClick={() => setForm({ name: "", blurb: "", sort_order: 0 })}><Ico n="plus" size={16} /> Add category</button>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/80 bg-white/75 px-4 py-3"><div className="mono text-2xl font-bold text-[#14213A]">{rows.length}</div><div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#667085]">Configured labels</div></div>
+          <div className="rounded-xl border border-white/80 bg-white/75 px-4 py-3"><div className="mono text-2xl font-bold text-[#14213A]">{GW.gadgets.length}</div><div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#667085]">Live products</div></div>
+          <div className="rounded-xl border border-white/80 bg-white/75 px-4 py-3"><div className="mono text-2xl font-bold text-[#14213A]">{new Set(GW.gadgets.map((g) => g.category)).size}</div><div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#667085]">Marketplace groups</div></div>
+        </div>
       </div>
 
       {form && (
@@ -381,7 +393,18 @@ function Categories({ toast }) {
             <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.blurb || "No description."}</p>
           </div>
         ))}
-        {!rows.length && <p className="text-[15px] text-[#6B7280]">No categories yet. Add one above.</p>}
+        {!rows.length && (
+          <div className="rounded-xl border border-dashed border-[#B8C7DD] bg-[#F8FBFF] p-8 lg:col-span-2">
+            <div className="flex flex-wrap items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#E7F0FF] text-[#2260D4]"><Ico n="layers" size={22} /></span>
+              <div className="min-w-0">
+                <h2 className="text-[18px] font-bold text-[#111827]">No custom category labels yet</h2>
+                <p className="mt-1 max-w-[58ch] text-[15px] leading-relaxed text-[#475467]">The live marketplace already groups products by category. Add a label only when you need a clearer navigation group or a curated collection for students.</p>
+                <button className={`${btnSecondary} mt-4`} onClick={() => setForm({ name: "", blurb: "", sort_order: rows.length })}><Ico n="plus" size={16} /> Add your first label</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
