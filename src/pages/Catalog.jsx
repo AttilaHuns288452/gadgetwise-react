@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
-import { GadgetCard } from "../components/ui.jsx";
+import { GadgetCard, CatalogLoadingCard } from "../components/ui.jsx";
 import LiveSearch from "../components/LiveSearch.jsx";
 
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
@@ -39,7 +39,7 @@ const toggle = (setter) => (val) =>
     return n;
   });
 
-export default function Catalog({ compare, onCompare }) {
+export default function Catalog({ compare, onCompare, catalogLoading }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const cat = searchParams.get("cat") || "";
   const spQ = searchParams.get("search") ?? searchParams.get("q") ?? "";
@@ -280,17 +280,25 @@ export default function Catalog({ compare, onCompare }) {
             ))}
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((g) => (
-              <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
-            ))}
-          </div>
-
-          {results.length === 0 && (
-            <div className="card mt-6 p-8 text-center">
-              <div className="text-lg font-semibold text-ink">No gadgets match your filters</div>
-              <p className="mt-2 text-sm text-ink2">Try clearing a filter or broadening the price range.</p>
+          {catalogLoading ? (
+            <div className="mt-6">
+              <CatalogLoadingCard bare />
             </div>
+          ) : (
+            <>
+              <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {results.map((g) => (
+                  <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
+                ))}
+              </div>
+
+              {results.length === 0 && (
+                <div className="card mt-6 p-8 text-center">
+                  <div className="text-lg font-semibold text-ink">No gadgets match your filters</div>
+                  <p className="mt-2 text-sm text-ink2">Try clearing a filter or broadening the price range.</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Compare tray */}

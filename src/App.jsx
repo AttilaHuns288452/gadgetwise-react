@@ -122,6 +122,9 @@ export default function App() {
   // fill it before the routes render and force one re-render when it's ready.
   const [, setCatalogReady] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
+  // true until the live catalog has settled: pages must show "loading", never a
+  // false empty state like "no gadgets match" while results are still arriving.
+  const [catalogLoading, setCatalogLoading] = useState(true);
   useEffect(() => {
     let alive = true;
     // Marketplace + admin-curated products load INDEPENDENTLY: curated (DB)
@@ -139,6 +142,7 @@ export default function App() {
       // If we have anything (marketplace or curated), show it; only error when empty.
       if (GW.gadgets.length) setCatalogReady(true);
       else setCatalogError(catOk ? null : "catalog unavailable");
+      setCatalogLoading(false);
     })();
     return () => {
       alive = false;
@@ -343,8 +347,8 @@ export default function App() {
           <CatalogErrorCard />
         ) : (
         <Routes>
-          <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} />} />
-          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} />} />
+          <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} catalogLoading={catalogLoading} />} />
+          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} />} />
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
           <Route path="/recommend" element={<Quiz />} />

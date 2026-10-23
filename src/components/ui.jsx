@@ -265,6 +265,25 @@ export function Modal({ title, sub, children, actions, onClose }) {
   );
 }
 
+/* Honest "still loading" card. The catalog is fetched live per category, so
+   there is a real gap between first paint and results: say so instead of
+   letting pages show a false empty state ("no gadgets match"). */
+export function CatalogLoadingCard({ bare = false }) {
+  const card = (
+      <div className="card max-w-xl p-8 text-center mx-auto">
+        <h2 className="text-2xl">Loading products…</h2>
+        <p className="mt-3 text-ink2">
+          Fetching live marketplace listings. This takes a few seconds the first time;
+          results are cached afterwards.
+        </p>
+        <div className="mx-auto mt-5 h-2 w-40 overflow-hidden rounded-full bg-surface2" aria-hidden="true">
+          <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+        </div>
+      </div>
+  );
+  return bare ? card : <section className="section">{card}</section>;
+}
+
 /* Honest "products unavailable" card. Shown when the live marketplace can't be
    reached — never replaced by fake product data. */
 export function CatalogErrorCard() {

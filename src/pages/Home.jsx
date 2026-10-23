@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
-import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, useReveal } from '../components/ui.jsx';
+import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, CatalogLoadingCard, useReveal } from '../components/ui.jsx';
 import ParetoExplorer from '../components/ParetoExplorer.jsx';
 
 function Hero() {
@@ -227,12 +227,14 @@ function CTA() {
   );
 }
 
-export default function Home({ compare, onCompare, catalogError }) {
+export default function Home({ compare, onCompare, catalogError, catalogLoading }) {
   useReveal();
   return (
     <>
       <Hero />
-      {catalogError ? (
+      {catalogLoading ? (
+        <CatalogLoadingCard />
+      ) : catalogError ? (
         <CatalogErrorCard />
       ) : (
         <>
