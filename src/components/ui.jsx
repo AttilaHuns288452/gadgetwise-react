@@ -422,9 +422,8 @@ export function StaleCatalogNote() {
 
 /* Honest "products unavailable" card. Shown when the live marketplace can't be
    reached — never replaced by fake product data. */
-export function CatalogErrorCard() {
-  return (
-    <section className="section">
+export function CatalogErrorCard({ bare = false }) {
+  const card = (
       <div className="card max-w-xl p-8 text-center mx-auto">
         <h2 className="text-2xl">Couldn't load live products</h2>
         <p className="mt-3 text-ink2">
@@ -439,8 +438,8 @@ export function CatalogErrorCard() {
           Retry
         </button>
       </div>
-    </section>
   );
+  return bare ? card : <section className="section">{card}</section>;
 }
 
 /* Shared sign-in prompt for guests who attempt an account-gated action

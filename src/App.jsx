@@ -159,7 +159,7 @@ export default function App() {
   // /admin is excluded too: the admin console must always render (its route
   // guard redirects non-admins, and its moderation/users panels work without the
   // marketplace). Only product-discovery routes are gated on the catalog.
-  const needsCatalog = ![ "/", "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare" ].includes(pathname)
+  const needsCatalog = ![ "/", "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare", "/gadgets" ].includes(pathname)
     && !pathname.startsWith("/u/");
   const { user, ready, admin: isAdminUser, adminChecked, signOut } = useAuth();
   // the account avatar in the nav: one profile read per signed-in user
@@ -370,7 +370,7 @@ export default function App() {
         ) : (
         <Routes>
           <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} catalogLoading={catalogLoading} />} />
-          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} />} />
+          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} catalogError={catalogError} />} />
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
           <Route path="/recommend" element={<Quiz />} />

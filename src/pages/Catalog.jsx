@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
-import { GadgetCard, CatalogLoadingCard, StaleCatalogNote } from "../components/ui.jsx";
+import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, StaleCatalogNote } from "../components/ui.jsx";
 import LiveSearch from "../components/LiveSearch.jsx";
 
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
@@ -33,7 +33,7 @@ const toggle = (setter) => (val) =>
     return n;
   });
 
-export default function Catalog({ compare, onCompare, catalogLoading }) {
+export default function Catalog({ compare, onCompare, catalogLoading, catalogError }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const cat = searchParams.get("cat") || "";
   const spQ = searchParams.get("search") ?? searchParams.get("q") ?? "";
@@ -278,6 +278,10 @@ export default function Catalog({ compare, onCompare, catalogLoading }) {
           {catalogLoading ? (
             <div className="mt-6">
               <CatalogLoadingCard bare />
+            </div>
+          ) : catalogError ? (
+            <div className="mt-6">
+              <CatalogErrorCard bare />
             </div>
           ) : (
             <>
