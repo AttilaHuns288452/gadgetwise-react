@@ -63,11 +63,15 @@ function ScrollToTop() {
 }
 
 function CubeIcon() {
+  // GadgetWise mark: the gadget cube + a "smart pick" spark (matches favicon.svg).
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z" />
-      <path d="M3 7l9 5 9-5" />
-      <path d="M12 12v10" />
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.5 3 4 6.7v9.1l6.5 3.7 6.5-3.7V6.7L10.5 3z" />
+        <path d="M4 6.7l6.5 3.7 6.5-3.7" />
+        <path d="M10.5 10.4v9.1" />
+      </g>
+      <path d="M20 2.2l.85 1.9 1.9.85-1.9.85-.85 1.9-.85-1.9-1.9-.85 1.9-.85z" fill="#FACC15" stroke="none" />
     </svg>
   );
 }
