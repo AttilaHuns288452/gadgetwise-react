@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GW } from "./lib.js";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import Home from "./pages/Home.jsx";
@@ -123,12 +124,22 @@ export default function App() {
   const [catalogError, setCatalogError] = useState(null);
   useEffect(() => {
     let alive = true;
-    loadCatalog()
-      .then(async () => {
-        await loadCurated().catch(() => {}); // admin-managed products merge in
-        if (alive) setCatalogReady(true);
-      })
-      .catch((e) => alive && setCatalogError(e.message || "catalog unavailable"));
+    // Marketplace + admin-curated products load INDEPENDENTLY: curated (DB)
+    // products must appear even when the marketplace API is down/quota-limited.
+    (async () => {
+      let catOk = true;
+      try {
+        const r = await loadCatalog();
+        catOk = !!r?.ok;
+      } catch {
+        catOk = false;
+      }
+      await loadCurated().catch(() => {});
+      if (!alive) return;
+      // If we have anything (marketplace or curated), show it; only error when empty.
+      if (GW.gadgets.length) setCatalogReady(true);
+      else setCatalogError(catOk ? null : "catalog unavailable");
+    })();
     return () => {
       alive = false;
     };
