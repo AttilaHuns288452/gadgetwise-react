@@ -360,7 +360,14 @@ export function useToast() {
     const timer = timers.current.get(id);
     if (timer) clearTimeout(timer);
     timers.current.delete(id);
-    setItems((xs) => xs.filter((x) => x.id !== id));
+    // exit animation before unmount; reduced-motion users close immediately
+    const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setItems((xs) => xs.filter((x) => x.id !== id));
+      return;
+    }
+    setItems((xs) => xs.map((x) => (x.id === id ? { ...x, leaving: true } : x)));
+    setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== id)), 190);
   };
   const toast = (text, icon = "checkCircle") => {
     const id = Math.random().toString(36).slice(2);
@@ -370,7 +377,7 @@ export function useToast() {
   const node = (
     <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[100] grid max-w-[min(24rem,calc(100vw-2rem))] gap-2.5 sm:right-6" role="status" aria-live="polite">
       {items.map((t) => (
-        <div key={t.id} className="toast-in flex min-w-0 items-start gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl" role="alert">
+        <div key={t.id} className={`${t.leaving ? "toast-out" : "toast-in"} flex min-w-0 items-start gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl`} role="alert">
           <svg viewBox="0 0 16 16" className="mt-0.5 h-4 w-4 shrink-0 text-[#9CC3EE]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>
           <span className="min-w-0 break-words">{t.text}</span>
           <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss notification" className="ml-auto shrink-0 text-white/60 transition-colors hover:text-white">×</button>

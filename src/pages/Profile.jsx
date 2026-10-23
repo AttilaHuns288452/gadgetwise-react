@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadRecommendations, deleteRecommendation, loadMyProfile, saveMyProfile } from "../lib/store.js";
+import { loadRecommendations, deleteRecommendation, loadMyProfile, saveMyProfile, uploadAvatar, removeAvatar } from "../lib/store.js";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
 import { GadgetCard, useWishlist, useToast, Modal, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
@@ -55,6 +55,30 @@ export default function Profile({ compare, onCompare }) {
   const [draft, setDraft] = useState({ full_name: "", bio: "", avatar_url: "" });
   const [saving, setSaving] = useState(false);
   const [avatarBroken, setAvatarBroken] = useState(false);
+  const [photo, setPhoto] = useState(null); // pending File
+  const [preview, setPreview] = useState(null); // object URL for the pending file
+  const [removePhoto, setRemovePhoto] = useState(false);
+
+  const pickPhoto = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const allowed = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) { toast("Use a PNG, JPEG, WebP or GIF image", "alert"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast("Image must be 5 MB or smaller", "alert"); return; }
+    if (preview) URL.revokeObjectURL(preview);
+    setPhoto(file);
+    setPreview(URL.createObjectURL(file));
+    setRemovePhoto(false);
+  };
+
+  const dropPhoto = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPhoto(null);
+    setPreview(null);
+    setRemovePhoto(true);
+    const input = document.getElementById("pf-photo");
+    if (input) input.value = "";
+  };
 
   useEffect(() => {
     document.title = "GadgetWise — Profile";
@@ -93,22 +117,39 @@ export default function Profile({ compare, onCompare }) {
 
   const openEdit = () => {
     setDraft({ full_name: profile.full_name || displayName, bio: profile.bio || "", avatar_url: profile.avatar_url || "" });
+    setPhoto(null);
+    setPreview(null);
+    setRemovePhoto(false);
     setEditing(true);
   };
 
   const saveProfile = async () => {
     const name = (draft.full_name || "").trim();
-    const avatar = (draft.avatar_url || "").trim();
     if (!name) { toast("Display name cannot be empty", "alert"); return; }
     if (name.length > 120) { toast("Display name must be 120 characters or fewer", "alert"); return; }
-    if (avatar && !/^https?:\/\//i.test(avatar)) { toast("Avatar must be an http(s) image URL", "alert"); return; }
     setSaving(true);
+    // photo first: upload/removal is its own real operation, and a failure keeps
+    // the previous working photo instead of half-saving the profile
+    let avatar = draft.avatar_url || "";
+    if (photo) {
+      const up = await uploadAvatar(user.id, photo);
+      if (!up.ok) { setSaving(false); toast(up.error || "Could not upload the photo", "alert"); return; }
+      avatar = up.url;
+    } else if (removePhoto) {
+      const gone = await removeAvatar(user.id);
+      if (!gone.ok) { setSaving(false); toast(gone.error || "Could not remove the photo", "alert"); return; }
+      avatar = "";
+    }
     const result = await saveMyProfile(user.id, { full_name: name, bio: draft.bio, avatar_url: avatar });
     setSaving(false);
     if (!result.ok) { toast(result.error || "Could not save your profile", "alert"); return; }
+    if (preview) URL.revokeObjectURL(preview);
+    setPhoto(null); setPreview(null); setRemovePhoto(false);
     setProfile({ full_name: name, bio: draft.bio, avatar_url: avatar });
     setAvatarBroken(false);
     setEditing(false);
+    // keep the shared nav avatar in sync without prop drilling
+    window.dispatchEvent(new Event("gw-profile-updated"));
     toast("Profile updated");
   };
 
@@ -300,10 +341,30 @@ export default function Profile({ compare, onCompare }) {
             <p className="mt-1 text-xs text-ink2">Up to 500 characters. Shown on your public profile.</p>
           </div>
           <div>
-            <label className={fieldLabelCls} htmlFor="pf-avatar">Avatar image URL</label>
-            <input id="pf-avatar" className={fieldInputCls} value={draft.avatar_url} placeholder="https://…"
-              onChange={(e) => setDraft({ ...draft, avatar_url: e.target.value })} />
-            <p className="mt-1 text-xs text-ink2">Optional. Must be an http(s) image URL.</p>
+            <span className={fieldLabelCls}>Profile photo</span>
+            <div className="mt-2 flex items-center gap-4">
+              {preview ? (
+                <img src={preview} alt="Selected preview" className="h-16 w-16 rounded-full border border-line object-cover" />
+              ) : draft.avatar_url && !removePhoto ? (
+                <img src={draft.avatar_url} alt="" className="h-16 w-16 rounded-full border border-line object-cover" />
+              ) : (
+                <div className="grid h-16 w-16 place-items-center rounded-full bg-[#DBEAFE] text-xl font-semibold text-[#14213A]">{initials}</div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <label className={`${btnOutlineCls} cursor-pointer`}>
+                  Change photo
+                  <input id="pf-photo" type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={pickPhoto} />
+                </label>
+                {(preview || (draft.avatar_url && !removePhoto)) && (
+                  <button type="button" className="text-sm font-semibold text-ink3 hover:text-red-700" onClick={dropPhoto}>
+                    Remove photo
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-ink2">
+              PNG, JPEG, WebP or GIF up to 5 MB. {photo ? "Preview only — the photo uploads when you save." : ""}
+            </p>
           </div>
         </Modal>
       )}

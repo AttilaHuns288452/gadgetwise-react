@@ -16,8 +16,11 @@ function Login() {
   const [mode, setMode] = useState("signin"); // signin | forgot | done
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Supabase appends ?error=... when a recovery/OAuth link is expired or invalid
+  const linkError = searchParams.get("error_description") || (searchParams.get("error") ? "This sign-in link is invalid or has expired. Request a new one." : "");
 
   const google = async () => {
     setError("");
@@ -49,6 +52,7 @@ function Login() {
     e.preventDefault();
     setError("");
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (password !== confirm) { setError("The two passwords do not match."); return; }
     setBusy(true);
     const { error: err } = await setNewPassword(password);
     setBusy(false);
@@ -65,6 +69,11 @@ function Login() {
             <label className={fieldLabelCls} htmlFor="new-pw">New password</label>
             <input id="new-pw" type="password" required minLength={8} value={password}
               onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={fieldInputCls} />
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="new-pw-confirm">Confirm new password</label>
+            <input id="new-pw-confirm" type="password" required minLength={8} value={confirm}
+              onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the new password" className={fieldInputCls} />
           </div>
           {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
@@ -83,6 +92,9 @@ function Login() {
         ? <>Remembered it? <button type="button" onClick={() => { setMode("signin"); setError(""); }} className="font-semibold text-primary hover:text-primary-dark">Back to sign in</button></>
         : <>New here? <Link to="/register" className="font-semibold text-primary hover:text-primary-dark">Create an account</Link></>}
     >
+      {linkError && (
+        <p role="alert" className="mb-4 rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">{linkError}</p>
+      )}
       {mode === "forgot" ? (
         <form onSubmit={sendReset} className="space-y-5">
           <div>

@@ -139,6 +139,8 @@
 
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in .25s var(--ease-out, ease) both; }
+@keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
+.toast-out { animation: toast-out 180ms var(--ease-out, ease) both; }
 
 /* state-change motion for shared product surfaces */
 @keyframes success-pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }

@@ -17,6 +17,7 @@ import ReviewHistory from "./pages/ReviewHistory.jsx";
 import PublicProfile from "./pages/PublicProfile.jsx";
 import { useAuth } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
+import { loadMyProfile } from "./lib/store.js";
 import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard } from "./components/ui.jsx";
 
 const NAV = [
@@ -161,6 +162,23 @@ export default function App() {
   const needsCatalog = ![ "/", "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare" ].includes(pathname)
     && !pathname.startsWith("/u/");
   const { user, ready, admin: isAdminUser, adminChecked, signOut } = useAuth();
+  // the account avatar in the nav: one profile read per signed-in user
+  const [navAvatar, setNavAvatar] = useState(null);
+  const navUserId = user?.id || null;
+  useEffect(() => {
+    let alive = true;
+    const refresh = () => {
+      loadMyProfile(navUserId).then((p) => { if (alive) setNavAvatar(p?.avatar_url || null); });
+    };
+    if (!navUserId) { setNavAvatar(null); return () => { alive = false; }; }
+    refresh();
+    // Profile saves dispatch this so the nav avatar updates immediately
+    window.addEventListener("gw-profile-updated", refresh);
+    return () => {
+      alive = false;
+      window.removeEventListener("gw-profile-updated", refresh);
+    };
+  }, [navUserId]);
   // Real identity for the navbar avatar (no hardcoded initials).
   const authName = user?.user_metadata?.full_name || user?.email || "";
   const authInitials = (authName || "?").trim().slice(0, 2).toUpperCase();
@@ -225,9 +243,13 @@ export default function App() {
                   to="/profile"
                   aria-label="Profile"
                   title={authName}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-base font-semibold text-[#14213A]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#DBEAFE] text-base font-semibold text-[#14213A]"
                 >
-                  {authInitials}
+                  {navAvatar ? (
+                    <img src={navAvatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    authInitials
+                  )}
                 </Link>
                 <button
                   type="button"

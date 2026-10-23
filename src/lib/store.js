@@ -72,10 +72,10 @@ async function authorNames(userIds) {
   try {
     const { data, error } = await supabase
       .from("public_profiles")
-      .select("id, display_name")
+      .select("id, display_name, avatar_url")
       .in("id", ids);
     if (error) return {};
-    return Object.fromEntries((data || []).map((p) => [p.id, p.display_name]));
+    return Object.fromEntries((data || []).map((p) => [p.id, { name: p.display_name, avatar: p.avatar_url }]));
   } catch {
     return {};
   }
@@ -84,7 +84,8 @@ async function authorNames(userIds) {
 const toReview = (r, names) => ({
   id: r.id,
   user_id: r.user_id,
-  user: names[r.user_id] || "Member",
+  user: names[r.user_id]?.name || "Member",
+  avatar: names[r.user_id]?.avatar || null,
   text: r.body || "",
   rating: r.rating,
   date: r.created_at,
@@ -254,6 +255,35 @@ export async function saveMyProfile(userId, { full_name, bio, avatar_url }) {
   const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+// ---------- profile photo (Supabase Storage, owner-scoped) ----------
+// Each user writes only under their own folder (storage policies bind
+// folder[1] to auth.uid()); a fixed object name + upsert replaces the previous
+// photo instead of accumulating orphaned uploads.
+const AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+
+export async function uploadAvatar(userId, file) {
+  if (!live(userId)) return { ok: false, error: "Sign in required" };
+  if (!AVATAR_TYPES.includes(file.type)) return { ok: false, error: "Use a PNG, JPEG, WebP or GIF image." };
+  if (file.size > AVATAR_MAX_BYTES) return { ok: false, error: "Image must be 5 MB or smaller." };
+  const path = `${userId}/avatar`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, {
+    upsert: true,
+    contentType: file.type,
+  });
+  if (error) return { ok: false, error: error.message };
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  // version query defeats stale CDN/browser caches after an upsert
+  return { ok: true, url: `${data.publicUrl}?v=${Date.now()}` };
+}
+
+export async function removeAvatar(userId) {
+  if (!live(userId)) return { ok: false, error: "Sign in required" };
+  await supabase.storage.from("avatars").remove([`${userId}/avatar`]).catch(() => {});
+  const { error } = await supabase.from("profiles").update({ avatar_url: null, updated_at: new Date().toISOString() }).eq("id", userId);
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 // ---------- roles (admin_users membership, DB-enforced) ----------
