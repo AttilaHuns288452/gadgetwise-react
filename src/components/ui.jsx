@@ -23,7 +23,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
       style={{ aspectRatio: frame }}
     >
       <img
-        src={gadget.image}
+        src={gadget.image || ph}
         alt={`${gadget.brand} ${gadget.model}`}
         loading={eager ? "eager" : "lazy"}
         onLoad={(e) => setAr(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}

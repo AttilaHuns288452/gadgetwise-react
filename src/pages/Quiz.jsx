@@ -104,7 +104,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
     <main className="mx-auto w-full max-w-none px-6 lg:px-12 2xl:px-16 pb-24 pt-10">
       <h1 className="text-[calc(32px*var(--tscale,1))] font-extrabold leading-tight">Get Recommendations</h1>
       <p className="mt-2 max-w-[560px] text-ink2">
-        Three questions, then a ranked shortlist. Every score shows its full breakdown.
+        Four questions, then a ranked shortlist. Every score shows its full breakdown.
       </p>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">

@@ -193,7 +193,7 @@ const STEPS = [
   ['01', 'Discover', 'Browse six categories with honest specs and monthly costs.'],
   ['02', 'Evaluate', 'Open a gadget: warranty, repair path, issues, reviews.'],
   ['03', 'Compare', 'Up to four side by side, with real differences highlighted.'],
-  ['04', 'Recommend', 'Three questions in, a ranked shortlist with its math shown.'],
+  ['04', 'Recommend', 'Four questions in, a ranked shortlist with its math shown.'],
   ['05', 'Save', 'Keep contenders on your wishlist while you decide.'],
 ];
 
@@ -219,7 +219,7 @@ function CTA() {
       <div className="flex flex-col gap-6 rounded-2xl border-l-4 border-gold-hair bg-hero px-6 py-10 md:flex-row md:items-center md:justify-between md:px-8">
         <div className="min-w-0">
           <h2 className="font-display text-[24px] font-bold tracking-tight text-white md:text-2xl">Not sure which one?</h2>
-          <p className="mt-2 text-base text-on-hero2">Three questions. A ranked shortlist. Every score shows its math.</p>
+          <p className="mt-2 text-base text-on-hero2">Four questions. A ranked shortlist. Every score shows its math.</p>
         </div>
         <Link to="/recommend" className="shrink-0 rounded-lg bg-white px-7 py-2.5 text-base font-semibold text-hero transition-colors hover:bg-on-hero">Find my gadget →</Link>
       </div>

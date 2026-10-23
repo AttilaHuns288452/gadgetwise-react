@@ -96,12 +96,14 @@ function BarList({ rows }) {
 
 function StatCard({ label, value, trend, tone }) {
   const amber = tone === "amber";
+  // neutral: informational text (no directional arrow / green-red implication)
+  const neutral = trend.neutral;
   return (
     <div className={`rounded-xl border bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)] ${amber ? "border-2 border-[#B07C28]" : "border-[#E4E7EC]"}`}>
       <div className="text-[13px] text-[#667085]">{label}</div>
-      <div className={`mt-1 text-[40px] font-bold leading-none ${amber ? "text-[#7C4708]" : "text-[#111827]"}`}>{value}</div>
-      <div className={`mt-3 flex items-center gap-1.5 text-[13px] font-semibold ${trend.down ? "text-[#C0392B]" : "text-[#12B76A]"}`}>
-        <Ico n="trendUp" size={15} /> {trend.text}
+      <div className={`mt-1 break-words text-[26px] font-bold leading-none sm:text-[34px] xl:text-[40px] ${amber ? "text-[#7C4708]" : "text-[#111827]"}`}>{value}</div>
+      <div className={`mt-3 flex items-center gap-1.5 text-[13px] font-semibold ${neutral ? "text-[#667085]" : trend.down ? "text-[#C0392B]" : "text-[#12B76A]"}`}>
+        {!neutral && <Ico n="trendUp" size={15} />} {trend.text}
       </div>
     </div>
   );
@@ -123,10 +125,12 @@ function Dashboard({ tab, stats, pendingRows }) {
   const [views, setViews] = useState({ topViewed: [], weeklyViews: [0, 0, 0, 0] });
   useEffect(() => { loadViewStats().then((r) => r.ok && setViews(r)); }, []);
   const statCards = [
-    ["Products tracked", s.total, { text: `${s.categories.length} categories` }, {}],
-    ["Avg list price", money(s.avgPrice), { text: "across live catalog" }, {}],
-    ["Rated products", s.withRating, { text: `${s.avgRating} avg rating` }, {}],
-    ["Pending reviews", pendingRows.length, { text: "needs moderation", down: true }, { tone: "amber" }],
+    ["Products tracked", s.total, { text: `${s.categories.length} categories`, neutral: true }, {}],
+    ["Avg list price", money(s.avgPrice), { text: "across live catalog", neutral: true }, {}],
+    ["Rated products", s.withRating, { text: s.withRating ? `${s.avgRating} avg rating` : "No ratings yet", neutral: !s.withRating }, {}],
+    ["Pending reviews", pendingRows.length,
+      pendingRows.length ? { text: "needs moderation", down: true } : { text: "queue is clear", neutral: true },
+      pendingRows.length ? { tone: "amber" } : {}],
   ];
   const preview = pendingRows.slice(0, 4);
   return (
@@ -217,7 +221,7 @@ function Reports({ stats }) {
               <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Categories</td><td className={`${cellCls} text-right font-semibold`}>{stats.categories.length}</td></tr>
               <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Average list price</td><td className={`${cellCls} text-right font-semibold`}>{money(stats.avgPrice)}</td></tr>
               <tr className="border-b border-[#F2F4F7]"><td className={cellCls}>Products with ratings</td><td className={`${cellCls} text-right font-semibold`}>{stats.withRating}</td></tr>
-              <tr><td className={cellCls}>Average rating</td><td className={`${cellCls} text-right font-semibold`}>{stats.avgRating}★</td></tr>
+              <tr><td className={cellCls}>Average rating</td><td className={`${cellCls} text-right font-semibold`}>{stats.withRating ? `${stats.avgRating}★` : "No ratings"}</td></tr>
             </tbody>
           </table>
         </Panel>
@@ -285,7 +289,7 @@ function Gadgets({ toast }) {
         </div>
       )}
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white">
+      <div className="mt-6 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white">
         <table className="w-full text-left text-[14px]">
           <thead><tr className="border-b border-[#E4E7EC] text-[13px] uppercase tracking-wide text-[#667085]">
             <th className="px-4 py-3">Gadget</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Price</th><th className="px-4 py-3 text-right">Actions</th>
@@ -437,12 +441,12 @@ function Integrations({ toast }) {
                 className={inputCls}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Paste the RapidAPI key"
+                placeholder="Paste the Lazada (RapidAPI) key"
                 autoComplete="off"
               />
             </Field>
           </div>
-          <button className={btnPrimary} onClick={saveKey} disabled={saving}>
+          <button className={btnPrimary} onClick={saveKey} disabled={saving || !apiKey.trim()}>
             {saving ? "Saving…" : "Save key"}
           </button>
         </div>
@@ -454,7 +458,12 @@ function Integrations({ toast }) {
         )}
       </div>
 
-      {err && <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-[15px] text-red-700">{err}</div>}
+      {err && (
+        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-[15px] text-red-700">
+          <p>{err} Connection status needs the deployed API; it may be unavailable in a local preview.</p>
+          <button onClick={load} className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-[14px] font-semibold text-red-700 hover:bg-red-50">Try again</button>
+        </div>
+      )}
 
       {status && (
         <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
@@ -530,7 +539,7 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
         ))}
       </div>
 
-      <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+      <div className="mt-5 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-[#EAECF0]">
@@ -629,6 +638,7 @@ function Users() {
   const [users, setUsers] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error
   const [err, setErr] = useState("");
+  const [reload, setReload] = useState(0);
 
   // Real registered users, fetched server-side with this admin's verified
   // session. The fabricated demo roster is gone; if the request fails we say so.
@@ -639,10 +649,10 @@ function Users() {
         const { data } = await supabase.auth.getSession();
         const token = data?.session?.access_token;
         if (!token) throw new Error("Not signed in");
-        const r = await fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } });
-        const j = await r.json();
+                const r = await fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } });
+        const j = await r.json().catch(() => null);
         if (!alive) return;
-        if (!r.ok) throw new Error(j?.error?.message || "Could not load users");
+        if (!r.ok || !j) throw new Error(j?.error?.message || "The user service didn’t respond.");
         setUsers(j.users || []);
         setState("ready");
       } catch (e) {
@@ -654,7 +664,7 @@ function Users() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [reload]);
 
   const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—");
   const initials = (email) => (email || "?").slice(0, 2).toUpperCase();
@@ -666,14 +676,15 @@ function Users() {
       {state === "loading" && <p className="mt-6 text-[15px] text-[#6B7280]">Loading registered users…</p>}
       {state === "error" && (
         <div className="mt-6 rounded-xl border border-[#F5C6C6] bg-[#FEF3F3] p-5 text-[15px] text-[#B42318]">
-          Could not load users: {err}
+          <p>Could not load users. {err}</p>
+          <button onClick={() => setReload((n) => n + 1)} className="mt-3 rounded-lg border border-[#F5C6C6] bg-white px-3 py-1.5 text-[14px] font-semibold text-[#B42318] hover:bg-[#FEF3F3]">Try again</button>
         </div>
       )}
       {state === "ready" && (
       <>
       <div className="mt-4 text-[14px] text-[#6B7280]">{users.length} registered account{users.length === 1 ? "" : "s"}</div>
       <input className={`${inputCls} mt-4 !w-72`} placeholder="Search by email..." value={q} onChange={(e) => setQ(e.target.value)} />
-      <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+      <div className="mt-5 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[760px]">
           <thead>
             <tr className="border-b border-[#EAECF0]">
@@ -731,7 +742,7 @@ function Shell({ tabKey, tab, onOut, children }) {
           <span className="ml-auto rounded bg-white/15 px-[7px] py-[3px] text-[10px] font-bold tracking-[0.1em] text-white">ADMIN</span>
         </div>
         <hr className="border-white/10" />
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-5 pt-3 lg:block lg:space-y-4 lg:overflow-visible">
+        <nav className="scroll-fade flex gap-1 overflow-x-auto px-3 pb-5 pt-3 lg:block lg:space-y-4 lg:overflow-visible">
           {groups.map(([group, items]) => (
             <div key={group}>
               <div className="hidden px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7E8FAE] lg:block">{group}</div>

@@ -49,8 +49,8 @@ const ACCOUNT = [
   ["Create account", "/register"],
 ];
 const THIS_PROJECT = [
-  "CC 116 frontend prototype",
-  "Scoring formulas in the README",
+  "Compare real gadgets side by side",
+  "Every score shows its math",
   "Not a store — nothing is sold here",
 ];
 
@@ -256,7 +256,7 @@ export default function App() {
           </div>
 
           {/* nav links (horizontally scrollable on small screens) */}
-          <nav className="order-3 w-full overflow-x-auto lg:order-2 lg:w-auto lg:shrink-0" aria-label="Main">
+          <nav className="scroll-fade order-3 w-full overflow-x-auto lg:order-2 lg:w-auto lg:shrink-0" aria-label="Main">
             <ul className="flex w-max items-center gap-2 whitespace-nowrap text-base font-semibold">
               {NAV.map(([href, label]) => (
                 <li key={href}>
@@ -367,11 +367,11 @@ export default function App() {
             <div>
               <div className="text-xl font-bold">
                 <span className="text-white">Gadget</span>
-                <span className="text-[#5B9DF0]">{" "}Wise</span>
+                <span className="text-[#5B9DF0]">Wise</span>
               </div>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-on-hero2">
                 Compare gadgets by price, specs, ownership cost, and student ratings. Made for Filipino students.{" "}
-                <span className="text-white/45">
+                <span className="text-white/65">
                   Product data comes from the live Lazada marketplace. Specs the marketplace does not provide are shown
                   as unavailable rather than estimated. GadgetWise is a comparison tool, not a store.
                 </span>

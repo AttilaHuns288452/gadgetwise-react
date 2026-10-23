@@ -118,10 +118,11 @@
     line-height: 1;
   }
   .oidx span {
-    /* no nowrap — the label must wrap to 2 lines on narrow cards; nowrap made min-content 134px and overflowed mobile */
-    overflow-wrap: anywhere; /* PERFORMANCE is 96px > the 84px mobile cap; allow the word to break */
-    font-size: 0.875rem;
-    letter-spacing: 0.08em;
+    /* wrap at word boundaries (PERFORMANCE / TO COST); shrink + tighten tracking so
+       PERFORMANCE fits the narrow mobile box without breaking mid-word */
+    overflow-wrap: break-word;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
     font-weight: 600;
     color: var(--color-ink3);
     line-height: 1.25;
@@ -202,4 +203,16 @@ tbody tr:hover { background: #F9FAFB; }
 /* ponytail: uniform zoom instead of re-sizing every hardcoded px class in Admin.jsx */
 @media (min-width: 1024px) {
   .admin-zoom { zoom: 1.25; }
+}
+
+
+/* horizontal-scroll nav strips (mobile): fade the right edge so it reads as
+   scrollable instead of broken/clipped. Only where the strip can overflow. */
+@media (max-width: 1023px) {
+  .scroll-fade {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    scrollbar-width: none;
+  }
+  .scroll-fade::-webkit-scrollbar { display: none; }
 }
