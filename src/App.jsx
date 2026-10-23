@@ -170,7 +170,7 @@ export default function App() {
       <ScrollToTop />
       {!isAdminRoute && (
       <header className="sticky top-0 z-20 border-b border-line bg-white">
-        <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-5 gap-y-3 px-6 lg:px-12 2xl:px-16 py-4">
+        <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-3 px-6 lg:flex-nowrap lg:px-12 2xl:px-16 py-4">
           {/* logo */}
           <Link to="/" className="order-1 flex min-w-0 shrink-0 items-center gap-2">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white">
@@ -180,7 +180,7 @@ export default function App() {
               <span className="text-[#111827]">Gadget</span>
               <span className="text-[#2563EB]">{" "}Wise</span>
             </span>
-            <span className="hidden text-sm font-normal text-ink3 lg:inline">Smart picks for students</span>
+            <span className="hidden text-sm font-normal text-ink3 2xl:inline">Smart picks for students</span>
           </Link>
 
           {/* right cluster: wishlist, compare, divider, avatar */}
@@ -279,7 +279,7 @@ export default function App() {
 
           {/* search */}
           <form
-            className="order-4 flex w-full min-w-0 items-center lg:order-3 lg:ml-auto lg:w-[15rem] xl:w-[20rem]"
+            className="order-4 flex w-full min-w-0 items-center lg:order-3 lg:w-auto lg:min-w-0 lg:flex-1"
             onSubmit={(e) => {
               e.preventDefault();
               navigate(`/gadgets?q=${encodeURIComponent(q)}`);
