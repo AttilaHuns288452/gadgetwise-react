@@ -107,7 +107,7 @@ const CAT_ICONS = {
   smartwatches: <><rect x="7" y="7" width="10" height="10" rx="2.5" /><path d="M9.5 7V4.5h5V7M9.5 17v2.5h5V17" strokeLinecap="round" /></>,
 };
 
-function Categories() {
+function Categories({ hideCounts = false }) {
   return (
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -126,7 +126,7 @@ function Categories() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">{CAT_ICONS[c.id] || CAT_ICONS.smartwatches}</svg>
               </span>
               <h3 className="mt-4 font-display text-lg font-bold text-ink">{c.name}</h3>
-              <p className="mt-1 text-sm text-ink3">{n} gadgets</p>
+              <p className="mt-1 text-sm text-ink3">{hideCounts ? "Category" : `${n} gadgets`}</p>
             </Link>
           );
         })}
@@ -253,22 +253,27 @@ export default function Home({ compare, onCompare, catalogError, catalogLoading 
       <Hero />
       {catalogLoading ? (
         <CatalogLoadingCard />
-      ) : catalogError ? (
-        <CatalogErrorCard />
       ) : (
         <>
-          <div className="reveal"><Stats /></div>
-          <div className="reveal"><Categories /></div>
-          <div className="reveal"><Miss /></div>
-          <div className="reveal"><TopRated compare={compare} onCompare={onCompare} /></div>
-          <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
-            <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Explore trade-offs</h2>
-            <p className="mt-2 max-w-[62ch] text-base text-ink2">
-              Pick two objectives and filter. The amber line is the <b>Pareto frontier</b>: nothing beats those products on both axes at once. Click any dot for details.
-            </p>
-            <div className="mt-6"><ParetoExplorer /></div>
-          </section>
-          <div className="reveal"><Cheapest /></div>
+          {catalogError && <CatalogErrorCard />}
+          {/* category navigation is not product data: it stays available even
+              when the live marketplace is down, so users can still browse */}
+          <div className="reveal"><Categories hideCounts={Boolean(catalogError)} /></div>
+          {!catalogError && (
+            <>
+              <div className="reveal"><Stats /></div>
+              <div className="reveal"><Miss /></div>
+              <div className="reveal"><TopRated compare={compare} onCompare={onCompare} /></div>
+              <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
+                <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Explore trade-offs</h2>
+                <p className="mt-2 max-w-[62ch] text-base text-ink2">
+                  Pick two objectives and filter. The amber line is the <b>Pareto frontier</b>: nothing beats those products on both axes at once. Click any dot for details.
+                </p>
+                <div className="mt-6"><ParetoExplorer /></div>
+              </section>
+              <div className="reveal"><Cheapest /></div>
+            </>
+          )}
         </>
       )}
       <div className="reveal"><Steps /></div>
