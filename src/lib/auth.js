@@ -91,9 +91,16 @@ export function useAuth() {
 
   // Ask the database whether this user is an admin (source of truth, not client state).
   useEffect(() => {
-    if (!supabaseConfigured || !user) {
+    if (!supabaseConfigured) {
       setAdmin(false);
       setAdminChecked(true);
+      return;
+    }
+    if (!user) {
+      setAdmin(false);
+      // "no user" only counts as checked once session restore has finished —
+      // a cold load of /admin must not bounce a signed-in admin in that window.
+      if (ready) setAdminChecked(true);
       return;
     }
     let cancelled = false;
@@ -109,7 +116,7 @@ export function useAuth() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, ready]);
 
   const signIn = useCallback(async (email, password) => {
     if (!supabaseConfigured) return notConfigured();
