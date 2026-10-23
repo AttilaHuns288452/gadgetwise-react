@@ -150,7 +150,9 @@ export default async function handler(req, res) {
   const data = normalizeSearchResponse(body);
   const now = Date.now();
   CACHE.set(cacheKey, { at: now, data });
-  snapshotWrite(cacheKey, data); // best-effort shared snapshot for quota outages
+  // must be awaited: a fire-and-forget write is frozen when the serverless
+  // response returns, which left the snapshot permanently empty
+  await snapshotWrite(cacheKey, data);
   if (CACHE.size > 200) {
     // ponytail: crude bound; drop oldest key rather than a real LRU.
     CACHE.delete(CACHE.keys().next().value);
