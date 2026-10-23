@@ -34,7 +34,7 @@ const CATEGORY_QUERIES = [
 ];
 
 async function fetchCategory(catId, query) {
-  const items = [];
+  const out = { items: [], stale: false, staleFrom: null };
   for (let page = 1; page <= PAGES_PER_CATEGORY; page++) {
     const qs = new URLSearchParams({ q: query, marketplace: "ph", page: String(page) });
     let r;
@@ -45,9 +45,12 @@ async function fetchCategory(catId, query) {
     }
     if (!r.ok) continue; // e.g. 429 on one page: keep the rest
     const d = await r.json();
-    for (const p of d.products || []) items.push({ ...p, _cat: catId });
+    for (const p of d.products || []) out.items.push({ ...p, _cat: catId });
+    // the handler serves a real snapshot when the provider is unavailable and
+    // marks it stale — surface that so cached rows are never sold as live
+    if (d.stale) { out.stale = true; out.staleFrom = d.staleFrom || out.staleFrom; }
   }
-  return items;
+  return out;
 }
 
 function toCatalogGadget(p) {
@@ -119,11 +122,12 @@ export async function loadCatalog() {
     const seen = new Set();
     for (const r of settled) {
       if (r.status !== "fulfilled") continue;
-      for (const p of r.value) {
+      for (const p of r.value.items) {
         if (!p.productId || seen.has(p.productId)) continue;
         seen.add(p.productId);
         products.push(p);
       }
+      if (r.value.stale) { GW.catalogStale = true; GW.catalogStaleFrom = r.value.staleFrom || GW.catalogStaleFrom; }
     }
   } catch {
     /* network/upstream failure: fall through to the stale cache */

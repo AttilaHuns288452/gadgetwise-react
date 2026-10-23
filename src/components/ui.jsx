@@ -318,6 +318,21 @@ export function CatalogLoadingCard({ bare = false }) {
   return bare ? card : <section className="section">{card}</section>;
 }
 
+/* Honest stale-snapshot notice: real marketplace rows fetched earlier, shown
+   because the live provider is unavailable right now (e.g. quota exhausted). */
+export function StaleCatalogNote() {
+  const stale = typeof GW !== "undefined" && GW.catalogStale;
+  if (!stale) return null;
+  const when = GW.catalogStaleFrom
+    ? ` from ${new Date(GW.catalogStaleFrom).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}`
+    : "";
+  return (
+    <p className="mt-3 rounded-lg border border-[#F0E2B8] bg-[#FFF8E6] px-3 py-2 text-sm leading-relaxed text-[#6B4E12] [overflow-wrap:anywhere]">
+      Live marketplace search is unavailable right now — these are real listings from the last successful fetch{when}, not new ones.
+    </p>
+  );
+}
+
 /* Honest "products unavailable" card. Shown when the live marketplace can't be
    reached — never replaced by fake product data. */
 export function CatalogErrorCard() {
