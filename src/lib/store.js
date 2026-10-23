@@ -364,9 +364,17 @@ export async function loadCategories() {
   return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
 }
 
-export async function saveCategory(id, { name, blurb, sort_order = 0 }) {
+export async function saveCategory(id, { name, blurb, sort_order = 0, slug, query }) {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
-  const payload = { name, blurb, sort_order };
+  // slug is the app's category id (filters, product.category) and query is the
+  // marketplace keyword that fills the category — both shape the public site
+  const payload = {
+    name,
+    blurb,
+    sort_order,
+    query: String(query || "").trim() || null,
+    ...(slug ? { slug: String(slug).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") } : {}),
+  };
   const q = id ? supabase.from("categories").update(payload).eq("id", id)
                : supabase.from("categories").insert(payload);
   const { error } = await q;

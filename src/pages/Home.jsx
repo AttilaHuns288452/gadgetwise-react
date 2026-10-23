@@ -123,7 +123,7 @@ function Categories() {
           return (
             <Link key={c.id} to={`/gadgets?cat=${c.id}`} className="card p-6 transition-colors hover:border-primary">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-line-strong text-primary">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">{CAT_ICONS[c.id]}</svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">{CAT_ICONS[c.id] || CAT_ICONS.smartwatches}</svg>
               </span>
               <h3 className="mt-4 font-display text-lg font-bold text-ink">{c.name}</h3>
               <p className="mt-1 text-sm text-ink3">{n} gadgets</p>

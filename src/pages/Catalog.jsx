@@ -15,15 +15,9 @@ const FEATURE_LABELS = [
   ["budget", "Under ₱15,000"],
   ["durable", "Build & protection (7+)"],
 ];
-const CATS = [
-  ["", "All"],
-  ["smartphones", "Smartphones"],
-  ["laptops", "Laptops"],
-  ["tablets", "Tablets"],
-  ["headphones", "Headphones"],
-  ["powerbanks", "Power banks"],
-  ["smartwatches", "Smartwatches"],
-];
+// filters follow the same category list the catalog fetches (admin-editable)
+const CATS = [["", "All"]];
+const catOptions = () => [...CATS, ...GW.categories.map((c) => [c.id, c.name])];
 const SORTS = [
   ["featured", "Featured"],
   ["price-asc", "Price: low to high"],
@@ -123,7 +117,7 @@ export default function Catalog({ compare, onCompare, catalogLoading }) {
             <div>
               <h4 className={headCls}>CATEGORY</h4>
               <div>
-                {CATS.map(([id, label]) => (
+                {catOptions().map(([id, label]) => (
                   <label key={id || "all"} className={rowCls}>
                     <input
                       type="radio"
@@ -265,7 +259,7 @@ export default function Catalog({ compare, onCompare, catalogLoading }) {
           <LiveSearch query={q} />
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {CATS.map(([id, label]) => (
+            {catOptions().map(([id, label]) => (
               <button
                 key={id || "all"}
                 type="button"

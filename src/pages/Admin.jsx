@@ -87,13 +87,37 @@ function BarList({ rows }) {
       {rows.map(([name, value]) => (
         <li key={name} className="flex min-w-0 items-center gap-4">
           <span className="w-28 shrink-0 truncate text-[15px] text-[#344054] sm:w-72">{name}</span>
-          <span className="h-3 flex-1 overflow-hidden rounded bg-[#EDEFF3]">
-            <span className="block h-full rounded bg-[#CBD5E1]" style={{ width: `${(value / max) * 100}%` }} />
+          <span className="h-3 flex-1 overflow-hidden rounded-full bg-[#EEF2F7]">
+            <span
+              className="block h-full rounded-full bg-gradient-to-r from-[#2260D4] to-[#5B9DF0] transition-[width] duration-500"
+              style={{ width: `${Math.max(2, (value / max) * 100)}%` }}
+            />
           </span>
           <span className="w-16 shrink-0 text-right text-[15px] font-semibold text-[#111827]">{value.toLocaleString()}</span>
         </li>
       ))}
     </ul>
+  );
+}
+
+/* Vertical mini-chart for a short time series (e.g. weekly counts). */
+function MiniBars({ data, labels }) {
+  const max = Math.max(1, ...data);
+  return (
+    <div className="flex h-36 items-end gap-3">
+      {data.map((v, i) => (
+        <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+          <div className="flex w-full flex-1 items-end">
+            <div
+              className="w-full rounded-t-md bg-gradient-to-t from-[#2260D4] to-[#5B9DF0] transition-[height] duration-500"
+              style={{ height: `${Math.max(2, (v / max) * 100)}%`, opacity: v ? 1 : 0.22 }}
+            />
+          </div>
+          <span className="text-[11px] text-[#667085]">{labels[i]}</span>
+          <span className="text-xs font-semibold text-[#111827]">{v.toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -162,11 +186,11 @@ function Dashboard({ tab, stats, pendingRows }) {
         </Panel>
         <Panel title="Most viewed products">
           {views.topViewed.length
-            ? <BarList rows={views.topViewed.map((v) => [v.id.slice(0, 18), v.views])} />
+            ? <BarList rows={views.topViewed.map((v) => [GW.getGadget(v.id) ? GW.displayName(GW.getGadget(v.id)) : v.id.slice(0, 18), v.views])} />
             : <p className="text-[15px] text-[#6B7280]">No product views recorded yet. Views are counted live as people open product pages.</p>}
         </Panel>
         <Panel title="Product views — last 4 weeks">
-          <BarList rows={["4 wks ago", "3 wks ago", "2 wks ago", "This week"].map((w, i) => [w, views.weeklyViews[i] || 0])} />
+          <MiniBars data={views.weeklyViews.map((n) => n || 0)} labels={["4 wks", "3 wks", "2 wks", "This week"]} />
         </Panel>
         <Panel title="Moderation queue preview">
           <ul className="space-y-3">
@@ -354,7 +378,10 @@ function Categories({ toast }) {
   const categoryCounts = GW.gadgets.reduce((map, g) => map.set(g.category, (map.get(g.category) || 0) + 1), new Map());
   const save = async () => {
     if (!form?.name?.trim()) { toast("Name is required", "alert"); return; }
-    const res = await saveCategory(form.id || null, form);
+    // the slug is the app's category id: derive it from the name once (creating),
+    // never rename it afterwards (products and quiz cases reference it)
+    const slug = form.slug || form.name;
+    const res = await saveCategory(form.id || null, { ...form, slug });
     if (res.ok) { setForm(null); reload(); toast(form.id ? "Category updated" : "Category added"); }
     else toast(res.error || "Could not save", "alert");
   };
@@ -371,7 +398,7 @@ function Categories({ toast }) {
             <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Categories</h1>
             <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">Categories are lightweight navigation labels for the marketplace catalog. Use them to group products and power filters, not to invent product records.</p>
           </div>
-          <button className={btnPrimary} onClick={() => setForm({ name: "", blurb: "", sort_order: rows.length })}><Ico n="plus" size={16} /> Add category</button>
+          <button className={btnPrimary} onClick={() => setForm({ name: "", blurb: "", sort_order: rows.length, query: "" })}><Ico n="plus" size={16} /> Add category</button>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-white/80 bg-white/75 px-4 py-3"><div className="mono text-2xl font-bold text-[#14213A]">{rows.length}</div><div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#667085]">Configured labels</div></div>
@@ -386,6 +413,14 @@ function Categories({ toast }) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Name"><input className={fieldInputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
             <Field label="Sort order"><input type="number" className={fieldInputCls} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></Field>
+            <div className="sm:col-span-2">
+              <Field label="Marketplace search query">
+                <input className={fieldInputCls} value={form.query || ""} onChange={(e) => setForm({ ...form, query: e.target.value })} placeholder="e.g. smartwatch" />
+              </Field>
+              <p className="mt-1 text-xs text-[#667085]">
+                This keyword fills the category with live marketplace products. Leave empty to keep the current products for this category.
+              </p>
+            </div>
             <div className="sm:col-span-2"><Field label="Description"><input className={fieldInputCls} value={form.blurb} onChange={(e) => setForm({ ...form, blurb: e.target.value })} placeholder="Short description shown on the category" /></Field></div>
           </div>
           <div className="mt-4 flex gap-2">
@@ -407,7 +442,7 @@ function Categories({ toast }) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className={iconBtn} title="Edit" onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0 })}><Ico n="pencil" /></button>
+                <button className={iconBtn} title="Edit" onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0, slug: c.slug, query: c.query || "" })}><Ico n="pencil" /></button>
                 <button className={iconBtn} title="Delete" onClick={() => del(c.id)}><Ico n="trash" /></button>
               </div>
             </div>

@@ -12,7 +12,7 @@
 
 import GW from "../data.js";
 import { toGadget } from "./marketplace.js";
-import { loadProducts } from "./store.js";
+import { loadProducts, loadCategories } from "./store.js";
 
 // Bump after catalog-data integrity changes so an old browser never revives
 // stale or placeholder-heavy marketplace results.
@@ -32,6 +32,44 @@ const CATEGORY_QUERIES = [
   ["powerbanks", "power bank"],
   ["smartwatches", "smartwatch"],
 ];
+
+/**
+ * Category source of truth. The admin-managed `categories` table overrides the
+ * built-in defaults by slug: renaming changes the public label, editing the
+ * query changes what the marketplace fetch fills the category with, and a new
+ * slug + query adds a category with products. Rows merge over the defaults so
+ * one admin edit never deletes the rest of the catalog.
+ */
+async function categoryPlan() {
+  const base = CATEGORY_QUERIES.map(([id, query]) => ({
+    id,
+    name: GW.getCategory(id)?.name || id,
+    query,
+  }));
+  try {
+    const rows = (await loadCategories()).rows || [];
+    const byId = new Map(base.map((c) => [c.id, c]));
+    for (const r of rows) {
+      const slug = String(r.slug || "").trim();
+      if (!slug) continue;
+      const query = String(r.query || "").trim();
+      const existing = byId.get(slug);
+      if (existing) {
+        if (r.name) existing.name = r.name;
+        if (query) existing.query = query;
+      } else if (query && r.name) {
+        byId.set(slug, { id: slug, name: r.name, query });
+      }
+    }
+    const list = [...byId.values()];
+    // every page reads GW.categories (Home tiles, filters, quiz cases), so the
+    // admin list has to land there to actually influence the public site
+    GW.categories = list.map((c) => ({ id: c.id, name: c.name }));
+    return list.filter((c) => c.query).map((c) => [c.id, c.query]);
+  } catch {
+    return CATEGORY_QUERIES;
+  }
+}
 
 async function fetchCategory(catId, query) {
   const out = { items: [], stale: false, staleFrom: null };
@@ -115,9 +153,10 @@ export async function loadCatalog() {
   }
 
   let products = [];
+  const queries = await categoryPlan(); // admin categories shape the fetch
   try {
     const settled = await Promise.allSettled(
-      CATEGORY_QUERIES.map(([cat, q]) => fetchCategory(cat, q)),
+      queries.map(([cat, q]) => fetchCategory(cat, q)),
     );
     const seen = new Set();
     for (const r of settled) {
