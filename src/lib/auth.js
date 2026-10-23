@@ -51,6 +51,7 @@ export function useAuth() {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [admin, setAdmin] = useState(false);
+  const [recovery, setRecovery] = useState(false);
 
   // Keep the shared gate's notion of the current user in sync.
   useEffect(() => {
@@ -74,6 +75,7 @@ export function useAuth() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
+      if (_event === "PASSWORD_RECOVERY") setRecovery(true);
       setUser(session?.user ?? null);
       setReady(true);
     });
@@ -131,10 +133,27 @@ export function useAuth() {
     return { error, needsConfirm: Boolean(data?.user && !data?.session) };
   }, []);
 
+  // Password recovery: email a reset link, then set the new password after the
+  // user follows it (the recovery session fires PASSWORD_RECOVERY).
+  const resetPassword = useCallback(async (email) => {
+    if (!supabaseConfigured) return notConfigured();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/#/login",
+    });
+    return { error };
+  }, []);
+
+  const setNewPassword = useCallback(async (password) => {
+    if (!supabaseConfigured) return notConfigured();
+    if (!password || password.length < 8) return { error: { message: "Password must be at least 8 characters." } };
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  }, []);
+
   const signOut = useCallback(async () => {
     if (supabaseConfigured) await supabase.auth.signOut();
     setUser(null);
   }, []);
 
-  return { user, ready, admin, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut };
+  return { user, ready, admin, recovery, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut, resetPassword, setNewPassword };
 }

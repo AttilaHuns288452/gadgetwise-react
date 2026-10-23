@@ -411,3 +411,50 @@ export function useReveal() {
     return () => { clearTimeout(t); io.disconnect(); };
   }, []);
 }
+
+
+/**
+ * Auth screen shell: a brand panel (navy, the app's value props) beside the
+ * form. One layout for Login + Register so they stay visually identical.
+ * On mobile the brand panel hides and the form stands alone.
+ */
+export function AuthLayout({ title, subtitle, children, footer }) {
+  return (
+    <section className="section">
+      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_60px_rgba(15,23,34,0.12)] lg:grid-cols-2">
+        {/* brand panel */}
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-hero p-10 text-on-hero lg:flex">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/5" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/5" />
+          <Logo size={20} tone="light" />
+          <div className="relative">
+            <h2 className="text-[2.15rem] font-extrabold leading-[1.1]">
+              Find the right gadget for <span className="text-star">school.</span>
+            </h2>
+            <p className="mt-3 max-w-[38ch] text-[15px] leading-relaxed text-on-hero2">
+              Compare verified specifications, monthly costs, and student priorities before you buy.
+            </p>
+            <ul className="mt-6 space-y-2.5 text-sm text-on-hero2">
+              {["Ownership cost on every tag", "Warranty & repair paths surfaced", "Scores show their math"].map((t) => (
+                <li key={t} className="flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[11px]">✓</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="relative text-xs text-on-hero2">Made for Filipino students · GadgetWise</p>
+        </div>
+
+        {/* form panel */}
+        <div className="p-7 sm:p-10">
+          <div className="mb-6 lg:hidden"><Logo size={20} tone="dark" /></div>
+          <h1 className="text-[1.85rem] font-extrabold leading-tight text-ink">{title}</h1>
+          {subtitle && <p className="mt-1.5 text-[15px] text-ink2">{subtitle}</p>}
+          <div className="mt-7">{children}</div>
+          {footer && <div className="mt-6 text-center text-sm text-ink2">{footer}</div>}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, Logo } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, AuthLayout } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 
 // Only allow a same-app path as a return destination (blocks open redirects).
@@ -12,7 +12,8 @@ function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = safeNext(searchParams.get("next"));
-  const { signIn, signInWithGoogle, configured } = useAuth();
+  const { signIn, signInWithGoogle, resetPassword, setNewPassword, configured, recovery } = useAuth();
+  const [mode, setMode] = useState("signin"); // signin | forgot | done
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,45 +31,89 @@ function Login() {
     setBusy(true);
     const { error: err } = await signIn(email, password);
     setBusy(false);
-    if (err) {
-      setError(err.message || "Could not sign in. Check your email and password.");
-      return;
-    }
+    if (err) { setError(err.message || "Could not sign in. Check your email and password."); return; }
     navigate(next);
   };
 
-  return (
-    <section className="section">
-      <div className="mx-auto max-w-md">
-        <div className="mb-6 flex justify-center"><Logo size={22} tone="dark" /></div>
-        <div className="eyebrow">Account</div>
-        <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">Welcome back</h1>
-        <p className="mt-2 text-ink2">your wishlist missed you</p>
+  const sendReset = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    const { error: err } = await resetPassword(email);
+    setBusy(false);
+    if (err) { setError(err.message || "Could not send the reset link."); return; }
+    setMode("done");
+  };
 
-        <form onSubmit={submit} className="card mt-8 space-y-5 p-6 sm:p-8">
+  const savePassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    setBusy(true);
+    const { error: err } = await setNewPassword(password);
+    setBusy(false);
+    if (err) { setError(err.message || "Could not update the password."); return; }
+    navigate("/profile");
+  };
+
+  // Recovery link followed: let the user choose a new password.
+  if (recovery) {
+    return (
+      <AuthLayout title="Set a new password" subtitle="Choose a new password for your GadgetWise account.">
+        <form onSubmit={savePassword} className="space-y-5">
+          <div>
+            <label className={fieldLabelCls} htmlFor="new-pw">New password</label>
+            <input id="new-pw" type="password" required minLength={8} value={password}
+              onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={fieldInputCls} />
+          </div>
+          {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
+          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {busy ? "Saving…" : "Set new password"}
+          </button>
+        </form>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <AuthLayout
+      title={mode === "forgot" ? "Reset your password" : "Welcome back"}
+      subtitle={mode === "forgot" ? "Enter your account email and we'll send you a reset link." : "Your wishlist missed you."}
+      footer={mode === "forgot"
+        ? <>Remembered it? <button type="button" onClick={() => { setMode("signin"); setError(""); }} className="font-semibold text-primary hover:text-primary-dark">Back to sign in</button></>
+        : <>New here? <Link to="/register" className="font-semibold text-primary hover:text-primary-dark">Create an account</Link></>}
+    >
+      {mode === "forgot" ? (
+        <form onSubmit={sendReset} className="space-y-5">
+          <div>
+            <label className={fieldLabelCls} htmlFor="reset-email">Email</label>
+            <input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@student.edu" className={fieldInputCls} />
+          </div>
+          {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
+          <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {busy ? "Sending…" : "Send reset link"}
+          </button>
+        </form>
+      ) : mode === "done" ? (
+        <div className="rounded-lg bg-emerald-50 px-4 py-4 text-sm font-medium text-emerald-800">
+          Check your email — if an account exists for <b>{email}</b>, a reset link is on its way. Follow it to choose a new password.
+        </div>
+      ) : (
+        <form onSubmit={submit} className="space-y-5">
           <div>
             <label className={fieldLabelCls} htmlFor="login-email">Email</label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@student.edu"
-              className={fieldInputCls}
-            />
+            <input id="login-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@student.edu" className={fieldInputCls} />
           </div>
           <div>
-            <label className={fieldLabelCls} htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className={fieldInputCls}
-            />
+            <div className="flex items-center justify-between">
+              <label className={fieldLabelCls} htmlFor="login-password">Password</label>
+              <button type="button" onClick={() => { setMode("forgot"); setError(""); }}
+                className="text-xs font-semibold text-primary hover:text-primary-dark">Forgot password?</button>
+            </div>
+            <input id="login-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••" className={fieldInputCls} />
           </div>
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
             {busy ? "Signing in…" : "Log in"}
@@ -85,22 +130,13 @@ function Login() {
             </svg>
             Continue with Google
           </button>
-          {error && (
-            <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
-              {error}
-            </p>
-          )}
+          {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
           {!configured && (
-            <p className="text-center text-xs text-ink2">
-              Sign-in is unavailable: authentication is not configured for this build.
-            </p>
+            <p className="text-center text-xs text-ink2">Sign-in is unavailable: authentication is not configured for this build.</p>
           )}
-          <p className="text-center text-sm text-ink2">
-            New here? <Link to="/register" className="font-semibold text-primary hover:text-primary-dark">Create an account</Link>
-          </p>
         </form>
-      </div>
-    </section>
+      )}
+    </AuthLayout>
   );
 }
 
