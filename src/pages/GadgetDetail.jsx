@@ -7,6 +7,8 @@ import { isListingId, fetchListing } from "../lib/marketplace.js";
 import {
   Img,
   Stars,
+  StarPicker,
+  ReviewVotes,
   Bar,
   GadgetCard,
   useWishlist,
@@ -708,6 +710,9 @@ function GadgetDetail({ compare, onCompare }) {
                         </div>
                       </div>
                       <p className="mt-2 text-ink2">{r.text}</p>
+                      <div className="mt-3">
+                        <ReviewVotes review={r} />
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -785,17 +790,7 @@ function GadgetDetail({ compare, onCompare }) {
             <label className={fieldLabelCls} htmlFor="rv-rating">
               Rating
             </label>
-            <select
-              id="rv-rating"
-              className={fieldInputCls}
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-            >
-              <option value={5}>Excellent</option>
-              <option value={4}>Good</option>
-              <option value={3}>Fair</option>
-              <option value={2}>Poor</option>
-            </select>
+            <StarPicker id="rv-rating" value={rating} onChange={setRating} label="Star rating" />
           </div>
           <div>
             <label className={fieldLabelCls} htmlFor="rv-usage">

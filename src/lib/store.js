@@ -101,7 +101,50 @@ export async function loadReviews(gadget_id) {
   if (error) return null;
   const rows = data || [];
   const names = await authorNames(rows.map((r) => r.user_id));
-  return rows.map((r) => toReview(r, names));
+  const votes = await loadReviewVotes(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...toReview(r, names), votes: votes[r.id] || { up: 0, down: 0, mine: 0 } }));
+}
+
+// ---------- review votes (public like / dislike) ----------
+export async function loadReviewVotes(reviewIds) {
+  const ids = [...new Set((reviewIds || []).filter(Boolean))];
+  if (!ids.length) return {};
+  const { data: { user } = {} } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+  const uid = user?.id || null;
+  const { data, error } = await supabase
+    .from("review_votes")
+    .select("review_id, user_id, value")
+    .in("review_id", ids);
+  const out = Object.fromEntries(ids.map((id) => [id, { up: 0, down: 0, mine: 0 }]));
+  if (error) return out;
+  for (const v of data || []) {
+    const e = out[v.review_id];
+    if (!e) continue;
+    if (v.value === 1) e.up += 1;
+    else e.down += 1;
+    if (v.user_id === uid) e.mine = v.value;
+  }
+  return out;
+}
+
+// value: 1 = like, -1 = dislike. Clicking the same vote again removes it.
+export async function voteReview(reviewId, value) {
+  const { data: { user } = {} } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+  if (!user) return { ok: false, error: "Sign in required" };
+  const { data: existing } = await supabase
+    .from("review_votes")
+    .select("value")
+    .eq("review_id", reviewId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (existing?.value === value) {
+    const { error } = await supabase.from("review_votes").delete().eq("review_id", reviewId).eq("user_id", user.id);
+    return error ? { ok: false, error: error.message } : { ok: true, value: 0 };
+  }
+  const { error } = await supabase
+    .from("review_votes")
+    .upsert({ review_id: reviewId, value, user_id: user.id }, { onConflict: "review_id,user_id" });
+  return error ? { ok: false, error: error.message } : { ok: true, value };
 }
 
 // ---------- reviews: admin moderation ----------
@@ -185,7 +228,8 @@ export async function loadPublicUserReviews(userId) {
     // visible to their author through the owner-scoped product query, not here.
     const rows = (data || []).filter((r) => r.status === "approved");
     const names = await authorNames([userId]);
-    return rows.map((r) => ({ ...toReview(r, names), gadget_id: r.gadget_id }));
+    const votes = await loadReviewVotes(rows.map((r) => r.id));
+    return rows.map((r) => ({ ...toReview(r, names), gadget_id: r.gadget_id, votes: votes[r.id] || { up: 0, down: 0, mine: 0 } }));
   } catch {
     return null;
   }

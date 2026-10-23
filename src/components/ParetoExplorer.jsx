@@ -183,14 +183,14 @@ export default function ParetoExplorer() {
 
           {/* points: dominated first so frontier draws on top */}
           {pts.filter((p) => !frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
-              <circle cx={sx(p.x)} cy={sy(p.y)} r={5} fill="#14213a" fillOpacity="0.55" />
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+              <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={5} fill="#14213a" fillOpacity="0.55" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
             </Link>
           ))}
           {pts.filter((p) => frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
-              <circle cx={sx(p.x)} cy={sy(p.y)} r={7} fill="#c2872f" stroke="#fff" strokeWidth="1.5" />
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+              <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={7} fill="#c2872f" stroke="#fff" strokeWidth="1.5" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
             </Link>
           ))}

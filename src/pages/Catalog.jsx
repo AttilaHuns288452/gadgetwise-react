@@ -287,7 +287,7 @@ export default function Catalog({ compare, onCompare, catalogLoading }) {
             </div>
           ) : (
             <>
-              <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="stagger mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {results.map((g) => (
                   <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
                 ))}

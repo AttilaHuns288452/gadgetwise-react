@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getPublicProfile, loadPublicUserReviews } from "../lib/store.js";
+import { ReviewVotes } from "../components/ui.jsx";
 
 function MiniStars({ n }) {
   return (
@@ -103,8 +104,11 @@ export default function PublicProfile() {
                       )}
                     </div>
                   </div>
-                  {r.text ? <p className="mt-2 text-ink2">{r.text}</p> : null}
-                </article>
+                  {m.text ? <p className="mt-2 text-ink2">{m.text}</p> : null}
+                  <div className="mt-3">
+                    <ReviewVotes review={m} />
+                  </div>
+                  </article>
               ))}
             </div>
           )}

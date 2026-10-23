@@ -270,7 +270,7 @@ export default function Profile({ compare, onCompare }) {
               <Link to="/gadgets" className="btn-primary mt-4 inline-flex">Browse gadgets</Link>
             </div>
           ) : (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="stagger mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {saved.map((g) => (
                 <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
               ))}

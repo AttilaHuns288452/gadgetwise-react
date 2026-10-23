@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { money, ownIndex, GW } from "../lib.js";
 import { useAuth, useAuthPrompt, requireAuth } from "../lib/auth.js";
-import { loadWishlist, syncWishlist } from "../lib/store.js";
+import { loadWishlist, syncWishlist, voteReview } from "../lib/store.js";
 
 /* Canonical name builder lives on GW (data.js) so moderation rows match the UI */
 export const displayName = (g) => GW.displayName(g);
@@ -33,6 +33,93 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
         }}
         className={`h-full w-full rounded-md ${ar != null && ar < 1 ? "object-contain" : "object-cover"} ${imgClass}`}
       />
+    </div>
+  );
+}
+
+/* Clickable 1-5 star rating input. Replaces word-label dropdowns so users rate
+   with stars everywhere a rating is entered. Keyboard: arrows via native radio. */
+export function StarPicker({ value, onChange, id, label = "Rating" }) {
+  const [hover, setHover] = useState(0);
+  const shown = hover || value;
+  return (
+    <div id={id} role="radiogroup" aria-label={label} className="flex flex-wrap items-center gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          role="radio"
+          aria-checked={value === n}
+          aria-label={`${n} star${n === 1 ? "" : "s"}`}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(0)}
+          onFocus={() => setHover(n)}
+          onBlur={() => setHover(0)}
+          onClick={() => onChange(n)}
+          className={`rounded p-0.5 text-2xl leading-none transition-transform hover:scale-110 focus-visible:outline-2 ${n <= shown ? "text-star" : "text-line-strong"}`}
+        >
+          ★
+        </button>
+      ))}
+      <span className="ml-2 text-sm text-ink2">{shown}/5</span>
+    </div>
+  );
+}
+
+const ThumbIcon = ({ down = false }) => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {down
+      ? <path d="M17 14V2M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+      : <path d="M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />}
+  </svg>
+);
+
+/* Public like / dislike on a review. One vote per signed-in user; clicking the
+   same choice again removes it. Counts come from review_votes (RLS owner-write). */
+export function ReviewVotes({ review }) {
+  const [votes, setVotes] = useState(review.votes || { up: 0, down: 0, mine: 0 });
+  const [busy, setBusy] = useState(false);
+  const [toast, toastNode] = useToast();
+  const cast = async (value) => {
+    if (!requireAuth(value === 1 ? "like this review" : "dislike this review")) return;
+    if (busy) return;
+    setBusy(true);
+    const res = await voteReview(review.id, value);
+    setBusy(false);
+    if (!res.ok) { toast(res.error || "Could not save your vote", "alert"); return; }
+    setVotes((v) => {
+      const next = { up: v.up, down: v.down, mine: res.value };
+      if (v.mine === 1) next.up -= 1;
+      if (v.mine === -1) next.down -= 1;
+      if (res.value === 1) next.up += 1;
+      if (res.value === -1) next.down += 1;
+      return next;
+    });
+  };
+  const btn = (value, label, icon, count) => (
+    <button
+      type="button"
+      aria-pressed={votes.mine === value}
+      onClick={() => cast(value)}
+      disabled={busy}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+        votes.mine === value
+          ? value === 1
+            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+            : "border-red-300 bg-red-50 text-red-700"
+          : "border-line-strong text-ink2 hover:border-primary hover:text-primary"
+      }`}
+    >
+      {icon}
+      {label}
+      <span className="tabular-nums">{count}</span>
+    </button>
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {btn(1, "Like", <ThumbIcon />, votes.up)}
+      {btn(-1, "Dislike", <ThumbIcon down />, votes.down)}
+      {toastNode}
     </div>
   );
 }

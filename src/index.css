@@ -146,6 +146,24 @@
 @keyframes success-pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 .success-pop { animation: success-pop var(--dur, 250ms) var(--ease-out, ease) both; }
 
+/* product grids: a soft staggered entrance so results read as arriving */
+.stagger > * { animation: fade-up 320ms var(--ease-out, ease) both; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+
+/* Pareto chart points: enter with the data, respond to hover */
+@keyframes pop-in { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }
+.pareto-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop-in 240ms var(--ease-out, ease) both;
+  transition: transform 160ms var(--ease-out, ease), opacity 160ms var(--ease-out, ease);
+}
+.pareto-g:hover .pareto-dot { transform: scale(1.4); }
+
 /* route/page continuity: one short fade, no entrance choreography */
 main.flex-1 { animation: fade-in 180ms var(--ease-out, ease) both; }
 

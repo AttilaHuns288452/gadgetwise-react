@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { GW } from "../lib.js";
 import { useAuth } from "../lib/auth.js";
 import { loadMyReviews, editReview, deleteReview } from "../lib/store.js";
-import { Modal, useToast, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
+import { Modal, useToast, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls, StarPicker } from "../components/ui.jsx";
 
 function Stars({ rating }) {
   return (
@@ -139,10 +139,7 @@ function ReviewHistory() {
         >
           <div>
             <label className={fieldLabelCls} htmlFor="rv-edit-rating">Rating</label>
-            <select id="rv-edit-rating" className={fieldInputCls} value={edit.rating}
-              onChange={(e) => setEdit({ ...edit, rating: e.target.value })}>
-              {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
-            </select>
+            <StarPicker id="rv-edit-rating" value={Number(edit.rating)} onChange={(n) => setEdit({ ...edit, rating: n })} label="Star rating" />
           </div>
           <div>
             <label className={fieldLabelCls} htmlFor="rv-edit-body">Your review</label>

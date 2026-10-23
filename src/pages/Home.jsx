@@ -117,7 +117,7 @@ function Categories() {
         </div>
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>All gadgets →</Link>
       </div>
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {GW.categories.map((c) => {
           const n = GW.gadgetsInCategory(c.id).length;
           return (
@@ -170,7 +170,7 @@ function TopRated({ compare, onCompare }) {
         </div>
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>See all rankings</Link>
       </div>
-      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {top.map((g) => <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />)}
       </div>
     </section>
