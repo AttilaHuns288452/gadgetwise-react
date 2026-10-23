@@ -4,7 +4,8 @@ import GW from "./data.js";
 
 const peso = "\u20B1";
 export function money(n) {
-  const rounded = Math.round(n * 100) / 100;
+  // `|| 0` normalizes -0 (Math.round(-0) stays -0) so we never print "₱-0".
+  const rounded = Math.round(n * 100) / 100 || 0;
   const hasCents = rounded % 1 !== 0;
   return peso + rounded.toLocaleString("en-PH", {
     minimumFractionDigits: hasCents ? 2 : 0,
