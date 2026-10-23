@@ -17,7 +17,7 @@
 export const OBJECTIVES = {
   price: { key: "price", label: "Purchase price", unit: "PHP", direction: "min",
     get: (g) => (Number.isFinite(g.price) && g.price > 0 ? g.price : null) },
-  monthly: { key: "monthly", label: "Price per month", unit: "PHP/mo", direction: "min",
+  monthly: { key: "monthly", label: "Price per month", unit: "/month", direction: "min",
     get: (g) => (Number.isFinite(g.price) && g.price > 0 ? g.price / 36 : null) },
   rating: { key: "rating", label: "Marketplace rating", unit: "/5", direction: "max",
     get: (g) => (Number.isFinite(g.rating) && g.rating > 0 ? g.rating : null) },

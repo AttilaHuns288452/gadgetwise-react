@@ -344,10 +344,10 @@ export function enrich(g) {
 
   // 3. Price per month — amortized allocation over a fixed 36-month window.
   if (isNum(g.price) && g.price > 0) {
-    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: Math.round((g.price / 36) * 100) / 100, unit: "PHP/mo",
+    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: Math.round((g.price / 36) * 100) / 100, unit: "/month",
       status: "estimated", method: "Price \u00f7 36 months (fixed allocation, not a lifespan or total-cost claim)" });
   } else {
-    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: null, unit: "PHP/mo",
+    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: null, unit: "/month",
       status: "unavailable", reason: "No valid price" });
   }
 

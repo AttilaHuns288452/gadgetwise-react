@@ -236,7 +236,7 @@ export default function Catalog({ compare, onCompare }) {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search gadgets, brands, features…"
-                aria-label="Search gadgets"
+                aria-label="Filter gadgets in catalog"
                 className="field rounded-lg py-2.5 pl-10 pr-4"
               />
             </div>

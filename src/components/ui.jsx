@@ -218,7 +218,7 @@ export function GadgetCard({ g, compare, onCompare }) {
               </svg>
             </button>
           </div>
-          <div className="mt-0.5 text-xs uppercase tracking-wide text-ink3">Per month ≈ {money(monthly)}/month</div>
+          <div className="mt-0.5 text-xs uppercase tracking-wide text-ink3">≈ {money(monthly)}/month</div>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
             {onCompare ? (
               <label className="flex cursor-pointer items-center gap-2 text-sm text-ink2">

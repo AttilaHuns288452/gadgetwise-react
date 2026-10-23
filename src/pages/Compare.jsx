@@ -20,7 +20,7 @@ const ROWS = [
   },
   {
     label: "Cost per month", better: "low", badge: "Cheaper per month",
-    num: (g) => GW.monthlyCost(g), val: (g) => `≈ ${money(GW.monthlyCost(g))}/mo`,
+    num: (g) => GW.monthlyCost(g), val: (g) => `≈ ${money(GW.monthlyCost(g))}/month`,
   },
   { label: "Warranty", better: null, badge: null, num: null, val: (g) => g.value?.warrantyYears == null ? "—" : `${g.value.warrantyYears} yr` },
   {

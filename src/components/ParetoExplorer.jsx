@@ -101,35 +101,35 @@ export default function ParetoExplorer() {
     <div className="rounded-xl border border-line bg-white p-5">
       {/* controls */}
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-        <label className="text-sm text-ink2">X axis
-          <select value={xKey} onChange={(e) => setXKey(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">X axis
+          <select value={xKey} onChange={(e) => setXKey(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
             {X_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
           </select>
         </label>
-        <label className="text-sm text-ink2">Y axis
-          <select value={yKey} onChange={(e) => setYKey(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Y axis
+          <select value={yKey} onChange={(e) => setYKey(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
             {Y_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
           </select>
         </label>
-        <label className="text-sm text-ink2">Category
-          <select value={cat} onChange={(e) => setCat(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Category
+          <select value={cat} onChange={(e) => setCat(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
             <option value="all">All</option>
             {GW.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
-        <label className="text-sm text-ink2">Brand
-          <select value={brand} onChange={(e) => setBrand(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Brand
+          <select value={brand} onChange={(e) => setBrand(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
             <option value="all">All</option>
             {brands.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </label>
-        <label className="text-sm text-ink2">Min ₱
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Min ₱
           <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className="field ml-2 !w-24 !py-1.5" placeholder="0" />
         </label>
-        <label className="text-sm text-ink2">Max ₱
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Max ₱
           <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className="field ml-2 !w-24 !py-1.5" placeholder="any" />
         </label>
-        <label className="text-sm text-ink2">Min rating
+        <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Min rating
           <input type="number" step="0.1" min="0" max="5" value={minRating} onChange={(e) => setMinRating(e.target.value)} className="field ml-2 !w-20 !py-1.5" placeholder="any" />
         </label>
         <button type="button" onClick={reset} className="btn-ghost !py-1.5 !text-sm">Reset</button>

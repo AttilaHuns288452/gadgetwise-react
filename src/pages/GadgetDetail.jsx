@@ -141,6 +141,7 @@ function GadgetDetail({ compare, onCompare }) {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
   const [extra, setExtra] = useState([]);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
   const [fetched, setFetched] = useState(null);
@@ -169,7 +170,7 @@ function GadgetDetail({ compare, onCompare }) {
   useEffect(() => {
     let cancelled = false;
     loadReviews(id).then((rows) => {
-      if (!cancelled && rows) setExtra(rows);
+      if (!cancelled && rows) { setExtra(rows); setReviewsLoaded(true); }
     });
     return () => {
       cancelled = true;
@@ -431,11 +432,9 @@ function GadgetDetail({ compare, onCompare }) {
 
           {/* Specifications (frame: collapsed accordion) */}
           <div className="mt-8">
-            <Disclose title="Specifications">
-              <SpecPanel g={g} />
-              {/* ponytail: parked here so the closed default matches the frame */}
+            <Disclose title="Warranty &amp; repair">
+              {/* specs live in the Specifications tab; this accordion is warranty only */}
               <div className="card mt-6 p-6">
-                <h2 className="text-xl font-semibold">Warranty &amp; repair</h2>
                 <dl className="mt-4">
                   <div className={rowCls}>
                     <dt className="text-ink2">Warranty</dt>
@@ -528,7 +527,7 @@ function GadgetDetail({ compare, onCompare }) {
           ["Specifications", "specifications"],
           ["Value Analysis", "value-analysis"],
           ["Ownership Cost", "ownership-cost"],
-          [`Reviews (${reviews.length})`, "reviews"],
+          [`Reviews${reviewsLoaded ? ` (${reviews.length})` : ""}`, "reviews"],
           [`Reported Issues (${issues.length})`, "reported-issues"],
         ].map(([label, target]) => (
           <button

@@ -303,7 +303,7 @@ function Gadgets({ toast }) {
                     <div><div className="font-medium text-[#111827]">{[g.brand, g.model].filter(Boolean).join(" ")}</div></div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-[#4B5563]">{g.category || "—"}</td>
+                <td className="px-4 py-3 text-[#4B5563]">{g.category ? g.category.charAt(0).toUpperCase() + g.category.slice(1) : "—"}</td>
                 <td className="px-4 py-3 mono text-[#111827]">{g.price != null ? money(g.price) : "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
@@ -350,12 +350,12 @@ function Categories({ toast }) {
         <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
           <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit category" : "New category"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Name"><input className={fieldInputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
+            <Field label="Name"><input className={fieldInputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
             <Field label="Sort order"><input type="number" className={fieldInputCls} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></Field>
             <div className="sm:col-span-2"><Field label="Description"><input className={fieldInputCls} value={form.blurb} onChange={(e) => setForm({ ...form, blurb: e.target.value })} placeholder="Short description shown on the category" /></Field></div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button className={btnPrimary} onClick={save}>Save</button>
+            <button className={btnPrimary} onClick={save} disabled={!form?.name?.trim()}>Save</button>
             <button className={iconBtn} onClick={() => setForm(null)}>Cancel</button>
           </div>
         </div>
