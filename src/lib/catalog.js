@@ -12,6 +12,7 @@
 
 import GW from "../data.js";
 import { toGadget } from "./marketplace.js";
+import { loadProducts } from "./store.js";
 
 const CACHE_KEY = "gw.catalog.v2";
 // ponytail: 7-day cache + 1 page/category. The API is a 50-req/month BASIC plan,
@@ -150,7 +151,6 @@ export async function loadCatalog() {
    catalog alongside marketplace listings. Mapped to the same gadget shape. */
 export async function loadCurated() {
   try {
-    const { loadProducts } = await import("./store.js");
     const r = await loadProducts();
     if (!r.ok || !r.rows?.length) return { ok: !!r.ok, count: 0 };
     const extra = r.rows.map((p) => ({
