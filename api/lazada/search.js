@@ -5,14 +5,13 @@
  * OMKAR_LAZADA_API_KEY env var (kept name-compatible) and never reaches the
  * browser. Returns normalized product data plus an explicit freshness marker.
  */
-import { getLazadaKey } from "../../lib/settings-crypto.js";
+import { getLazadaKeys } from "../../lib/settings-crypto.js";
 import {
   normalizeQuery,
   normalizeMarketplace,
   normalizePage,
   buildSearchUrl,
-  buildAuthHeaders,
-  fetchUpstream,
+  fetchWithKeyFailover,
   normalizeSearchResponse,
   unwrap,
   mapUpstreamError,
@@ -29,8 +28,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { code: "method_not_allowed", message: "Use GET." } });
   }
 
-  const { key } = await getLazadaKey(); // admin-configured key, env fallback
-  if (!key) {
+  const keys = await getLazadaKeys(); // admin key first, then authorized env keys
+  if (!keys.length) {
     return res.status(503).json({
       error: { code: "search_unavailable", message: "Product search is not available right now." },
     });
@@ -62,7 +61,7 @@ export default async function handler(req, res) {
   const url = buildSearchUrl({ query, marketplace, page, startKey });
   let upstream;
   try {
-    upstream = await fetchUpstream(url, buildAuthHeaders(key));
+    ({ upstream } = await fetchWithKeyFailover(url, keys));
   } catch (err) {
     const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
     return res.status(504).json({
