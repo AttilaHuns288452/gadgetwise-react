@@ -206,13 +206,6 @@ main.flex-1 { animation: fade-in 180ms var(--ease-out, ease) both; }
 tbody tr { transition: background-color .15s ease; }
 tbody tr:hover { background: #F9FAFB; }
 
-/* Admin console: desktop scale-up so type matches the public site's density at 1920x1080 */
-/* ponytail: uniform zoom instead of re-sizing every hardcoded px class in Admin.jsx */
-@media (min-width: 1024px) {
-  .admin-zoom { zoom: 1.25; }
-}
-
-
 /* horizontal-scroll nav strips (mobile): fade the right edge so it reads as
    scrollable instead of broken/clipped. Only where the strip can overflow. */
 @media (max-width: 1023px) {

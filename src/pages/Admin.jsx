@@ -759,7 +759,7 @@ function Shell({ tabKey, tab, onOut, children }) {
     ["session", [["public", "View public site", "home"], ["out", "Sign out", "exit"]]],
   ];
   return (
-    <div className="admin-zoom flex min-h-screen flex-col bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:flex-row">
+    <div className="flex min-h-screen flex-col bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:flex-row">
       <aside className="w-full shrink-0 bg-[#14213A] lg:sticky lg:top-0 lg:h-screen lg:w-[300px] lg:overflow-y-auto">
         <div className="flex items-center justify-between gap-3 px-5 py-5">
           <Logo size={17} tone="light" />
