@@ -67,12 +67,13 @@ export default async function handler(req, res) {
   }
 
   if (!upstream.ok) {
-    // 417 from item_detail ("Get item detail error") that survived the transient
-    // retry means the listing itself is gone upstream: answer 404 honestly
-    // instead of a generic 502 "search failed".
+    // 417 from item_detail ("Get item detail error") is ambiguous upstream
+    // flakiness: the same listing can answer 200 moments later. It survived the
+    // transient retry here, so report a retryable lookup failure with accurate
+    // copy — never claim the listing is gone while it may still be live.
     if (upstream.status === 417) {
-      return res.status(404).json({
-        error: { code: "product_unavailable", message: "This listing is no longer available on the marketplace." },
+      return res.status(502).json({
+        error: { code: "product_lookup_failed", message: "The marketplace did not return this listing right now. Please try again." },
         upstreamStatus: 417,
       });
     }

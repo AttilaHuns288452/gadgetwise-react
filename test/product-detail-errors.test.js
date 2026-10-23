@@ -18,14 +18,15 @@ function mockRes() {
   return r;
 }
 
-test("a listing that vanished upstream becomes an honest 404, not a 502 search failure", async () => {
+test("an ambiguous upstream 417 is a retryable lookup failure, never a false 'gone' claim", async () => {
   process.env.LAZADA_API_KEYS = "test-key";
   globalThis.fetch = async () => new Response('{"code":417,"msg":"Get item detail error"}', { status: 417 });
   const res = mockRes();
   await handler({ method: "GET", query: { id: "15398622092", marketplace: "ph" } }, res);
-  assert.equal(res.statusCode, 404);
-  assert.equal(res.body.error.code, "product_unavailable");
-  assert.match(res.body.error.message, /no longer available/i);
+  assert.equal(res.statusCode, 502);
+  assert.equal(res.body.error.code, "product_lookup_failed");
+  assert.match(res.body.error.message, /try again/i);
+  assert.doesNotMatch(res.body.error.message, /no longer available/i, "must not claim permanent removal");
 });
 
 test("a valid live listing still resolves to a product", async () => {
