@@ -2,10 +2,12 @@
 // 5-step flow: category → budget → academic use → priorities → ranked results.
 // Scoring engine is recommend() in lib.js — this file is UI + copy only.
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../lib/auth.js";
 import { Link, useNavigate } from "react-router-dom";
 import { GW, money, FACTOR_META, recommend } from "../lib.js";
 import { Img } from "../components/ui.jsx";
 import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
+import { saveRecommendation } from "../lib/store.js";
 
 const CATS = [
   { id: "smartphones", name: "Smartphones", blurb: "Everyday carry, notes, hotspot" },
@@ -58,7 +60,9 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   });
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [savedRun, setSavedRun] = useState(false);
 
   // ponytail: App renders <Quiz /> bare today; fall back to local toggles if props ever arrive
   const [localCompare, setLocalCompare] = useState(new Set());
@@ -87,6 +91,20 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   useEffect(() => {
     if (step === 5 && engine && results.length) {
       toast(`Shortlist ready — showing the top ${results.length} of ${engine.results.length}`);
+      if (user && !savedRun) {
+        saveRecommendation(user.id, {
+          category: cat,
+          budget_label: band?.label || "",
+          use_case: useCase?.label || "",
+          priorities: prio,
+          result_ids: results.map((r) => r.gadget.id),
+          result_titles: results.map((r) => r.gadget.model),
+          result_scores: results.map((r) => r.score),
+        }).then((saved) => {
+          if (saved.ok) setSavedRun(true);
+          else toast(`Could not save recommendation history: ${saved.error}`, "alert");
+        });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { GW } from "../lib.js";
 import { useAuth } from "../lib/auth.js";
 import { loadMyReviews } from "../lib/store.js";
 
@@ -63,7 +64,7 @@ function ReviewHistory() {
           {rows.map((r) => (
             <article key={r.id} className="card p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <h2 className="text-lg font-semibold text-ink break-words">{r.gadget_id}</h2>
+                <h2 className="min-w-0 text-lg font-semibold text-ink break-words">{GW.getGadget(r.gadget_id) ? GW.displayName(GW.getGadget(r.gadget_id)) : r.gadget_id}</h2>
                 <span className="text-sm text-ink3">
                   {new Date(r.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}
                 </span>

@@ -144,7 +144,11 @@ export async function loadComparisons(userId) {
     .select("id, gadget_ids, gadget_titles, created_at")
     .order("created_at", { ascending: false });
   if (error) return null;
-  return (data || []).map((r) => ({ ids: r.gadget_ids, ts: new Date(r.created_at).getTime() }));
+  return (data || []).map((r) => ({
+    ids: r.gadget_ids,
+    titles: r.gadget_titles || [],
+    ts: new Date(r.created_at).getTime(),
+  }));
 }
 
 // ---------- public reviewer profiles ----------
@@ -193,6 +197,37 @@ export async function saveComparison(userId, ids, titles) {
     .insert({ gadget_ids: ids, gadget_titles: titles });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+// ---------- recommendation history ----------
+export async function loadRecommendations(userId) {
+  if (!live(userId)) return null;
+  const { data, error } = await supabase
+    .from("recommendation_history")
+    .select("id, category, budget_label, use_case, priorities, result_ids, result_titles, result_scores, created_at")
+    .order("created_at", { ascending: false });
+  if (error) return null;
+  return data || [];
+}
+
+export async function saveRecommendation(userId, run) {
+  if (!live(userId)) return { ok: true, local: true };
+  const { error } = await supabase.from("recommendation_history").insert({
+    category: run.category,
+    budget_label: run.budget_label,
+    use_case: run.use_case,
+    priorities: run.priorities || {},
+    result_ids: run.result_ids || [],
+    result_titles: run.result_titles || [],
+    result_scores: run.result_scores || [],
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteRecommendation(userId, id) {
+  if (!live(userId)) return { ok: true, local: true };
+  const { error } = await supabase.from("recommendation_history").delete().eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 

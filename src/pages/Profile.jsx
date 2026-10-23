@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { loadRecommendations, deleteRecommendation } from "../lib/store.js";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
 import { GadgetCard, useWishlist } from "../components/ui.jsx";
@@ -46,10 +47,34 @@ export default function Profile({ compare, onCompare }) {
   const navigate = useNavigate();
   const wish = useWishlist();
   const { user, ready, configured, signOut } = useAuth();
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationStatus, setRecommendationStatus] = useState("loading");
 
   useEffect(() => {
     document.title = "GadgetWise — Profile";
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const uid = user?.id || null;
+    if (!configured || !uid) {
+      setRecommendations([]);
+      setRecommendationStatus("ready");
+      return () => { alive = false; };
+    }
+    setRecommendationStatus("loading");
+    loadRecommendations(uid).then((rows) => {
+      if (!alive) return;
+      setRecommendations(rows || []);
+      setRecommendationStatus("ready");
+    });
+    return () => { alive = false; };
+  }, [user, configured]);
+
+  const removeRecommendation = async (id) => {
+    const result = await deleteRecommendation(user?.id, id);
+    if (result.ok) setRecommendations((rows) => rows.filter((r) => r.id !== id));
+  };
 
   // Real account only. In Supabase mode a signed-out visitor is sent to login;
   // demo mode (no Supabase) shows the local preview identity.
@@ -102,7 +127,7 @@ export default function Profile({ compare, onCompare }) {
             <Link to="/review-history" className="btn-outline flex w-full items-center justify-center gap-2">
               <DocIcon /> Review history
             </Link>
-            <Link to="/comparison-history" className="btn-outline flex w-full items-center justify-center gap-2">
+            <Link to="/compare-history" className="btn-outline flex w-full items-center justify-center gap-2">
               <ClockIcon /> Comparison history
             </Link>
             <Link to="/wishlist" className="btn-outline flex w-full items-center justify-center gap-2">
@@ -123,7 +148,26 @@ export default function Profile({ compare, onCompare }) {
 
         {/* main column */}
         <div className="lg:col-span-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <div className="rounded-2xl border border-[#DCE7F8] bg-[linear-gradient(135deg,#F8FBFF_0%,#EEF5FF_100%)] p-6 shadow-[0_12px_30px_rgba(31,78,121,0.08)]">
+            <div className="flex flex-wrap items-start justify-between gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2563EB]">Your decision desk</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">Keep your shortlist moving.</h2>
+                <p className="mt-2 max-w-[48ch] text-sm leading-relaxed text-ink2">Saved gadgets, comparisons, reviews, and recommendations in one calm place.</p>
+              </div>
+              <Link to="/recommend" className="btn-primary shrink-0">Run a recommendation →</Link>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {[["Saved", wish.ids.size, "/wishlist"], ["Comparisons", compareCount, "/compare-history"], ["Recommendations", recommendations.length, "#recommendation-history"]].map(([label, value, to]) => (
+                <Link key={label} to={to} className="rounded-xl border border-white/80 bg-white/75 px-4 py-3 transition-transform hover:-translate-y-0.5">
+                  <div className="mono text-2xl font-bold text-hero">{value}</div>
+                  <div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink3">{label}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 className="text-2xl font-semibold text-ink">Saved gadgets</h2>
             <Link to="/wishlist" className="font-semibold text-[#2563EB] hover:underline">
               Open wishlist
@@ -142,22 +186,40 @@ export default function Profile({ compare, onCompare }) {
             </div>
           )}
 
-          <div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h2 className="text-2xl font-semibold text-ink">Recommendation history</h2>
+          <div id="recommendation-history" className="mt-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink3">Your trail</p>
+              <h2 className="mt-1 text-2xl font-semibold text-ink">Recommendation history</h2>
+            </div>
             <Link to="/recommend" className="font-semibold text-[#2563EB] hover:underline">
               Run a new one
             </Link>
           </div>
-          {/* Recommendation runs are not persisted yet, so we show a real empty
-              state instead of seeding fabricated history. */}
-          <div className="card mt-4 p-8 text-center">
-            <p className="font-semibold text-ink">No recommendation runs saved yet.</p>
-            <p className="mt-1 text-sm text-ink2">
-              Run the recommendation wizard to get scored picks. Your runs will appear here once
-              recommendation history is saved to your account.
-            </p>
-            <Link to="/recommend" className="btn-primary mt-4 inline-flex">Find my gadget</Link>
-          </div>
+          {recommendationStatus === "loading" ? (
+            <div className="card mt-4 p-8 text-center"><p className="text-ink2">Loading your recommendation history…</p></div>
+          ) : recommendations.length === 0 ? (
+            <div className="card mt-4 border-dashed p-8 text-center">
+              <p className="font-semibold text-ink">No recommendation runs saved yet.</p>
+              <p className="mt-1 text-sm text-ink2">Complete the wizard and your ranked shortlist will be saved here.</p>
+              <Link to="/recommend" className="btn-primary mt-4 inline-flex">Find my gadget</Link>
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3">
+              {recommendations.map((run) => (
+                <article key={run.id} className="card flex flex-wrap items-start justify-between gap-4 p-5 transition-shadow hover:shadow-[0_10px_25px_rgba(15,23,34,0.08)]">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-ink">{run.category} shortlist</h3>
+                      <span className="chip">{run.budget_label}</span>
+                    </div>
+                    <p className="mt-1 text-sm text-ink2">For {run.use_case} · {new Date(run.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</p>
+                    <p className="mt-3 text-sm text-ink3">{(run.result_titles || []).slice(0, 3).join(" · ")}</p>
+                  </div>
+                  <button type="button" onClick={() => removeRecommendation(run.id)} className="shrink-0 text-sm font-semibold text-ink3 hover:text-red-700">Remove</button>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

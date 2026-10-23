@@ -31,8 +31,8 @@ function relDate(ts) {
   return new Date(ts).toLocaleDateString();
 }
 
-function gadgetName(id) {
-  return GW.getGadget(id) ? GW.displayName(GW.getGadget(id)) : id;
+function gadgetName(id, title) {
+  return GW.getGadget(id) ? GW.displayName(GW.getGadget(id)) : (title || id);
 }
 
 function ComparisonHistory({ compare }) {
@@ -58,12 +58,12 @@ function ComparisonHistory({ compare }) {
     // ponytail: dedupe only against the newest entry (consecutive identical sets)
     if (first && [...first.ids].sort().join(",") === key) return;
     const titles = ids.map((i) => GW.getGadget(i) ? GW.displayName(GW.getGadget(i)) : i);
-    const next = [{ ids, ts: Date.now() }, ...h].slice(0, 20);
+    const next = [{ ids, titles, ts: Date.now() }, ...h].slice(0, 20);
     localStorage.setItem(KEY, JSON.stringify(next));
     setHistory(next);
     if (uid) saveComparison(uid, ids, titles); // mirror to DB; RLS enforces ownership
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [compare, uid]);
 
   return (
     <section className="section">
@@ -85,7 +85,7 @@ function ComparisonHistory({ compare }) {
               <li key={`${entry.ts}-${i}`} className="card flex flex-wrap items-center justify-between gap-x-4 gap-y-2 p-4">
                 <div className="min-w-0">
                   <div className="font-semibold text-ink break-words">
-                    {ids.map(gadgetName).join(" vs ")}
+                    {ids.map((id, index) => gadgetName(id, entry.titles?.[index])).join(" vs ")}
                   </div>
                   <div className="text-sm text-ink3">{relDate(entry.ts)}</div>
                 </div>
