@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { money, ownIndex, GW } from "../lib.js";
 import { useAuth, useAuthPrompt, requireAuth } from "../lib/auth.js";
@@ -354,17 +354,26 @@ const toastIco = {
 
 export function useToast() {
   const [items, setItems] = useState([]);
+  const timers = useRef(new Map());
+  useEffect(() => () => timers.current.forEach((timer) => clearTimeout(timer)), []);
+  const dismiss = (id) => {
+    const timer = timers.current.get(id);
+    if (timer) clearTimeout(timer);
+    timers.current.delete(id);
+    setItems((xs) => xs.filter((x) => x.id !== id));
+  };
   const toast = (text, icon = "checkCircle") => {
     const id = Math.random().toString(36).slice(2);
-    setItems((xs) => [...xs, { id, text, icon }]);
-    setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== id)), 3200);
+    setItems((xs) => [...xs.slice(-3), { id, text, icon }]);
+    timers.current.set(id, setTimeout(() => dismiss(id), 3200));
   };
   const node = (
-    <div className="fixed bottom-[88px] right-6 z-[100] grid gap-2.5" role="status" aria-live="polite">
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[100] grid max-w-[min(24rem,calc(100vw-2rem))] gap-2.5 sm:right-6" role="status" aria-live="polite">
       {items.map((t) => (
-        <div key={t.id} className="toast-in flex items-center gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl">
-          <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-[#9CC3EE]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>
-          {t.text}
+        <div key={t.id} className="toast-in flex min-w-0 items-start gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl" role="alert">
+          <svg viewBox="0 0 16 16" className="mt-0.5 h-4 w-4 shrink-0 text-[#9CC3EE]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>
+          <span className="min-w-0 break-words">{t.text}</span>
+          <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss notification" className="ml-auto shrink-0 text-white/60 transition-colors hover:text-white">×</button>
         </div>
       ))}
     </div>
