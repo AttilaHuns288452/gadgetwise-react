@@ -282,7 +282,7 @@ export function GadgetCard({ g, compare, onCompare }) {
           {g.brand && g.brand !== "Unknown" && (
             <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
           )}
-          <a href={`#/g/${g.id}`} title={g.model} className="line-clamp-2 min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
+          <a href={`#/g/${g.id}`} title={g.model} className="line-clamp-2 min-h-[3.85rem] text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
             {g.model}
           </a>
         </div>
@@ -302,8 +302,23 @@ export function GadgetCard({ g, compare, onCompare }) {
           ))}
         </dl>
         <div className="mt-auto">
-          <div className="flex items-center justify-between gap-2">
+          <div>
             <span className="mono text-xl font-bold text-ink">{money(g.price)}</span>
+          </div>
+          <div className="mt-0.5 text-xs uppercase tracking-wide text-ink3">≈ {money(monthly)}/month</div>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+            {onCompare ? (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-ink2">
+                <input
+                  type="checkbox"
+                  checked={!!compare?.has(g.id)}
+                  onChange={() => onCompare(g.id)}
+                  className="h-4 w-4 rounded border-line-strong text-primary focus:ring-primary"
+                />
+                Compare
+              </label>
+            ) : <span />}
+            <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => {
@@ -320,21 +335,8 @@ export function GadgetCard({ g, compare, onCompare }) {
                 <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z" />
               </svg>
             </button>
-          </div>
-          <div className="mt-0.5 text-xs uppercase tracking-wide text-ink3">≈ {money(monthly)}/month</div>
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
-            {onCompare ? (
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-ink2">
-                <input
-                  type="checkbox"
-                  checked={!!compare?.has(g.id)}
-                  onChange={() => onCompare(g.id)}
-                  className="h-4 w-4 rounded border-line-strong text-primary focus:ring-primary"
-                />
-                Compare
-              </label>
-            ) : <span />}
-            <a href={`#/g/${g.id}`} className="font-semibold text-primary hover:text-primary-dark">Details</a>
+              <a href={`#/g/${g.id}`} className="font-semibold text-primary hover:text-primary-dark">Details</a>
+            </div>
           </div>
         </div>
       </div>
