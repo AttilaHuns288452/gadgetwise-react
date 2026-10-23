@@ -287,3 +287,91 @@ export function recommend(input) {
 }
 
 export { GW };
+
+
+/* ------------------------------------------------------------------ *
+ * Metric enrichment (Tier 3: derived from real marketplace fields).
+ * Computes legitimate metrics from price / rating / listing fields that
+ * Lazada actually returns. Never fabricates a product spec — a value we
+ * cannot derive or verify is returned as `unavailable` with a reason.
+ * Every metric carries provenance: source | calculated | estimated.
+ * ------------------------------------------------------------------ */
+export const ENRICH_VERSION = 1;
+
+const coreFields = (g) => ({
+  brand: !!g.brand,
+  model: !!g.model,
+  price: isNum(g.price) && g.price > 0,
+  image: !!g.image,
+  rating: isNum(g.rating) && g.rating > 0,
+  originalPrice: isNum(g.originalPrice) && g.originalPrice > 0,
+  seller: !!g.sellerName,
+  productUrl: !!g.productUrl,
+});
+
+/** One entry per metric: {id,label,value,unit,status,method|reason,note?}. */
+export function enrich(g) {
+  const out = [];
+  const peers = GW.gadgetsInCategory(g.category).filter((x) => isNum(x.price) && x.price > 0);
+  const n = peers.length;
+
+  // 1. Price competitiveness — where this price sits among category peers.
+  if (isNum(g.price) && g.price > 0 && n >= 3) {
+    const cheaperOrEq = peers.filter((x) => x.price >= g.price).length;
+    const pct = Math.round((cheaperOrEq / n) * 100); // % of peers priced at or above this
+    out.push({
+      id: "priceCompetitiveness", label: "Price competitiveness", value: pct, unit: "/100",
+      status: "calculated",
+      method: `Priced at or below ${pct}% of ${n} ${g.category.toLowerCase()} listings`,
+      note: "Relative price position only, not product quality.",
+    });
+  } else {
+    out.push({ id: "priceCompetitiveness", label: "Price competitiveness", value: null, unit: "/100",
+      status: "unavailable", reason: n < 3 ? `Only ${n} comparable listing(s) — too small a sample` : "No valid price" });
+  }
+
+  // 2. Discount — only when both prices are valid and reference > current.
+  if (isNum(g.price) && g.price > 0 && isNum(g.originalPrice) && g.originalPrice > g.price) {
+    const pct = ((g.originalPrice - g.price) / g.originalPrice) * 100;
+    out.push({ id: "discount", label: "Discount vs listed reference", value: Math.round(pct), unit: "%",
+      status: "calculated", method: `(${money(g.originalPrice)} - ${money(g.price)}) / ${money(g.originalPrice)}`,
+      note: "Compares to the seller's listed reference price, not a verified historical price." });
+  } else {
+    out.push({ id: "discount", label: "Discount vs listed reference", value: null, unit: "%",
+      status: "unavailable", reason: "No valid higher reference price from the listing" });
+  }
+
+  // 3. Price per month — amortized allocation over a fixed 36-month window.
+  if (isNum(g.price) && g.price > 0) {
+    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: Math.round((g.price / 36) * 100) / 100, unit: "PHP/mo",
+      status: "estimated", method: "Price \u00f7 36 months (fixed allocation, not a lifespan or total-cost claim)" });
+  } else {
+    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: null, unit: "PHP/mo",
+      status: "unavailable", reason: "No valid price" });
+  }
+
+  // 4. Listing completeness — how much the listing actually tells us.
+  const fields = coreFields(g);
+  const present = Object.values(fields).filter(Boolean).length;
+  out.push({ id: "listingCompleteness", label: "Listing completeness", value: Math.round((present / Object.keys(fields).length) * 100), unit: "%",
+    status: "calculated", method: `${present}/${Object.keys(fields).length} core fields present`,
+    note: "Measures how complete the listing is, not how good the product is." });
+
+  // 5. Marketplace rating (source-provided).
+  if (isNum(g.rating) && g.rating > 0) {
+    out.push({ id: "rating", label: "Marketplace rating", value: Math.round(g.rating * 10) / 10, unit: "/5",
+      status: "source", method: "Provided by the marketplace listing" });
+    out.push({ id: "reviewCount", label: "Marketplace review count", value: g.reviewCount ?? 0, unit: "reviews",
+      status: "source", method: "Provided by the marketplace listing" });
+  } else {
+    out.push({ id: "rating", label: "Marketplace rating", value: null, unit: "/5", status: "unavailable", reason: "Listing provides no rating" });
+  }
+
+  // 6. Evidence coverage — how many scoring factors real data supports.
+  const cov = ownIndexCoverage(g);
+  out.push({ id: "coverage", label: "Evidence coverage", value: cov, unit: "%",
+    status: "calculated", method: "Share of scoring weight backed by real inputs (missing factors are excluded, never zeroed)",
+    note: "Higher = the score rests on more real evidence." });
+
+  return out;
+}

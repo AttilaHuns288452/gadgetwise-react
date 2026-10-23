@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { GW, money, ownIndex } from "../lib.js";
+import { GW, money, ownIndex, enrich } from "../lib.js";
 import { useAuth, requireAuth } from "../lib/auth.js";
 import { submitReview as submitReviewRecord, loadReviews } from "../lib/store.js";
 import { isListingId, fetchListing } from "../lib/marketplace.js";
@@ -474,6 +474,37 @@ function GadgetDetail({ compare, onCompare }) {
             <p className="mt-4 text-xs text-ink3">
               Derived from catalog specs — the full formula is in the README.
             </p>
+          </div>
+
+          {/* Evidence-backed metrics — derived from the listing's real fields,
+              each labeled with provenance. No value is invented. */}
+          <div className="card mt-8 p-6">
+            <h2 className="text-xl font-semibold">Evidence-backed metrics</h2>
+            <p className="mt-1 text-sm text-ink2">
+              Computed from this listing's real data. Every value is labeled source, calculated, estimated, or unavailable.
+            </p>
+            <dl className="mt-4 divide-y divide-line">
+              {enrich(g).map((m) => (
+                <div key={m.id} className="flex items-start justify-between gap-4 py-2.5">
+                  <div className="min-w-0">
+                    <dt className="font-medium text-ink">{m.label}</dt>
+                    <dd className="text-xs text-ink3">{m.method || m.reason}{m.note ? ` · ${m.note}` : ""}</dd>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="mono text-lg font-semibold text-ink">
+                      {m.value == null ? "—" : `${m.value}${m.unit === "%" ? "%" : m.unit === "/5" ? "/5" : m.unit === "/100" ? "/100" : ` ${m.unit}`}`}
+                    </div>
+                    <span className={
+                      "mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                      (m.status === "source" ? "bg-emerald-100 text-emerald-800"
+                        : m.status === "calculated" ? "bg-blue-100 text-blue-800"
+                        : m.status === "estimated" ? "bg-amber-100 text-amber-800"
+                        : "bg-gray-100 text-gray-600")
+                    }>{m.status}</span>
+                  </div>
+                </div>
+              ))}
+            </dl>
           </div>
 
           {/* Common issue banner (frame: warm/yellow) */}

@@ -265,7 +265,7 @@ export default function App() {
                     to={href}
                     end={href === "/"}
                     className={({ isActive }) =>
-                      `inline-block rounded-lg px-5 py-2.5 ${
+                      `inline-block rounded-lg px-3.5 py-2 ${
                         isActive ? "bg-[#EFF6FF] text-[#2563EB]" : "text-ink2 hover:text-[#2563EB]"
                       }`
                     }
@@ -279,7 +279,7 @@ export default function App() {
 
           {/* search */}
           <form
-            className="order-4 flex w-full min-w-0 items-center lg:order-3 lg:ml-auto lg:w-[22rem] xl:w-[30rem]"
+            className="order-4 flex w-full min-w-0 items-center lg:order-3 lg:ml-auto lg:w-[15rem] xl:w-[20rem]"
             onSubmit={(e) => {
               e.preventDefault();
               navigate(`/gadgets?q=${encodeURIComponent(q)}`);
