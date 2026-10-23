@@ -277,7 +277,7 @@ function GadgetDetail({ compare, onCompare }) {
 
       {/* Hero: frame puts the image + actions left and the meta → common-issue stack right. */}
       <div className="mt-6 grid gap-8 lg:grid-cols-2">
-        <div className="min-w-0">
+        <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <Img gadget={g} className="card" eager />
           <div className="mt-5 flex flex-wrap gap-3">
             <button
