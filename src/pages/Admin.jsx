@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -386,13 +386,27 @@ function Integrations({ toast }) {
   const [status, setStatus] = useState(null);
   const [err, setErr] = useState(null);
   const [testing, setTesting] = useState(false);
+  const [cfg, setCfg] = useState(null);
+  const [apiKey, setApiKey] = useState("");
+  const [saving, setSaving] = useState(false);
   const load = async () => {
     setTesting(true);
-    const r = await loadIntegrationStatus();
+    const [s, c] = await Promise.all([loadIntegrationStatus(), loadIntegrationConfig()]);
     setTesting(false);
-    if (r.ok) { setStatus(r.status); setErr(null); } else setErr(r.error);
+    if (s.ok) { setStatus(s.status); setErr(null); } else setErr(s.error);
+    if (c.ok) setCfg(c.config);
   };
   useEffect(() => { load(); }, []);
+  const saveKey = async () => {
+    if (!apiKey.trim()) { toast("Paste an API key first", "alert"); return; }
+    setSaving(true);
+    const r = await saveIntegrationKey(apiKey.trim());
+    setSaving(false);
+    if (!r.ok) { toast(r.error || "Could not save", "alert"); return; }
+    setApiKey("");
+    toast(r.message || "API key saved (encrypted)", "check");
+    load();
+  };
   const connBadge = (c) => ({
     ok: "bg-emerald-100 text-emerald-800", quota_exhausted: "bg-amber-100 text-amber-800",
     invalid_credentials: "bg-red-100 text-red-700", missing_credentials: "bg-gray-100 text-gray-600",
@@ -406,6 +420,38 @@ function Integrations({ toast }) {
           <p className="mt-1 text-[15px] text-[#6B7280]">Product-data provider status and a real connection test. Secrets stay server-side; only a masked fingerprint is shown.</p>
         </div>
         <button className={btnPrimary} onClick={load} disabled={testing}>{testing ? "Testing…" : "Run connection test"}</button>
+      </div>
+
+      {/* set / rotate the API key (encrypted server-side) */}
+      <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
+        <h2 className="text-[19px] font-bold text-[#111827]">API key</h2>
+        <p className="mt-1 text-[15px] text-[#6B7280]">
+          Save the Lazada API key here. It is encrypted (AES-256-GCM) and stored server-side — never shown back in full and never shipped to the browser.
+          A new key is used by product searches immediately, no redeploy needed.
+        </p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-[320px] flex-1">
+            <Field label="New API key">
+              <input
+                type="password"
+                className={inputCls}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Paste the RapidAPI key"
+                autoComplete="off"
+              />
+            </Field>
+          </div>
+          <button className={btnPrimary} onClick={saveKey} disabled={saving}>
+            {saving ? "Saving…" : "Save key"}
+          </button>
+        </div>
+        {cfg && (
+          <p className="mt-3 text-[13px] text-[#6B7280]">
+            Current: {cfg.configured ? `configured (${cfg.fingerprint}) · source: ${cfg.source}` : `not set · falling back to ${cfg.source}`}
+            {cfg.updated_at ? ` · updated ${new Date(cfg.updated_at).toLocaleString()}` : ""}
+          </p>
+        )}
       </div>
 
       {err && <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-[15px] text-red-700">{err}</div>}

@@ -279,3 +279,32 @@ export async function loadIntegrationStatus() {
   if (!r.ok) return { ok: false, error: j?.error?.message || "Could not load integration status" };
   return { ok: true, status: j.status };
 }
+
+
+/** Save the Lazada API key (encrypted server-side). Admin-only. */
+export async function saveIntegrationKey(value) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) return { ok: false, error: "Sign in required" };
+  const r = await fetch("/api/admin/integration-config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ value }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { ok: false, error: j?.error?.message || "Could not save the key" };
+  return { ok: true, message: j.message, fingerprint: j.fingerprint };
+}
+
+/** Load the integration-config status (masked). */
+export async function loadIntegrationConfig() {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) return { ok: false, error: "Sign in required" };
+  const r = await fetch("/api/admin/integration-config", { headers: { Authorization: `Bearer ${token}` } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { ok: false, error: j?.error?.message || "Could not load config" };
+  return { ok: true, config: j };
+}

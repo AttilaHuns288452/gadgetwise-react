@@ -4,6 +4,7 @@
  * Serverless proxy for the TMAPI Lazada item-detail API. The API key stays
  * server-side in OMKAR_LAZADA_API_KEY and is never sent to the browser.
  */
+import { getLazadaKey } from "../../lib/settings-crypto.js";
 import {
   isValidProductId,
   normalizeMarketplace,
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { code: "method_not_allowed", message: "Use GET." } });
   }
 
-  const key = process.env.LAZADA_API_KEY || process.env.OMKAR_LAZADA_API_KEY;
+  const { key } = await getLazadaKey(); // admin-configured key, env fallback
   if (!key) {
     return res.status(503).json({
       error: { code: "search_unavailable", message: "Product lookup is not available right now." },

@@ -5,6 +5,7 @@
  * OMKAR_LAZADA_API_KEY env var (kept name-compatible) and never reaches the
  * browser. Returns normalized product data plus an explicit freshness marker.
  */
+import { getLazadaKey } from "../../lib/settings-crypto.js";
 import {
   normalizeQuery,
   normalizeMarketplace,
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { code: "method_not_allowed", message: "Use GET." } });
   }
 
-  const key = process.env.LAZADA_API_KEY || process.env.OMKAR_LAZADA_API_KEY;
+  const { key } = await getLazadaKey(); // admin-configured key, env fallback
   if (!key) {
     return res.status(503).json({
       error: { code: "search_unavailable", message: "Product search is not available right now." },
