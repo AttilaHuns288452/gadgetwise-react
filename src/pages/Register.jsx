@@ -59,7 +59,7 @@ function Register() {
           <label className={fieldLabelCls} htmlFor="reg-password">Password</label>
           <input id="reg-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters" className={fieldInputCls} />
-          <p className="mt-1.5 text-xs text-ink2">At least 8 characters. Required fields are marked below.</p>
+          <p className="mt-1.5 text-xs text-ink2">At least 8 characters. Name, email, and password are required.</p>
         </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
           {busy ? "Creating account…" : "Create account"}

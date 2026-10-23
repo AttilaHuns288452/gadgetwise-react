@@ -167,7 +167,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
               <p className="mt-1.5 text-ink2">
                 Only that category gets ranked — a laptop is never compared against a power bank.
               </p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
                 {CATS.map((c) => (
                   <button key={c.id} type="button" onClick={() => setCat(c.id)} className={optionCls(cat === c.id)}>
                     <div className="text-lg font-bold">{c.name}</div>
@@ -189,7 +189,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
               <p className="mt-1.5 text-ink2">Realistic student brackets, or set a custom ceiling.</p>
               {!custom ? (
                 <>
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
                     {GW.budgetBands.map((b, i) => (
                       <button key={b.id} type="button" onClick={() => setBandId(b.id)} className={optionCls(band && band.id === b.id)}>
                         <div className="text-lg font-bold">{b.label}</div>
@@ -252,7 +252,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
             <div>
               <h2 className="text-2xl font-extrabold">What will you use it for?</h2>
               <p className="mt-1.5 text-ink2">Pick one primary use. Scoring changes with the workload.</p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
                 {GW.useCases.map((u) => (
                   <button key={u.id} type="button" onClick={() => setUseId(u.id)} className={optionCls(useId === u.id)}>
                     <div className="text-lg font-bold">{u.label}</div>
