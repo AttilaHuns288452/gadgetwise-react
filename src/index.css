@@ -216,3 +216,10 @@ tbody tr:hover { background: #F9FAFB; }
   }
   .scroll-fade::-webkit-scrollbar { display: none; }
 }
+
+/* Keep the primary nav compact on phones. The search field and account
+   actions are more useful above the nav; the nav itself remains scrollable. */
+@media (max-width: 639px) {
+  .main-nav-list { gap: 0.125rem; font-size: 0.875rem; }
+  .main-nav-list a { padding: 0.5rem 0.625rem; }
+}

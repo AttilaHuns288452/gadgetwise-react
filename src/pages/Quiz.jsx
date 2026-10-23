@@ -109,7 +109,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">
         {/* LEFT — numbered steps */}
-        <nav aria-label="Quiz steps" className="lg:sticky lg:top-24 lg:self-start">
+        <nav aria-label="Quiz steps" className="order-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
           <ol>
             {TITLES.map((t, i) => {
               const n = i + 1;

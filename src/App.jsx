@@ -256,8 +256,8 @@ export default function App() {
           </div>
 
           {/* nav links (horizontally scrollable on small screens) */}
-          <nav className="scroll-fade order-3 w-full overflow-x-auto lg:order-2 lg:w-auto lg:shrink-0" aria-label="Main">
-            <ul className="flex w-max items-center gap-2 whitespace-nowrap text-base font-semibold">
+          <nav className="main-nav scroll-fade order-3 w-full overflow-x-auto lg:order-2 lg:w-auto lg:shrink-0" aria-label="Main">
+            <ul className="main-nav-list flex w-full flex-wrap items-center gap-1 whitespace-normal text-base font-semibold sm:w-max sm:flex-nowrap sm:gap-2 sm:whitespace-nowrap">
               {NAV.map(([href, label]) => (
                 <li key={href}>
                   <NavLink
@@ -293,7 +293,7 @@ export default function App() {
                 value={q}
                 onChange={(e) => { setQ(e.target.value); setShowSuggest(true); }}
                 onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
-                placeholder="Search gadgets, brands, categories…"
+                placeholder="Search gadgets…"
                 aria-label="Search gadgets"
                 autoComplete="off"
                 className="field !rounded-lg !py-2.5 !pl-10 !pr-4"

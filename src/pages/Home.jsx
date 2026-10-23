@@ -62,8 +62,8 @@ function Stats() {
   const avg = (GW.gadgets.reduce((s, g) => s + g.rating, 0) / Math.max(1, n)).toFixed(1);
   const cells = [
     [String(n), 'gadgets tracked'],
-    [reviews.toLocaleString('en-US') + '+', 'student reviews'],
-    [avg + '★', 'average catalog rating'],
+    [reviews ? `${reviews.toLocaleString('en-US')}+` : 'No ratings', reviews ? 'student reviews' : 'student reviews yet'],
+    [reviews ? `${avg}★` : 'No ratings', 'average catalog rating'],
     [String(GW.categories.length), 'categories covered'],
   ];
   return (

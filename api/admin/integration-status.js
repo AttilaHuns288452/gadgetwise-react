@@ -11,6 +11,7 @@
  * quota state.
  */
 import { createClient } from "@supabase/supabase-js";
+import { getLazadaKey } from "../../lib/settings-crypto.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -43,12 +44,13 @@ export default async function handler(req, res) {
   }
 
   // ---- honest status (no secret ever leaves the server) ----
-  const key = process.env.LAZADA_API_KEY || process.env.OMKAR_LAZADA_API_KEY;
+  const { key, source } = await getLazadaKey();
   const base = process.env.LAZADA_API_BASE || "https://lazada-api.p.rapidapi.com";
   const host = new URL(base).host;
   const status = {
     provider: "Lazada marketplace (TMAPI via RapidAPI)",
     configured: Boolean(key),
+    source,
     // masked fingerprint: first 4 + last 3 chars only
     keyFingerprint: key ? `${key.slice(0, 4)}…${key.slice(-3)}` : null,
     apiHost: host,

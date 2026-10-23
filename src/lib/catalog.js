@@ -14,7 +14,9 @@ import GW from "../data.js";
 import { toGadget } from "./marketplace.js";
 import { loadProducts } from "./store.js";
 
-const CACHE_KEY = "gw.catalog.v2";
+// Bump after catalog-data integrity changes so an old browser never revives
+// stale or placeholder-heavy marketplace results.
+const CACHE_KEY = "gw.catalog.v3";
 // ponytail: 7-day cache + 1 page/category. The API is a 50-req/month BASIC plan,
 // so we fetch rarely and lean on the cache; stale data beats an empty catalog.
 const TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -149,11 +151,28 @@ export async function loadCatalog() {
 
 /* GadgetWise-curated products (admin-managed `products` table) merged into the
    catalog alongside marketplace listings. Mapped to the same gadget shape. */
+export function curatedRowsForPublic(rows = []) {
+  const seen = new Set();
+  return rows.filter((p) => {
+    // Quarantine obvious propagation-test/placeholder records without deleting
+    // the admin record. Public discovery must not present test data as a real
+    // product. Empty model, non-positive price, and test-like names are not
+    // publishable catalog records.
+    const model = String(p.model || "").trim();
+    const testSentinel = /^ZZ\b|propagated|test product|placeholder/i.test(model);
+    if (testSentinel || !model || p.price == null || Number(p.price) <= 0) return false;
+    const key = [p.brand || "", p.model || "", p.category || "", p.price ?? "", p.image || "", p.description || ""].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return Boolean(model);
+  });
+}
+
 export async function loadCurated() {
   try {
     const r = await loadProducts();
     if (!r.ok || !r.rows?.length) return { ok: !!r.ok, count: 0 };
-    const extra = r.rows.map((p) => ({
+    const extra = curatedRowsForPublic(r.rows).map((p) => ({
       id: `gw-${p.id}`,
       brand: p.brand || "Unknown",
       model: p.model,

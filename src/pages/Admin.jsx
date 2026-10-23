@@ -262,6 +262,7 @@ function Gadgets({ toast }) {
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
           <p className="mt-1 text-[15px] text-[#6B7280]">GadgetWise-curated products. Add, edit, or remove them — saved to the database and shown in the catalog.</p>
+          <p className="mt-2 text-[13px] text-[#B42318]">Remove any propagation-test or placeholder rows before publishing a product.</p>
         </div>
         <button className={btnPrimary} onClick={() => setForm({ model: "", brand: "", category: "smartphones", price: "", image: "" })}><Ico n="plus" size={16} /> Add gadget</button>
       </div>

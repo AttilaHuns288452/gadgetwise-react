@@ -172,11 +172,13 @@ export async function loadPublicUserReviews(userId) {
   try {
     const { data, error } = await supabase
       .from("reviews")
-      .select("id, user_id, gadget_id, rating, body, created_at")
+      .select("id, user_id, gadget_id, rating, body, status, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (error) return null;
-    const rows = (data || []).filter((r) => r.status !== "rejected");
+    // Public profiles show published reviews only. Pending reviews remain
+    // visible to their author through the owner-scoped product query, not here.
+    const rows = (data || []).filter((r) => r.status === "approved");
     const names = await authorNames([userId]);
     return rows.map((r) => ({ ...toReview(r, names), gadget_id: r.gadget_id }));
   } catch {
