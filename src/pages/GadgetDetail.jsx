@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GW, money, ownIndex, enrich } from "../lib.js";
 import { useAuth, requireAuth } from "../lib/auth.js";
-import { submitReview as submitReviewRecord, loadReviews } from "../lib/store.js";
+import { submitReview as submitReviewRecord, loadReviews, trackView } from "../lib/store.js";
 import { isListingId, fetchListing } from "../lib/marketplace.js";
 import {
   Img,
@@ -156,6 +156,11 @@ function GadgetDetail({ compare, onCompare }) {
   // Marketplace listings live in an in-memory registry; a deep-link or refresh
   // would 404. Fetch-on-miss so /g/lazada-<id> always resolves.
   const [loadingListing, setLoadingListing] = useState(isListingId(id));
+  // Real view tracking for admin analytics (fire-and-forget, never blocks UI).
+  useEffect(() => {
+    trackView(id);
+  }, [id]);
+
   useEffect(() => {
     if (!isListingId(id)) return;
     let cancelled = false;

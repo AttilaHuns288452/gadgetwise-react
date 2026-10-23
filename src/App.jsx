@@ -15,7 +15,7 @@ import Register from "./pages/Register.jsx";
 import ReviewHistory from "./pages/ReviewHistory.jsx";
 import PublicProfile from "./pages/PublicProfile.jsx";
 import { useAuth } from "./lib/auth.js";
-import { loadCatalog } from "./lib/catalog.js";
+import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard } from "./components/ui.jsx";
 
 const NAV = [
@@ -124,7 +124,10 @@ export default function App() {
   useEffect(() => {
     let alive = true;
     loadCatalog()
-      .then(() => alive && setCatalogReady(true))
+      .then(async () => {
+        await loadCurated().catch(() => {}); // admin-managed products merge in
+        if (alive) setCatalogReady(true);
+      })
       .catch((e) => alive && setCatalogError(e.message || "catalog unavailable"));
     return () => {
       alive = false;

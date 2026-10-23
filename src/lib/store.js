@@ -192,3 +192,77 @@ export async function saveComparison(userId, ids, titles) {
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
+
+
+/* ---- Admin catalog management (real DB persistence, admin-only writes) ---- */
+
+export async function loadCategories() {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured", rows: [] };
+  const { data, error } = await supabase.from("categories").select("*").order("sort_order", { ascending: true });
+  return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
+}
+
+export async function saveCategory(id, { name, blurb, sort_order = 0 }) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const payload = { name, blurb, sort_order };
+  const q = id ? supabase.from("categories").update(payload).eq("id", id)
+               : supabase.from("categories").insert(payload);
+  const { error } = await q;
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteCategory(id) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function loadProducts() {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured", rows: [] };
+  const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+  return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
+}
+
+export async function saveProduct(id, p) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const payload = {
+    brand: p.brand || "", model: p.model, category: p.category || null,
+    price: p.price == null ? null : Number(p.price),
+    original_price: p.original_price == null ? null : Number(p.original_price),
+    image: p.image || null, description: p.description || null,
+  };
+  const q = id ? supabase.from("products").update(payload).eq("id", id)
+               : supabase.from("products").insert(payload);
+  const { error } = await q;
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteProduct(id) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Record a product view (insert-only; used for real analytics). */
+export async function trackView(productId) {
+  if (!supabaseConfigured) return { ok: false };
+  await supabase.from("product_views").insert({ product_id: String(productId) });
+  return { ok: true };
+}
+
+/** Real view analytics counted from product_views (top products + last-4-week trend). */
+export async function loadViewStats() {
+  if (!supabaseConfigured) return { ok: false, topViewed: [], weeklyViews: [0, 0, 0, 0] };
+  const { data, error } = await supabase.from("product_views").select("product_id, viewed_at");
+  if (error) return { ok: false, error: error.message, topViewed: [], weeklyViews: [0, 0, 0, 0] };
+  const byId = {};
+  const weekly = [0, 0, 0, 0]; // oldest -> newest, last 4 weeks
+  const now = Date.now();
+  for (const r of data || []) {
+    byId[r.product_id] = (byId[r.product_id] || 0) + 1;
+    const weeksAgo = Math.floor((now - new Date(r.viewed_at).getTime()) / (7 * 864e5));
+    if (weeksAgo < 4) weekly[3 - weeksAgo] += 1;
+  }
+  const topViewed = Object.entries(byId).map(([id, views]) => ({ id, views })).sort((a, b) => b.views - a.views).slice(0, 10);
+  return { ok: true, topViewed, weeklyViews: weekly };
+}

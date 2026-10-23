@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -119,6 +119,8 @@ const toCat = (c) => ({ id: c.id, name: c.name, desc: c.blurb });
 
 function Dashboard({ tab, stats, pendingRows }) {
   const s = stats;
+  const [views, setViews] = useState({ topViewed: [], weeklyViews: [0, 0, 0, 0] });
+  useEffect(() => { loadViewStats().then((r) => r.ok && setViews(r)); }, []);
   const statCards = [
     ["Products tracked", s.total, { text: `${s.categories.length} categories` }, {}],
     ["Avg list price", money(s.avgPrice), { text: "across live catalog" }, {}],
@@ -150,6 +152,14 @@ function Dashboard({ tab, stats, pendingRows }) {
         <Panel title="Products by category" action={<button className="text-[14px] font-semibold text-[#2260D4] hover:underline" onClick={() => tab("reports")}>Full reports →</button>}>
           <BarList rows={stats.categories.map((c) => [c.name, c.count])} />
         </Panel>
+        <Panel title="Most viewed products">
+          {views.topViewed.length
+            ? <BarList rows={views.topViewed.map((v) => [v.id.slice(0, 18), v.views])} />
+            : <p className="text-[15px] text-[#6B7280]">No product views recorded yet. Views are counted live as people open product pages.</p>}
+        </Panel>
+        <Panel title="Product views — last 4 weeks">
+          <BarList rows={["4 wks ago", "3 wks ago", "2 wks ago", "This week"].map((w, i) => [w, views.weeklyViews[i] || 0])} />
+        </Panel>
         <Panel title="Moderation queue preview">
           <ul className="space-y-3">
             {preview.map((r) => (
@@ -168,8 +178,8 @@ function Dashboard({ tab, stats, pendingRows }) {
         <Panel title="Data sources">
           <p className="text-[15px] leading-relaxed text-[#4B5563]">
             Product counts and prices are counted live from the marketplace catalog. Review
-            counts come from the database. No traffic or engagement metrics are fabricated —
-            page-view analytics are not collected, so none are shown.
+            counts and page views come from the database (product_views) — these analytics are
+            counted for real, never estimated or fabricated.
           </p>
         </Panel>
         <Panel title="Catalog health">
@@ -219,70 +229,81 @@ function Reports({ stats }) {
   );
 }
 
-function Gadgets() {
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState("all");
-  const cats = [...new Set(GW.gadgets.map((g) => g.category))];
-  const rows = GW.gadgets;
-  const filtered = rows.filter((g) =>
-    (cat === "all" || g.category === cat) &&
-    `${g.brand} ${g.model}`.toLowerCase().includes(q.toLowerCase())
-  );
+function Gadgets({ toast }) {
+  const [rows, setRows] = useState([]);
+  const [form, setForm] = useState(null);
+  const cats = GW.categories.map((c) => c.id);
+  const reload = async () => { const r = await loadProducts(); if (r.ok) setRows(r.rows); };
+  useEffect(() => { reload(); }, []);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const save = async () => {
+    if (!form?.model?.trim()) { toast("Model name is required", "alert"); return; }
+    const res = await saveProduct(form.id || null, form);
+    if (res.ok) { setForm(null); reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
+    else toast(res.error || "Could not save", "alert");
+  };
+  const del = async (id) => {
+    const res = await deleteProduct(id);
+    if (res.ok) { reload(); toast("Gadget deleted"); } else toast(res.error || "Could not delete", "alert");
+  };
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">
-            Live marketplace catalog the recommendation engine and comparison tool use. These are managed upstream and are read-only here.
-          </p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">GadgetWise-curated products. Add, edit, or remove them — saved to the database and shown in the catalog.</p>
         </div>
+        <button className={btnPrimary} onClick={() => setForm({ model: "", brand: "", category: "smartphones", price: "", image: "" })}><Ico n="plus" size={16} /> Add gadget</button>
       </div>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <input className={`${inputCls} !w-72`} placeholder="Search brand or model..." value={q} onChange={(e) => setQ(e.target.value)} />
-        <select className={`${inputCls} !w-52`} value={cat} onChange={(e) => setCat(e.target.value)}>
-          <option value="all">All categories</option>
-          {cats.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <select className={`${inputCls} !w-44`}>
-          <option>All statuses</option>
-          <option>Published</option>
-        </select>
-      </div>
-      <div className="mt-5 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-        <table className="w-full min-w-[860px]">
-          <thead>
-            <tr className="border-b border-[#EAECF0]">
-              <th className={headCls}>Gadget</th><th className={headCls}>Category</th><th className={headCls}>Price</th>
-              <th className={headCls}>Rating</th><th className={headCls}>Status</th><th className={`${headCls} text-right`}>Actions</th>
-            </tr>
-          </thead>
+
+      {form && (
+        <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
+          <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit gadget" : "New gadget"}</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field label="Brand"><input className={fieldInputCls} value={form.brand || ""} onChange={(e) => set("brand", e.target.value)} placeholder="e.g. Samsung" /></Field>
+            <Field label="Model"><input className={fieldInputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Galaxy A55" /></Field>
+            <Field label="Category">
+              <select className={fieldInputCls} value={form.category || ""} onChange={(e) => set("category", e.target.value)}>
+                {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+            <Field label="Price (₱)"><input type="number" className={fieldInputCls} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="0" /></Field>
+            <Field label="Original price (₱, optional)"><input type="number" className={fieldInputCls} value={form.original_price || ""} onChange={(e) => set("original_price", e.target.value)} /></Field>
+            <Field label="Image URL"><input className={fieldInputCls} value={form.image || ""} onChange={(e) => set("image", e.target.value)} placeholder="https://…" /></Field>
+            <div className="sm:col-span-2"><Field label="Description"><textarea rows="3" className={fieldInputCls} value={form.description || ""} onChange={(e) => set("description", e.target.value)} /></Field></div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button className={btnPrimary} onClick={save}>Save</button>
+            <button className={iconBtn} onClick={() => setForm(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white">
+        <table className="w-full text-left text-[14px]">
+          <thead><tr className="border-b border-[#E4E7EC] text-[13px] uppercase tracking-wide text-[#667085]">
+            <th className="px-4 py-3">Gadget</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Price</th><th className="px-4 py-3 text-right">Actions</th>
+          </tr></thead>
           <tbody>
-            {filtered.map((g) => (
-              <tr key={g.id} className="border-b border-[#F2F4F7] last:border-0">
-                <td className={cellCls}>
+            {rows.map((g) => (
+              <tr key={g.id} className="border-b border-[#F0F2F5]">
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <img src={g.image || g.img} alt="" className="h-11 w-11 shrink-0 rounded-md border border-[#E4E7EC] bg-white object-contain p-0.5" />
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold text-[#111827]">{displayName(g)}</div>
-                      <div className="truncate text-[13px] text-[#6B7280]">{g.id}</div>
-                    </div>
+                    {g.image ? <img src={g.image} alt="" className="h-10 w-10 rounded-md border border-[#E4E7EC] object-cover" /> : null}
+                    <div><div className="font-medium text-[#111827]">{[g.brand, g.model].filter(Boolean).join(" ")}</div></div>
                   </div>
                 </td>
-                <td className={cellCls}>{g.category}</td>
-                <td className={`${cellCls} font-semibold text-[#111827]`}>{money(g.price)}</td>
-                <td className={cellCls}>{g.rating}★</td>
-                <td className={cellCls}><Pill kind="published">Published</Pill></td>
-                <td className={cellCls}>
+                <td className="px-4 py-3 text-[#4B5563]">{g.category || "—"}</td>
+                <td className="px-4 py-3 mono text-[#111827]">{g.price != null ? money(g.price) : "—"}</td>
+                <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
-                    <Link to={`/g/${g.id}`} className={iconBtn} title="View public page"><Ico n="eye" /></Link>
+                    <button className={iconBtn} title="Edit" onClick={() => setForm({ ...g })}><Ico n="pencil" /></button>
+                    <button className={iconBtn} title="Delete" onClick={() => del(g.id)}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
-              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={6}>No gadgets match the filters.</td></tr>
-            )}
+            {!rows.length && <tr><td colSpan={4} className="px-4 py-8 text-center text-[#6B7280]">No curated gadgets yet. Add one above.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -290,45 +311,66 @@ function Gadgets() {
   );
 }
 
-function Categories() {
-  const rows = GW.categories.map(toCat);
-  const counts = Object.fromEntries(
-    rows.map((c) => {
-      const inCat = GW.gadgets.filter((g) => g.category === c.id);
-      return [c.id, { n: inCat.length, avg: inCat.length ? (inCat.reduce((s, g) => s + g.rating, 0) / inCat.length).toFixed(1) : "0.0" }];
-    })
-  );
+function Categories({ toast }) {
+  const [rows, setRows] = useState([]);
+  const [form, setForm] = useState(null); // {id?, name, blurb, sort_order}
+  const reload = async () => { const r = await loadCategories(); if (r.ok) setRows(r.rows); };
+  useEffect(() => { reload(); }, []);
+  const save = async () => {
+    if (!form?.name?.trim()) { toast("Name is required", "alert"); return; }
+    const res = await saveCategory(form.id || null, form);
+    if (res.ok) { setForm(null); reload(); toast(form.id ? "Category updated" : "Category added"); }
+    else toast(res.error || "Could not save", "alert");
+  };
+  const del = async (id) => {
+    const res = await deleteCategory(id);
+    if (res.ok) { reload(); toast("Category deleted"); } else toast(res.error || "Could not delete", "alert");
+  };
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Categories</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">
-            Structural categories that organize the catalog. These are system configuration, shown here with their live catalog counts.
-          </p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog categories. Add, edit, or remove them here — saved to the database.</p>
         </div>
+        <button className={btnPrimary} onClick={() => setForm({ name: "", blurb: "", sort_order: 0 })}><Ico n="plus" size={16} /> Add category</button>
       </div>
+
+      {form && (
+        <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
+          <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit category" : "New category"}</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field label="Name"><input className={fieldInputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
+            <Field label="Sort order"><input type="number" className={fieldInputCls} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></Field>
+            <div className="sm:col-span-2"><Field label="Description"><input className={fieldInputCls} value={form.blurb} onChange={(e) => setForm({ ...form, blurb: e.target.value })} placeholder="Short description shown on the category" /></Field></div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button className={btnPrimary} onClick={save}>Save</button>
+            <button className={iconBtn} onClick={() => setForm(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {rows.map((c) => {
-          const s = counts[c.id] || { n: 0, avg: "0.0" };
-          return (
-            <div key={c.id} className="min-w-0 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF3FC] text-[#2260D4]"><Ico n="cube" size={18} /></span>
-                  <div>
-                    <h3 className="text-[20px] font-bold text-[#111827]">{c.name}</h3>
-                    <p className="text-[13px] text-[#667085]">{s.n} gadgets · avg {s.avg}★</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Link to="/gadgets" className={iconBtn} title="View catalog"><Ico n="eye" /></Link>
+        {rows.map((c) => (
+          <div key={c.id} className="min-w-0 rounded-xl border border-[#E4E7EC] bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF3FC] text-[#2260D4]"><Ico n="cube" size={18} /></span>
+                <div>
+                  <h3 className="text-[20px] font-bold text-[#111827]">{c.name}</h3>
+                  <p className="text-[13px] text-[#667085]">sort {c.sort_order}</p>
                 </div>
               </div>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.desc}</p>
+              <div className="flex gap-2">
+                <button className={iconBtn} title="Edit" onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0 })}><Ico n="pencil" /></button>
+                <button className={iconBtn} title="Delete" onClick={() => del(c.id)}><Ico n="trash" /></button>
+              </div>
             </div>
-          );
-        })}
+            <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.blurb || "No description."}</p>
+          </div>
+        ))}
+        {!rows.length && <p className="text-[15px] text-[#6B7280]">No categories yet. Add one above.</p>}
       </div>
     </>
   );
@@ -637,8 +679,8 @@ export default function Admin() {
         <Dashboard tab={tab} stats={stats} pendingRows={reviews.filter((r) => r.status === "pending")} />
       )}
       {tabKey === "reports" && <Reports stats={stats} />}
-      {tabKey === "gadgets" && <Gadgets />}
-      {tabKey === "categories" && <Categories />}
+      {tabKey === "gadgets" && <Gadgets toast={toast} />}
+      {tabKey === "categories" && <Categories toast={toast} />}
       {tabKey === "reviews" && (
         <Reviews rows={reviews} setRows={setReviews} loaded={reviewsLoaded} reload={reloadReviews} toast={toast} />
       )}

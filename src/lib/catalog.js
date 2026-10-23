@@ -144,3 +144,41 @@ export async function loadCatalog() {
   GW.gadgets = products.map(toCatalogGadget);
   return { ok: true, count: GW.gadgets.length, cached: false };
 }
+
+
+/* GadgetWise-curated products (admin-managed `products` table) merged into the
+   catalog alongside marketplace listings. Mapped to the same gadget shape. */
+export async function loadCurated() {
+  try {
+    const { loadProducts } = await import("./store.js");
+    const r = await loadProducts();
+    if (!r.ok || !r.rows?.length) return { ok: !!r.ok, count: 0 };
+    const extra = r.rows.map((p) => ({
+      id: `gw-${p.id}`,
+      brand: p.brand || "Unknown",
+      model: p.model,
+      category: p.category || "smartphones",
+      price: p.price ?? 0,
+      rating: 0,
+      reviewCount: 0,
+      originalPrice: p.original_price ?? null,
+      image: p.image || "",
+      sellerName: "GadgetWise",
+      productUrl: null,
+      marketplace: false,
+      tagline: p.description || p.model,
+      summary: p.description || "GadgetWise-curated product.",
+      specs: {},
+      specList: [],
+      scored: { performance: null, battery: null, durability: null, portability: null, display: null, camera: null, storage: null, repairability: null },
+      battery: null,
+      value: { warrantyYears: null, lifespanYears: null, repairabilityLabel: "Not specified" },
+      strengths: [], weaknesses: [], goodFor: [], notIdeal: [], reviews: [], issues: [], durab: null, repair: null,
+    }));
+    // prepend curated so they surface first; keep marketplace after
+    GW.gadgets = [...extra, ...GW.gadgets.filter((g) => !String(g.id).startsWith("gw-"))];
+    return { ok: true, count: extra.length };
+  } catch {
+    return { ok: false, count: 0 };
+  }
+}
