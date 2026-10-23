@@ -321,7 +321,7 @@ export function enrich(g) {
     const cheaperOrEq = peers.filter((x) => x.price >= g.price).length;
     const pct = Math.round((cheaperOrEq / n) * 100); // % of peers priced at or above this
     out.push({
-      id: "priceCompetitiveness", label: "Price competitiveness", value: pct, unit: "/100",
+      id: "priceCompetitiveness", label: "Price competitiveness", value: pct, unit: "%",
       status: "calculated",
       method: `Priced at or below ${pct}% of ${n} ${g.category.toLowerCase()} listings`,
       note: "Relative price position only, not product quality.",

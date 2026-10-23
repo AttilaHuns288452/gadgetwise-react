@@ -223,9 +223,10 @@ function GadgetDetail({ compare, onCompare }) {
 
   // 0–5 ownership scores from catalog values (frame: "Battery (spec)" 5.0, "Warranty (catalog)" 2.5).
   const s5 = (v01) => Math.min(5, v01 * 5).toFixed(1);
+  // null stays null (Bar renders "Not available"); never coerce a missing spec to 0.
   const ownBars = [
-    ["Battery (spec)", s5(Math.min(g.scored.battery / 10, 1))],
-    ["Warranty (catalog)", s5(Math.min((wYears * 12) / 24, 1))],
+    ["Battery (spec)", g.scored.battery == null ? null : s5(Math.min(g.scored.battery / 10, 1))],
+    ["Warranty (catalog)", wYears == null ? null : s5(Math.min((wYears * 12) / 24, 1))],
   ];
 
   const submitReview = async () => {
@@ -406,7 +407,8 @@ function GadgetDetail({ compare, onCompare }) {
             </div>
           </section>
 
-          {/* Good for / Not ideal for */}
+          {/* Good for / Not ideal for (hidden entirely when there is nothing to say) */}
+          {(g.goodFor?.length || g.notIdeal?.length) ? (
           <section className="mt-8 grid gap-6 sm:grid-cols-2">
             <div className="card p-6">
               <h2 className="text-xl font-semibold">Good for</h2>
@@ -425,6 +427,7 @@ function GadgetDetail({ compare, onCompare }) {
               </ul>
             </div>
           </section>
+          ) : null}
 
           {/* Specifications (frame: collapsed accordion) */}
           <div className="mt-8">
