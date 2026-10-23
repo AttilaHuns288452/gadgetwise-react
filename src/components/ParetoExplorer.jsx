@@ -38,17 +38,20 @@ export default function ParetoExplorer() {
 
   const brands = useMemo(() => [...new Set(GW.gadgets.map((g) => g.brand).filter(Boolean))].sort(), []);
 
-  // Filtering changes the comparison population; the frontier is recomputed on it.
-  const filtered = useMemo(() => GW.gadgets.filter((g) => {
+  // Filtering changes the comparison population; the frontier is recomputed on
+  // it. Computed inline (not memoized): GW.gadgets is mutable module state that
+  // fills in asynchronously, so a useMemo on the filter values alone would cache
+  // an empty list and never see the catalog.
+  const filtered = GW.gadgets.filter((g) => {
     if (cat !== "all" && g.category !== cat) return false;
     if (brand !== "all" && g.brand !== brand) return false;
     if (minPrice !== "" && g.price < Number(minPrice)) return false;
     if (maxPrice !== "" && g.price > Number(maxPrice)) return false;
     if (minRating !== "" && (g.rating || 0) < Number(minRating)) return false;
     return true;
-  }), [cat, brand, minPrice, maxPrice, minRating]);
+  });
 
-  const result = useMemo(() => paretoFrontier(filtered, [xKey, yKey]), [filtered, xKey, yKey]);
+  const result = paretoFrontier(filtered, [xKey, yKey]);
   const frontierIds = new Set(result.frontier.map((g) => g.id));
   const xo = OBJECTIVES[xKey], yo = OBJECTIVES[yKey];
 
