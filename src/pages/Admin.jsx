@@ -126,7 +126,11 @@ function StatCard({ label, value, trend, tone }) {
   // neutral: informational text (no directional arrow / green-red implication)
   const neutral = trend.neutral;
   return (
-    <div className={`rounded-xl border bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)] ${amber ? "border-2 border-[#B07C28]" : "border-[#E4E7EC]"}`}>
+    <div
+      className={`hover-lift relative overflow-hidden rounded-xl border bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.05)] ${amber ? "border-2 border-[#B07C28]" : "border-[#E4E7EC]"}`}
+    >
+      {/* accent rail: gives each stat a visual anchor without decoration */}
+      <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${amber ? "bg-[#B07C28]" : "bg-gradient-to-r from-[#2260D4] to-[#5B9DF0]"}`} />
       <div className="text-[13px] text-[#667085]">{label}</div>
       <div className={`mt-1 break-words text-[26px] font-bold leading-none sm:text-[34px] xl:text-[40px] ${amber ? "text-[#7C4708]" : "text-[#111827]"}`}>{value}</div>
       <div className={`mt-3 flex items-center gap-1.5 text-[13px] font-semibold ${neutral ? "text-[#667085]" : trend.down ? "text-[#C0392B]" : "text-[#12B76A]"}`}>

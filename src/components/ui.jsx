@@ -268,10 +268,12 @@ export function GadgetCard({ g, compare, onCompare }) {
   const catName = GW.categories.find((c) => c.id === g.category)?.name || g.category;
   const specRows = Object.entries(g.specs || {}).slice(0, 3);
   return (
-    <article className="card hover-lift flex flex-col overflow-hidden">
+    <article
+      className={`card hover-lift flex flex-col overflow-hidden transition-shadow ${compare?.has(g.id) ? "ring-2 ring-primary shadow-md" : ""}`}
+    >
       <a href={`#/g/${g.id}`} className="block">
         <div className="relative">
-          <Img gadget={g} />
+          <Img gadget={g} className="card-media" />
           <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink2 shadow-sm">{catName}</span>
         </div>
       </a>
@@ -280,7 +282,7 @@ export function GadgetCard({ g, compare, onCompare }) {
           {g.brand && g.brand !== "Unknown" && (
             <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
           )}
-          <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
+          <a href={`#/g/${g.id}`} className="line-clamp-2 block min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
             {g.model}
           </a>
         </div>

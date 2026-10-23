@@ -343,15 +343,15 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-5">
+              <div className="stagger mt-6 grid gap-5">
                 {results.map((r, i) => {
                   const g = r.gadget;
                   return (
-                    <article key={g.id} className="card success-pop p-5 sm:p-6">
+                    <article key={g.id} className="card hover-lift p-5 sm:p-6">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="flex items-start gap-4">
                           <span className="mono text-xl font-semibold text-ink2">#{i + 1}</span>
-                          <Img gadget={g} className="h-24 w-24 shrink-0 rounded-lg border border-line" frame="1 / 1" eager={i < 2} />
+                          <Img gadget={g} className="card-media h-24 w-24 shrink-0 rounded-lg border border-line" frame="1 / 1" eager={i < 2} />
                           <div>
                             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">
                               {g.brand} · {catName(g.category)}
