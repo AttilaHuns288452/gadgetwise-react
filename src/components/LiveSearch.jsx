@@ -101,7 +101,7 @@ export default function LiveSearch({ query }) {
       </div>
 
       {state.status === "loading" && (
-        <div className="mt-3 text-sm text-ink2">Searching Lazada for “{q}”…</div>
+        <div className="mt-3 text-sm text-ink2 [overflow-wrap:anywhere]">Searching Lazada for “{q}”…</div>
       )}
 
       {state.status === "error" && (
@@ -111,7 +111,7 @@ export default function LiveSearch({ query }) {
       )}
 
       {state.status === "ready" && state.items.length === 0 && (
-        <div className="mt-3 text-sm text-ink2">No live listings found for “{q}”.</div>
+        <div className="mt-3 text-sm text-ink2 [overflow-wrap:anywhere]">No live listings found for “{q}”.</div>
       )}
 
       {state.items.length > 0 && (

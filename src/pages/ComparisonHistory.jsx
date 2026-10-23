@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { GW } from "../lib.js";
 import { useAuth } from "../lib/auth.js";
@@ -42,26 +42,46 @@ function ComparisonHistory({ compare }) {
 
   // Signed-in users: history lives in the database.
   useEffect(() => {
-    if (!uid) return;
-    loadComparisons(uid).then((rows) => {
-      if (rows) setHistory(rows);
-    });
+    let alive = true;
+    if (uid) {
+      loadComparisons(uid).then((rows) => {
+        // an empty DB must not wipe what this browser actually compared; merge
+        // both sources newest-first so either side can contribute entries
+        if (!alive || !rows || !rows.length) return;
+        const keyOf = (e) => [...(e.ids || [])].sort().join(",");
+        setHistory((prev) => {
+          const seen = new Set(rows.map(keyOf));
+          return [...rows, ...prev.filter((r) => !seen.has(keyOf(r)))]
+            .sort((a, b) => b.ts - a.ts)
+            .slice(0, 20);
+        });
+      });
+    }
+    return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
+  const mirroredRef = useRef(null); // last comparison set written to the DB
   useEffect(() => {
     if (!compare || compare.size === 0) return;
     const ids = [...compare];
     const key = [...ids].sort().join(",");
     const h = readCompareHistory();
     const first = h[0];
-    // ponytail: dedupe only against the newest entry (consecutive identical sets)
-    if (first && [...first.ids].sort().join(",") === key) return;
     const titles = ids.map((i) => GW.getGadget(i) ? GW.displayName(GW.getGadget(i)) : i);
-    const next = [{ ids, titles, ts: Date.now() }, ...h].slice(0, 20);
-    localStorage.setItem(KEY, JSON.stringify(next));
-    setHistory(next);
-    if (uid) saveComparison(uid, ids, titles); // mirror to DB; RLS enforces ownership
+    // local dedupe only against the newest entry (consecutive identical sets)
+    if (!first || [...first.ids].sort().join(",") !== key) {
+      const next = [{ ids, titles, ts: Date.now() }, ...h].slice(0, 20);
+      localStorage.setItem(KEY, JSON.stringify(next));
+      setHistory(next);
+    }
+    // The DB mirror needs its own guard: the run that creates the local entry
+    // often has no uid yet (session still restoring), and the later uid run
+    // would hit the local dedupe above and skip the write entirely.
+    if (uid && mirroredRef.current !== key) {
+      mirroredRef.current = key;
+      saveComparison(uid, ids, titles); // mirror to DB; RLS enforces ownership
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compare, uid]);
 

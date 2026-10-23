@@ -22,6 +22,10 @@ export function safeNext(raw) {
 // instead of each page inventing its own gate.
 let _authUser = null;
 const _promptListeners = new Set();
+// one admin lookup per user per session: product lists mount hundreds of
+// useAuth() instances and each must not fire its own is_admin() RPC
+// ponytail: cached for the session; a role change takes effect on reload
+const _adminCache = new Map();
 
 export function setAuthUser(u) {
   _authUser = u;
@@ -109,11 +113,18 @@ export function useAuth() {
       if (ready) setAdminChecked(true);
       return;
     }
+    const cached = _adminCache.get(user.id);
+    if (cached !== undefined) {
+      setAdmin(cached);
+      setAdminChecked(true);
+      return;
+    }
     let cancelled = false;
     setAdminChecked(false);
     supabase
       .rpc("is_admin")
       .then(({ data }) => {
+        _adminCache.set(user.id, data === true);
         if (!cancelled) { setAdmin(data === true); setAdminChecked(true); }
       })
       .catch(() => {

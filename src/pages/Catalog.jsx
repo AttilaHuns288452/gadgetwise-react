@@ -259,7 +259,7 @@ export default function Catalog({ compare, onCompare, catalogLoading }) {
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-ink3">{meta}</p>
+          <p className="mt-3 text-sm text-ink3 [overflow-wrap:anywhere]">{meta}</p>
 
           <LiveSearch query={q} />
 

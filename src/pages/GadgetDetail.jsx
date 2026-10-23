@@ -141,6 +141,7 @@ function GadgetDetail({ compare, onCompare }) {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
   const [extra, setExtra] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
   const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
@@ -235,11 +236,14 @@ function GadgetDetail({ compare, onCompare }) {
 
   const submitReview = async () => {
     if (!requireAuth("write a review")) return;
+    if (submitting) return; // one click, one review row
+    setSubmitting(true);
     const res = await submitReviewRecord(uid, {
       gadget_id: g.id,
       rating,
       body: text.trim(),
     });
+    setSubmitting(false);
     setReviewOpen(false);
     setText("");
     setRating(5);
@@ -771,8 +775,8 @@ function GadgetDetail({ compare, onCompare }) {
               <button type="button" className={btnOutlineCls} onClick={() => setReviewOpen(false)}>
                 Cancel
               </button>
-              <button type="button" className={btnPrimaryCls} onClick={submitReview}>
-                Submit for moderation
+              <button type="button" className={btnPrimaryCls} onClick={submitReview} disabled={submitting}>
+                {submitting ? "Submitting…" : "Submit for moderation"}
               </button>
             </>
           }

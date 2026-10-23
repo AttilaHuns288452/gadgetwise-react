@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { money, ownIndex, GW } from "../lib.js";
 import { useAuth, useAuthPrompt, requireAuth } from "../lib/auth.js";
@@ -110,19 +111,26 @@ export function Bar({ v, max = 10, label, mono = false, unavailable = false }) {
 /* Wishlist: localStorage-backed so cards, navbar and the Wishlist page
    share one list without prop drilling. */
 let _wishListeners = [];
-function _wishRead() {
+// per-user local key: a signed-out guest or a different account on the same
+// browser must never see the previous account's saved gadgets
+const _wishKey = (uid) => `gw_wishlist:${uid || "guest"}`;
+// bumped on every local change so an in-flight load can never clobber a newer
+// toggle (which would then be mirrored to the DB and delete real rows)
+let _wishLocalSeq = 0;
+let _wishLoadedUid = null; // first uid whose list was fetched this session
+function _wishRead(key) {
   // Real wishlist only: whatever the user actually saved. No seeded demo items —
   // a fresh account starts empty instead of showing gadgets they never saved.
   try {
-    const raw = localStorage.getItem("gw_wishlist");
+    const raw = localStorage.getItem(key);
     if (raw === null) return new Set();
     return new Set(JSON.parse(raw));
   } catch {
     return new Set();
   }
 }
-function _wishWrite(set) {
-  localStorage.setItem("gw_wishlist", JSON.stringify([...set]));
+function _wishWrite(set, key) {
+  localStorage.setItem(key, JSON.stringify([...set]));
   _wishListeners.forEach((fn) => fn(set));
 }
 export function useWishlist() {
@@ -140,23 +148,28 @@ export function useWishlist() {
   // truth. Guests stay on localStorage (seeded demo list).
   useEffect(() => {
     if (!uid) return;
+    if (_wishLoadedUid === uid) return; // one fetch per user, not per card
+    _wishLoadedUid = uid;
+    const seq = _wishLocalSeq;
     loadWishlist(uid).then((set) => {
-      if (set) {
-        _wishWrite(set, { remote: true });
-      }
+      // only apply the remote list if the user hasn't changed anything since
+      if (set && seq === _wishLocalSeq) _wishWrite(set, _wishKey(uid));
     });
   }, [uid]);
-  const ids = _wishRead();
+  const ids = _wishRead(_wishKey(uid));
   return {
     ids,
     has: (id) => ids.has(id),
+    // returns true only when the save actually changed
     toggle: (id) => {
       // Account-gated: favourites are user data, so a guest must sign in first.
-      if (!requireAuth("save gadgets to your wishlist")) return;
-      const s = _wishRead();
+      if (!requireAuth("save gadgets to your wishlist")) return false;
+      const s = _wishRead(_wishKey(uid));
       s.has(id) ? s.delete(id) : s.add(id);
-      _wishWrite(s);
+      _wishLocalSeq += 1;
+      _wishWrite(s, _wishKey(uid));
       if (uid) syncWishlist(uid, [...s]); // mirror to DB; RLS enforces ownership
+      return true;
     },
   };
 }
@@ -180,7 +193,7 @@ export function GadgetCard({ g, compare, onCompare }) {
           {g.brand && g.brand !== "Unknown" && (
             <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
           )}
-          <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary">
+          <a href={`#/g/${g.id}`} className="block min-h-[2.75rem] text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
             {g.model}
           </a>
         </div>
@@ -205,9 +218,10 @@ export function GadgetCard({ g, compare, onCompare }) {
             <button
               type="button"
               onClick={() => {
-                const adding = !wish.has(g.id);
-                wish.toggle(g.id);
-                if (adding) toast("Added to wishlist");
+                const wasSaved = wish.has(g.id);
+                const changed = wish.toggle(g.id);
+                // never claim a save that did not happen (guests are gated)
+                if (changed) toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
               }}
               aria-pressed={wish.has(g.id)}
               aria-label={wish.has(g.id) ? "Remove from wishlist" : "Add to wishlist"}
@@ -248,14 +262,34 @@ export const fieldLabelCls = "block text-sm font-bold text-[#111827]";
 export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-base text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
 
 export function Modal({ title, sub, children, actions, onClose }) {
+  const dialogRef = useRef(null);
   useEffect(() => {
-    const fn = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
+    // a modal must own focus: move it in, trap Tab inside, restore it on close
+    const previous = document.activeElement;
+    const node = dialogRef.current;
+    const focusables = () =>
+      node ? [...node.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea, select')]
+        .filter((el) => el.offsetParent !== null) : [];
+    (focusables()[0] || node)?.focus();
+    const onKey = (e) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key !== "Tab") return;
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (previous && previous.focus) previous.focus();
+    };
   }, [onClose]);
   return (
     <div className="anim-fade-in fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="anim-scale-in max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={dialogRef} onClick={(e) => e.stopPropagation()} className="anim-scale-in max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
         <h3 className="text-[calc(22px*var(--tscale,1))] font-bold leading-snug text-[#111827]">{title}</h3>
         {sub && <p className="mt-1.5 text-sm leading-relaxed text-[#6B7280]">{sub}</p>}
         <div className="mt-6 space-y-5">{children}</div>
@@ -374,6 +408,11 @@ export function useToast() {
     setItems((xs) => [...xs.slice(-3), { id, text, icon }]);
     timers.current.set(id, setTimeout(() => dismiss(id), 3200));
   };
+  // Portal to <body>: the host must escape the route-fade stacking context on
+  // main and the hover-transform containing block on cards, or the toast is
+  // painted under modal scrims and anchored to a card instead of the viewport.
+  // Render nothing when empty so 240 product cards don't mount 240 live regions.
+  if (!items.length) return [toast, null];
   const node = (
     <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[100] grid max-w-[min(24rem,calc(100vw-2rem))] gap-2.5 sm:right-6" role="status" aria-live="polite">
       {items.map((t) => (
@@ -385,7 +424,7 @@ export function useToast() {
       ))}
     </div>
   );
-  return [toast, node];
+  return [toast, createPortal(node, document.body)];
 }
 
 
