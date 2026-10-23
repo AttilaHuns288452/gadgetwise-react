@@ -10,6 +10,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, supabaseConfigured } from "./supabase.js";
 
+// Post-auth return destination: only same-app paths are allowed so a crafted
+// ?next= can never turn sign-in into an open redirect.
+export function safeNext(raw) {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
+}
+
 // ---- shared auth gate -----------------------------------------------------
 // One place to ask "is a signed-in user required for this action?" so every
 // protected action (favorite, review, ...) routes through the same prompt

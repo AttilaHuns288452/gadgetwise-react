@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls, AuthLayout } from "../components/ui.jsx";
-import { useAuth } from "../lib/auth.js";
-
-// Only allow a same-app path as a return destination (blocks open redirects).
-function safeNext(raw) {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
-}
+import { useAuth, safeNext } from "../lib/auth.js";
 
 function Login() {
   const navigate = useNavigate();
