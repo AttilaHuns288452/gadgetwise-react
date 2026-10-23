@@ -406,6 +406,8 @@ export function useReveal() {
       }
     }, { threshold: 0.08, rootMargin: "0px 0px -5% 0px" });
     els.forEach((e) => io.observe(e));
-    return () => io.disconnect();
+    // failsafe: never leave content stuck hidden if the observer misfires
+    const t = setTimeout(() => els.forEach((e) => e.classList.add("is-visible")), 2500);
+    return () => { clearTimeout(t); io.disconnect(); };
   }, []);
 }
