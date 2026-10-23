@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GW } from "./lib.js";
+import { GW, money } from "./lib.js";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import Home from "./pages/Home.jsx";
@@ -145,6 +145,7 @@ export default function App() {
     };
   }, []);
   const [q, setQ] = useState("");
+  const [showSuggest, setShowSuggest] = useState(false);
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
   // Auth and account routes need no product data — keep them reachable even if
@@ -290,11 +291,38 @@ export default function App() {
               <input
                 type="search"
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => { setQ(e.target.value); setShowSuggest(true); }}
+                onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
                 placeholder="Search gadgets, brands, categories…"
                 aria-label="Search gadgets"
+                autoComplete="off"
                 className="field !rounded-lg !py-2.5 !pl-10 !pr-4"
               />
+              {showSuggest && (() => {
+                const term = q.trim().toLowerCase();
+                const matches = term.length >= 2
+                  ? GW.gadgets.filter((g) => `${g.brand} ${g.model}`.toLowerCase().includes(term)).slice(0, 6)
+                  : [];
+                if (!matches.length) return null;
+                return (
+                  <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-line bg-white shadow-lg">
+                    {matches.map((g) => (
+                      <li key={g.id}>
+                        <Link to={`/g/${g.id}`} onClick={() => { setQ(""); setShowSuggest(false); }}
+                          className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface2">
+                          <span className="min-w-0 truncate text-ink">{g.brand} {g.model}</span>
+                          <span className="mono shrink-0 text-ink2">{money(g.price)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                    <li className="border-t border-line">
+                      <button type="submit" className="w-full px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-surface2">
+                        See all results for "{q.trim()}" →
+                      </button>
+                    </li>
+                  </ul>
+                );
+              })()}
             </div>
           </form>
         </div>
