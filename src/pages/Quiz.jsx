@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GW, money, FACTOR_META, recommend } from "../lib.js";
+import { Img } from "../components/ui.jsx";
 import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
 
 const CATS = [
@@ -332,6 +333,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="flex items-start gap-4">
                           <span className="mono text-xl font-semibold text-ink2">#{i + 1}</span>
+                          <Img gadget={g} className="h-24 w-24 shrink-0 rounded-lg border border-line" frame="1 / 1" eager={i < 2} />
                           <div>
                             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">
                               {g.brand} · {catName(g.category)}

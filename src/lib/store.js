@@ -266,3 +266,16 @@ export async function loadViewStats() {
   const topViewed = Object.entries(byId).map(([id, views]) => ({ id, views })).sort((a, b) => b.views - a.views).slice(0, 10);
   return { ok: true, topViewed, weeklyViews: weekly };
 }
+
+
+/** Admin integration status (real connection test; secrets never returned). */
+export async function loadIntegrationStatus() {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) return { ok: false, error: "Sign in required" };
+  const r = await fetch("/api/admin/integration-status", { headers: { Authorization: `Bearer ${token}` } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { ok: false, error: j?.error?.message || "Could not load integration status" };
+  return { ok: true, status: j.status };
+}

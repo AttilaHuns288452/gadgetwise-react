@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -11,6 +11,7 @@ import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabel
 const ICONS = {
   dashboard: "M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z",
   reports: "M4 20V6M10 20V10M16 20V4M4 20h16",
+  plug: "M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5",
   box: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12L4 7.5M12 12v9",
   layers: "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5",
   chat: "M4 5h16v10H8l-4 4z",
@@ -376,6 +377,70 @@ function Categories({ toast }) {
   );
 }
 
+function Integrations({ toast }) {
+  const [status, setStatus] = useState(null);
+  const [err, setErr] = useState(null);
+  const [testing, setTesting] = useState(false);
+  const load = async () => {
+    setTesting(true);
+    const r = await loadIntegrationStatus();
+    setTesting(false);
+    if (r.ok) { setStatus(r.status); setErr(null); } else setErr(r.error);
+  };
+  useEffect(() => { load(); }, []);
+  const connBadge = (c) => ({
+    ok: "bg-emerald-100 text-emerald-800", quota_exhausted: "bg-amber-100 text-amber-800",
+    invalid_credentials: "bg-red-100 text-red-700", missing_credentials: "bg-gray-100 text-gray-600",
+    provider_error: "bg-red-100 text-red-700",
+  }[c] || "bg-gray-100 text-gray-600");
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[30px] font-bold text-[#111827]">Integrations</h1>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Product-data provider status and a real connection test. Secrets stay server-side; only a masked fingerprint is shown.</p>
+        </div>
+        <button className={btnPrimary} onClick={load} disabled={testing}>{testing ? "Testing…" : "Run connection test"}</button>
+      </div>
+
+      {err && <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-[15px] text-red-700">{err}</div>}
+
+      {status && (
+        <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#667085]">Provider</div>
+              <div className="mt-1 text-[19px] font-bold text-[#111827]">{status.provider}</div>
+            </div>
+            <span className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${connBadge(status.connection)}`}>{(status.connection || "unknown").replaceAll("_", " ")}</span>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <Field label="Connection"><div className="text-[15px] text-[#111827]">{status.message || "—"}</div></Field>
+            <Field label="API host"><div className="text-[15px] text-[#111827]">{status.apiHost}</div></Field>
+            <Field label="Key configured"><div className="text-[15px] text-[#111827]">{status.configured ? `Yes (${status.keyFingerprint})` : "No"}</div></Field>
+            <Field label="Requests remaining"><div className="text-[15px] text-[#111827]">{status.requestsRemaining != null ? status.requestsRemaining.toLocaleString() : "—"}</div></Field>
+          </div>
+          <div className="mt-5">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#667085]">Environment variables</div>
+            <ul className="mt-2 grid gap-1.5">
+              {Object.entries(status.envVars || {}).map(([k, v]) => (
+                <li key={k} className="flex items-center justify-between text-[15px]">
+                  <span className="mono text-[#344054]">{k}</span>
+                  <span className={v ? "text-emerald-600" : "text-[#98A2B3]"}>{v ? "set" : "not set"}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {status.lastTest && <p className="mt-4 text-[13px] text-[#6B7280]">Last tested: {new Date(status.lastTest).toLocaleString()}</p>}
+          <p className="mt-3 text-[13px] leading-relaxed text-[#6B7280]">
+            Credentials are deployment environment variables (Vercel → Settings → Environment Variables). They are read server-side only and never exposed to the browser. Update them there, then run the connection test.
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Reviews({ rows, setRows, loaded, reload, toast }) {
   const [filter, setFilter] = useState("all");
   const [edit, setEdit] = useState(null);
@@ -604,6 +669,7 @@ function Shell({ tabKey, tab, onOut, children }) {
     ["catalog", [["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"]]],
     ["community", [["reviews", "Reviews", "chat"]]],
     ["people", [["users", "Users", "user"]]],
+    ["system", [["integrations", "Integrations", "plug"]]],
     ["session", [["public", "View public site", "home"], ["out", "Sign out", "exit"]]],
   ];
   return (
@@ -703,6 +769,7 @@ export default function Admin() {
         <Reviews rows={reviews} setRows={setReviews} loaded={reviewsLoaded} reload={reloadReviews} toast={toast} />
       )}
       {tabKey === "users" && <Users />}
+      {tabKey === "integrations" && <Integrations toast={toast} />}
       {toastNode}
     </Shell>
   );
