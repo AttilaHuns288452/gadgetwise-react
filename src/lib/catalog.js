@@ -14,8 +14,10 @@ import GW from "../data.js";
 import { toGadget } from "./marketplace.js";
 
 const CACHE_KEY = "gw.catalog.v2";
-const TTL = 30 * 60 * 1000; // 30 min
-const PAGES_PER_CATEGORY = 2;
+// ponytail: 7-day cache + 1 page/category. The API is a 50-req/month BASIC plan,
+// so we fetch rarely and lean on the cache; stale data beats an empty catalog.
+const TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+const PAGES_PER_CATEGORY = 1;
 
 // category id -> Lazada query. Buckets are assigned by query (reliable), not
 // title heuristics, so each tab has a real, even distribution.
@@ -89,33 +91,50 @@ export function catalogStats(gadgets = GW.gadgets) {
 export async function loadCatalog() {
   GW.gadgets = []; // fixture must not linger in the live data path
 
+  let stale = null;
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
       const { fetchedAt, products } = JSON.parse(raw);
-      if (Array.isArray(products) && products.length && Date.now() - fetchedAt < TTL) {
-        GW.gadgets = products.map(toCatalogGadget);
-        return { ok: true, count: GW.gadgets.length, cached: true };
+      if (Array.isArray(products) && products.length) {
+        if (Date.now() - fetchedAt < TTL) {
+          GW.gadgets = products.map(toCatalogGadget);
+          return { ok: true, count: GW.gadgets.length, cached: true };
+        }
+        stale = products; // keep as a fallback if the refetch comes back empty
       }
     }
   } catch {
     /* corrupt cache -> refetch */
   }
 
-  const settled = await Promise.allSettled(
-    CATEGORY_QUERIES.map(([cat, q]) => fetchCategory(cat, q)),
-  );
-  const seen = new Set();
-  const products = [];
-  for (const r of settled) {
-    if (r.status !== "fulfilled") continue;
-    for (const p of r.value) {
-      if (!p.productId || seen.has(p.productId)) continue;
-      seen.add(p.productId);
-      products.push(p);
+  let products = [];
+  try {
+    const settled = await Promise.allSettled(
+      CATEGORY_QUERIES.map(([cat, q]) => fetchCategory(cat, q)),
+    );
+    const seen = new Set();
+    for (const r of settled) {
+      if (r.status !== "fulfilled") continue;
+      for (const p of r.value) {
+        if (!p.productId || seen.has(p.productId)) continue;
+        seen.add(p.productId);
+        products.push(p);
+      }
     }
+  } catch {
+    /* network/upstream failure: fall through to the stale cache */
   }
-  if (!products.length) throw new Error("No products returned from the marketplace");
+
+  if (!products.length) {
+    // Live API exhausted or down: serve the last good catalog instead of an
+    // empty page. Stale-but-real beats fabricated or blank.
+    if (stale && stale.length) {
+      GW.gadgets = stale.map(toCatalogGadget);
+      return { ok: true, count: GW.gadgets.length, cached: true, stale: true };
+    }
+    throw new Error("No products returned from the marketplace");
+  }
 
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), products }));
