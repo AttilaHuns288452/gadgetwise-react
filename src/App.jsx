@@ -160,7 +160,7 @@ export default function App() {
   // marketplace). Only product-discovery routes are gated on the catalog.
   const needsCatalog = ![ "/", "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare" ].includes(pathname)
     && !pathname.startsWith("/u/");
-  const { user, ready, admin: isAdminUser, signOut } = useAuth();
+  const { user, ready, admin: isAdminUser, adminChecked, signOut } = useAuth();
   // Real identity for the navbar avatar (no hardcoded initials).
   const authName = user?.user_metadata?.full_name || user?.email || "";
   const authInitials = (authName || "?").trim().slice(0, 2).toUpperCase();
@@ -359,7 +359,18 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/review-history" element={<ReviewHistory />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
-          <Route path="/admin" element={isAdminUser ? <Admin /> : <Navigate to="/" replace />} />
+          <Route
+            path="/admin"
+            element={
+              !ready || !adminChecked ? (
+                <section className="section"><p className="text-ink2">Checking admin access…</p></section>
+              ) : isAdminUser ? (
+                <Admin />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
         </Routes>
         )}
       </main>

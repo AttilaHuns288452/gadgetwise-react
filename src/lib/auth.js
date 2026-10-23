@@ -51,6 +51,9 @@ export function useAuth() {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [admin, setAdmin] = useState(false);
+  // true once the DB admin check has resolved (or failed closed): route guards
+  // must not redirect a legitimate admin while the check is still in flight.
+  const [adminChecked, setAdminChecked] = useState(false);
   const [recovery, setRecovery] = useState(false);
 
   // Keep the shared gate's notion of the current user in sync.
@@ -90,16 +93,18 @@ export function useAuth() {
   useEffect(() => {
     if (!supabaseConfigured || !user) {
       setAdmin(false);
+      setAdminChecked(true);
       return;
     }
     let cancelled = false;
+    setAdminChecked(false);
     supabase
       .rpc("is_admin")
       .then(({ data }) => {
-        if (!cancelled) setAdmin(data === true);
+        if (!cancelled) { setAdmin(data === true); setAdminChecked(true); }
       })
       .catch(() => {
-        if (!cancelled) setAdmin(false);
+        if (!cancelled) { setAdmin(false); setAdminChecked(true); }
       });
     return () => {
       cancelled = true;
@@ -155,5 +160,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, ready, admin, recovery, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut, resetPassword, setNewPassword };
+  return { user, ready, admin, adminChecked, recovery, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut, resetPassword, setNewPassword };
 }
