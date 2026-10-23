@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -656,11 +656,29 @@ export default function Admin() {
   const [toast, toastNode] = useToast();
   const stats = catalogStats(GW.gadgets);
 
+  // loadAllReviews returns raw rows (body/gadget_id/user_id/created_at); map them
+  // to the display shape the moderation table renders (text/gadget/user/date).
+  const mapReviews = async (rows) => {
+    const uniq = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+    const names = {};
+    await Promise.all(uniq.map(async (id) => {
+      const p = await getPublicProfile(id).catch(() => null);
+      names[id] = p?.display_name || null;
+    }));
+    return rows.map((r) => ({
+      ...r,
+      text: r.body ?? "",
+      date: r.created_at ? new Date(r.created_at).toLocaleDateString() : "",
+      user: names[r.user_id] || "Member",
+      gadget: (GW.getGadget && GW.getGadget(r.gadget_id)?.model) || r.gadget_id,
+    }));
+  };
+
   useEffect(() => {
     let alive = true;
-    loadAllReviews().then((res) => {
+    loadAllReviews().then(async (res) => {
       if (!alive) return;
-      if (res.ok) setReviews(res.rows);
+      if (res.ok) setReviews(await mapReviews(res.rows));
       setReviewsLoaded(true);
     });
     return () => {
@@ -670,7 +688,7 @@ export default function Admin() {
 
   const reloadReviews = async () => {
     const res = await loadAllReviews();
-    if (res.ok) setReviews(res.rows);
+    if (res.ok) setReviews(await mapReviews(res.rows));
   };
 
   return (
