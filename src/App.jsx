@@ -16,7 +16,7 @@ import ReviewHistory from "./pages/ReviewHistory.jsx";
 import PublicProfile from "./pages/PublicProfile.jsx";
 import { useAuth } from "./lib/auth.js";
 import { loadCatalog } from "./lib/catalog.js";
-import { btnPrimaryCls, AuthPromptHost, CatalogErrorCard } from "./components/ui.jsx";
+import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard } from "./components/ui.jsx";
 
 const NAV = [
   ["/", "Home"],
@@ -60,20 +60,6 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
-}
-
-function CubeIcon() {
-  // GadgetWise mark: the gadget cube + a "smart pick" spark (matches favicon.svg).
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-      <g stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.5 3 4 6.7v9.1l6.5 3.7 6.5-3.7V6.7L10.5 3z" />
-        <path d="M4 6.7l6.5 3.7 6.5-3.7" />
-        <path d="M10.5 10.4v9.1" />
-      </g>
-      <path d="M20 2.2l.85 1.9 1.9.85-1.9.85-.85 1.9-.85-1.9-1.9-.85 1.9-.85z" fill="#FACC15" stroke="none" />
-    </svg>
-  );
 }
 
 function SearchIcon() {
@@ -177,13 +163,7 @@ export default function App() {
         <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-3 px-6 lg:flex-nowrap lg:px-12 2xl:px-16 py-4">
           {/* logo */}
           <Link to="/" className="order-1 flex min-w-0 shrink-0 items-center gap-2">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white">
-              <CubeIcon />
-            </span>
-            <span className="text-lg font-bold sm:text-2xl">
-              <span className="text-[#111827]">Gadget</span>
-              <span className="text-[#2563EB]">{" "}Wise</span>
-            </span>
+            <Logo size={20} tone="dark" />
             <span className="hidden text-sm font-normal text-ink3 2xl:inline">Smart picks for students</span>
           </Link>
 
@@ -361,7 +341,10 @@ export default function App() {
             <FooterColumn title="THIS PROJECT" items={THIS_PROJECT} />
           </div>
           <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-on-hero2">
-            <span>GadgetWise — a student gadget comparison tool. Not a store; no products are sold here.</span>
+            <span className="flex items-center gap-2.5">
+              <Logo size={16} tone="light" showWordmark={false} />
+              <span>GadgetWise — a student gadget comparison tool. Not a store; no products are sold here.</span>
+            </span>
             <span>Cost estimates use a fixed 36-month window so products stay comparable.</span>
           </div>
         </div>

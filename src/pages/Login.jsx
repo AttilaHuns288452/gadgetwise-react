@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, Logo } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 
 // Only allow a same-app path as a return destination (blocks open redirects).
@@ -40,6 +40,7 @@ function Login() {
   return (
     <section className="section">
       <div className="mx-auto max-w-md">
+        <div className="mb-6 flex justify-center"><Logo size={22} tone="dark" /></div>
         <div className="eyebrow">Account</div>
         <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">Welcome back</h1>
         <p className="mt-2 text-ink2">your wishlist missed you</p>

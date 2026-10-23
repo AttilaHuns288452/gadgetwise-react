@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
+import { Logo } from "../components/ui.jsx";
 import { loadAllReviews, setReviewStatus, editReview, deleteReview } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
@@ -567,7 +568,7 @@ function Shell({ tabKey, tab, onOut, children }) {
     <div className="admin-zoom flex min-h-screen flex-col bg-[#FAFAFB] font-[Inter,ui-sans-serif,system-ui,sans-serif] lg:flex-row">
       <aside className="w-full shrink-0 bg-[#14213A] lg:sticky lg:top-0 lg:h-screen lg:w-[300px] lg:overflow-y-auto">
         <div className="flex items-center justify-between gap-3 px-5 py-5">
-          <div className="text-[19px] font-bold text-white">Gadget <span className="text-[#A9C4F5]">Wise</span></div>
+          <Logo size={17} tone="light" />
           <span className="ml-auto rounded bg-white/15 px-[7px] py-[3px] text-[10px] font-bold tracking-[0.1em] text-white">ADMIN</span>
         </div>
         <hr className="border-white/10" />

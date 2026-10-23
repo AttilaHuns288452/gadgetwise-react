@@ -352,3 +352,40 @@ export function useToast() {
   );
   return [toast, node];
 }
+
+
+/* ------------------------------------------------------------------ *
+ * GadgetWise brand mark (cube + "smart pick" spark) and lockup.
+ * One source of truth for every branded surface (header, footer, auth,
+ * admin). Tone controls the wordmark contrast for light vs dark chrome.
+ * ------------------------------------------------------------------ */
+export function LogoMark({ size = 20, spark = "#FDE047", className = "" }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" className={className} aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.5 3 4 6.7v9.1l6.5 3.7 6.5-3.7V6.7L10.5 3z" />
+        <path d="M4 6.7l6.5 3.7 6.5-3.7" />
+        <path d="M10.5 10.4v9.1" />
+      </g>
+      <path d="M20 2.2l.85 1.9 1.9.85-1.9.85-.85 1.9-.85-1.9-1.9-.85 1.9-.85z" fill={spark} stroke="none" />
+    </svg>
+  );
+}
+
+/** Mark + "GadgetWise" wordmark. tone="dark" for light chrome, "light" for dark. */
+export function Logo({ size = 20, tone = "dark", showWordmark = true, className = "" }) {
+  const primary = tone === "light" ? "text-white" : "text-[#111827]";
+  const accent = tone === "light" ? "text-[#A9C4F5]" : "text-[#2563EB]";
+  return (
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <span className={`flex items-center justify-center rounded-xl bg-[#2563EB] text-white ${tone === "light" ? "" : ""}`} style={{ width: size * 2, height: size * 2 }}>
+        <LogoMark size={size} />
+      </span>
+      {showWordmark && (
+        <span className={`font-bold ${primary}`} style={{ fontSize: size * 1.05 }}>
+          Gadget<span className={accent}>Wise</span>
+        </span>
+      )}
+    </span>
+  );
+}
