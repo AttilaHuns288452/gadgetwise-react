@@ -239,7 +239,12 @@ function Gadgets({ toast }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const save = async () => {
     if (!form?.model?.trim()) { toast("Model name is required", "alert"); return; }
-    const res = await saveProduct(form.id || null, form);
+    // trust-boundary validation: reject malformed prices before they reach the DB
+    const price = form.price === "" || form.price == null ? null : Number(form.price);
+    const orig = form.original_price === "" || form.original_price == null ? null : Number(form.original_price);
+    if (price != null && (!Number.isFinite(price) || price <= 0)) { toast("Price must be a number greater than zero", "alert"); return; }
+    if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { toast("Original price must be a number greater than zero", "alert"); return; }
+    const res = await saveProduct(form.id || null, { ...form, price, original_price: orig });
     if (res.ok) { setForm(null); reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
     else toast(res.error || "Could not save", "alert");
   };

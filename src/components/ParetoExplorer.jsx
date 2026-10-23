@@ -42,12 +42,21 @@ export default function ParetoExplorer() {
   // it. Computed inline (not memoized): GW.gadgets is mutable module state that
   // fills in asynchronously, so a useMemo on the filter values alone would cache
   // an empty list and never see the catalog.
+  // trust-boundary: normalize invalid ranges (negative / reversed) instead of
+  // silently returning a misleading empty set
+  const rawMin = minPrice === "" ? null : Number(minPrice);
+  const rawMax = maxPrice === "" ? null : Number(maxPrice);
+  const minP = rawMin != null && Number.isFinite(rawMin) ? Math.max(0, rawMin) : null;
+  const maxP = rawMax != null && Number.isFinite(rawMax) ? Math.max(0, rawMax) : null;
+  const lo = minP != null && maxP != null ? Math.min(minP, maxP) : minP;
+  const hi = minP != null && maxP != null ? Math.max(minP, maxP) : maxP;
+  const minR = minRating === "" ? null : Math.min(5, Math.max(0, Number(minRating) || 0));
   const filtered = GW.gadgets.filter((g) => {
     if (cat !== "all" && g.category !== cat) return false;
     if (brand !== "all" && g.brand !== brand) return false;
-    if (minPrice !== "" && g.price < Number(minPrice)) return false;
-    if (maxPrice !== "" && g.price > Number(maxPrice)) return false;
-    if (minRating !== "" && (g.rating || 0) < Number(minRating)) return false;
+    if (lo != null && g.price < lo) return false;
+    if (hi != null && g.price > hi) return false;
+    if (minR != null && (g.rating || 0) < minR) return false;
     return true;
   });
 
