@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
 import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard } from '../components/ui.jsx';
+import ParetoExplorer from '../components/ParetoExplorer.jsx';
 
 function Hero() {
   // Real catalog: feature the top-rated real product with an image. Falls back
@@ -158,133 +159,6 @@ function TopRated({ compare, onCompare }) {
   );
 }
 
-function Scatter({ list = GW.gadgets }) {
-  const [hovId, setHovId] = useState(null);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const priceCap = 50000;
-  const W = 720, H = 420, padL = 64, padR = 24, padT = 24, padB = 52;
-  const iw = W - padL - padR, ih = H - padT - padB;
-  const yMin = 20, yMax = 100;
-  const xMin = 0, xMax = priceCap;
-  const sx = (p) => padL + ((Math.min(p, priceCap) - xMin) / (xMax - xMin)) * iw;
-  const sy = (v) => padT + (1 - (v - yMin) / (yMax - yMin)) * ih;
-  const pareto = [];
-  list.forEach((g) => {
-    const dominated = list.some((o) => o.id !== g.id && o.price <= g.price && ownIndex(o) >= ownIndex(g) && (o.price < g.price || ownIndex(o) > ownIndex(g)));
-    if (!dominated) pareto.push(g.id);
-  });
-  return (
-    <div
-      className="relative overflow-x-auto rounded-xl border border-line bg-white p-4"
-      onMouseMove={(e) => setPos({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })}
-    >
-      <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1200px]" role="img" aria-label="Scatter plot of price versus performance to cost index">
-        {[20, 40, 60, 80, 100].map((v) => (
-          <g key={v}>
-            <line x1={padL} x2={W - padR} y1={sy(v)} y2={sy(v)} stroke="#e3e7ed" />
-            <text x={padL - 8} y={sy(v) + 4} textAnchor="end" fontSize="10" fill="#64748b">{v}</text>
-          </g>
-        ))}
-        {[0, 10000, 20000, 30000, 40000, 50000].map((p) => (
-          <text key={p} x={sx(p)} y={H - 32} textAnchor="middle" fontSize="10" fill="#64748b">{p === 50000 ? '₱50k+' : '₱' + (p / 1000) + 'k'}</text>
-        ))}
-        <text x={padL - 40} y={padT + ih / 2} fontSize="10" fill="#3e4c61" transform={`rotate(-90 ${padL - 40} ${padT + ih / 2})`} textAnchor="middle">Performance to Cost — higher is better ↑</text>
-        <text x={padL + iw / 2} y={H - 12} fontSize="10" fill="#3e4c61" textAnchor="middle">Price — lower is better ↓</text>
-        {list.map((g, i) => {
-          const v = ownIndex(g), isP = pareto.includes(g.id);
-          const full = GW.displayName(g);
-          const label = full.length > 17 ? full.slice(0, 16) + "…" : full;
-          const cx = sx(g.price), cy = sy(v);
-          // Near the right edge, flip the label to the left so it never clips.
-          const flip = cx > W - padR - 110;
-          // Stagger above/below to break collisions in dense clusters.
-          const dy = i % 2 === 0 ? -9 : 14;
-          return (
-            <a
-              key={g.id}
-              href={`#/g/${g.id}`}
-              className="cursor-pointer"
-              onMouseEnter={() => setHovId(g.id)}
-              onMouseLeave={() => setHovId(null)}
-            >
-              <circle cx={cx} cy={cy} r={isP ? 8 : 6} fill={isP ? '#c2872f' : '#14213a'} fillOpacity={isP ? 1 : 0.7} />
-              <circle cx={cx} cy={cy} r={16} fill="transparent" />
-              <text
-                x={flip ? cx - 10 : cx + 10}
-                y={cy + dy}
-                fontSize="9"
-                textAnchor={flip ? "end" : "start"}
-                fill={isP ? '#8a5a1c' : '#64748b'}
-                fontWeight={isP ? '700' : '500'}
-              >
-                {label}
-              </text>
-            </a>
-          );
-        })}
-      </svg>
-      {hovId && (() => {
-        const g = GW.getGadget(hovId);
-        if (!g) return null;
-        return (
-          <div
-            className="pointer-events-none absolute z-10 w-[220px] rounded-lg border border-line-strong bg-white p-3 shadow-lg"
-            style={{ left: Math.min(pos.x + 14, 480), top: Math.max(8, pos.y - 90) }}
-          >
-            <p className="font-semibold text-ink">{GW.displayName(g)}</p>
-            <p className="mt-1 text-sm text-ink2">
-              {money(g.price)} · <span className="mono">{ownIndex(g)}</span> Performance to Cost
-            </p>
-            <p className="mt-1 text-xs text-primary">Click for details →</p>
-          </div>
-        );
-      })()}
-    </div>
-  );
-}
-
-function ChartLegend({ shown }) {
-  return (
-    <div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink2">
-        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" />Catalog gadget</span>
-        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#c2872f]" />Best value frontier (Pareto)</span>
-        <span className="mono text-ink3">{shown} shown</span>
-      </div>
-      <p className="mono mt-1.5 text-sm text-ink3">· Index = battery 25 + student rating 25 + value 30 (price vs category median monthly cost) + warranty 20</p>
-    </div>
-  );
-}
-
-function PriceChart() {
-  const [tab, setTab] = useState('all');
-  const list = tab === 'all' ? GW.gadgets : GW.gadgetsInCategory(tab);
-  const tabs = [
-    { id: 'all', name: 'All categories', n: GW.gadgets.length },
-    ...GW.categories.map((c) => ({ id: c.id, name: c.name, n: GW.gadgetsInCategory(c.id).length })),
-  ];
-  return (
-    <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
-      <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Price vs Performance to Cost</h2>
-      <p className="mt-2 max-w-[62ch] text-base text-ink2">Amber dots sit on the best value frontier — nothing beats them on price and build at once. Click a dot for details.</p>
-      <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-line">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={'-mb-px border-b-2 pb-2.5 text-base transition-colors ' + (tab === t.id ? 'border-primary font-semibold text-primary' : 'border-transparent text-ink3 hover:text-ink')}
-          >
-            {t.name} <span className="opacity-70">{t.n}</span>
-          </button>
-        ))}
-      </div>
-      <div className="mt-5"><ChartLegend shown={list.length} /></div>
-      <div className="mt-4"><Scatter list={list} /></div>
-    </section>
-  );
-}
-
 function Cheapest() {
   const rows = [...GW.gadgets].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b)).slice(0, 3);
   return (
@@ -365,7 +239,13 @@ export default function Home({ compare, onCompare, catalogError }) {
           <Categories />
           <Miss />
           <TopRated compare={compare} onCompare={onCompare} />
-          <PriceChart />
+          <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
+            <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Explore trade-offs</h2>
+            <p className="mt-2 max-w-[62ch] text-base text-ink2">
+              Pick two objectives and filter. The amber line is the <b>Pareto frontier</b>: nothing beats those products on both axes at once. Click any dot for details.
+            </p>
+            <div className="mt-6"><ParetoExplorer /></div>
+          </section>
           <Cheapest />
         </>
       )}

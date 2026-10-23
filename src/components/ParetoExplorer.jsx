@@ -1,0 +1,232 @@
+import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { GW, money } from "../lib.js";
+import { OBJECTIVES, paretoFrontier, listingCompleteness } from "../lib/pareto.js";
+
+/* X-axis candidates (cost-like) and Y-axis candidates (quality-like). Only
+   objectives with a real definition for the current marketplace data appear. */
+const X_OPTS = ["price", "monthly"];
+const Y_OPTS = ["rating", "reviewCount", "completeness"];
+
+const fmt = (key, v) => {
+  if (key === "price") return money(v);
+  if (key === "monthly") return money(v) + "/mo";
+  if (key === "rating") return v + "/5";
+  if (key === "reviewCount") return Number(v).toLocaleString() + " reviews";
+  return v + "%";
+};
+
+function niceTicks(min, max, n = 5) {
+  if (!(max > min)) return [min];
+  const raw = (max - min) / n;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= raw) || mag * 10;
+  const out = [];
+  for (let t = Math.ceil(min / step) * step; t <= max + 1e-6; t += step) out.push(t);
+  return out;
+}
+
+export default function ParetoExplorer() {
+  const [xKey, setXKey] = useState("price");
+  const [yKey, setYKey] = useState("rating");
+  const [cat, setCat] = useState("all");
+  const [brand, setBrand] = useState("all");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minRating, setMinRating] = useState("");
+  const [hov, setHov] = useState(null); // {id, x, y}
+
+  const brands = useMemo(() => [...new Set(GW.gadgets.map((g) => g.brand).filter(Boolean))].sort(), []);
+
+  // Filtering changes the comparison population; the frontier is recomputed on it.
+  const filtered = useMemo(() => GW.gadgets.filter((g) => {
+    if (cat !== "all" && g.category !== cat) return false;
+    if (brand !== "all" && g.brand !== brand) return false;
+    if (minPrice !== "" && g.price < Number(minPrice)) return false;
+    if (maxPrice !== "" && g.price > Number(maxPrice)) return false;
+    if (minRating !== "" && (g.rating || 0) < Number(minRating)) return false;
+    return true;
+  }), [cat, brand, minPrice, maxPrice, minRating]);
+
+  const result = useMemo(() => paretoFrontier(filtered, [xKey, yKey]), [filtered, xKey, yKey]);
+  const frontierIds = new Set(result.frontier.map((g) => g.id));
+  const xo = OBJECTIVES[xKey], yo = OBJECTIVES[yKey];
+
+  // Plot geometry (SVG viewBox). Domains from the eligible points only.
+  const pts = result.points.map((p) => ({ g: p.g, x: p.vals[0], y: p.vals[1] }));
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  const xMin = xs.length ? Math.min(...xs) : 0, xMax = xs.length ? Math.max(...xs) : 1;
+  const yMin = ys.length ? Math.min(...ys) : 0, yMax = ys.length ? Math.max(...ys) : 1;
+  const padX = (xMax - xMin) * 0.08 || 1, padY = (yMax - yMin) * 0.12 || 1;
+  const dx0 = xMin - padX, dx1 = xMax + padX, dy0 = yMin - padY, dy1 = yMax + padY;
+  const W = 760, H = 460, padL = 72, padR = 28, padT = 28, padB = 60;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const sx = (v) => padL + ((v - dx0) / (dx1 - dx0)) * iw;
+  const sy = (v) => padT + (1 - (v - dy0) / (dy1 - dy0)) * ih;
+
+  // "Most attractive quadrant": the corner where BOTH objectives are better
+  // (lower for min-direction, higher for max-direction), split at the median.
+  const medX = xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] : 0;
+  const medY = ys.length ? [...ys].sort((a, b) => a - b)[Math.floor(ys.length / 2)] : 0;
+  const goodXLow = xo.direction === "min";
+  const goodYHigh = yo.direction === "max";
+  const quad = {
+    x: goodXLow ? padL : sx(medX),
+    y: goodYHigh ? padT : sy(medY),
+    w: goodXLow ? sx(medX) - padL : W - padR - sx(medX),
+    h: goodYHigh ? sy(medY) - padT : H - padB - sy(medY),
+  };
+
+  // Pareto line: frontier points sorted along X.
+  const line = result.frontier
+    .map((g) => pts.find((p) => p.g.id === g.id))
+    .filter(Boolean)
+    .sort((a, b) => a.x - b.x);
+
+  const reset = () => { setCat("all"); setBrand("all"); setMinPrice(""); setMaxPrice(""); setMinRating(""); };
+
+  return (
+    <div className="rounded-xl border border-line bg-white p-5">
+      {/* controls */}
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <label className="text-sm text-ink2">X axis
+          <select value={xKey} onChange={(e) => setXKey(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+            {X_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
+          </select>
+        </label>
+        <label className="text-sm text-ink2">Y axis
+          <select value={yKey} onChange={(e) => setYKey(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+            {Y_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
+          </select>
+        </label>
+        <label className="text-sm text-ink2">Category
+          <select value={cat} onChange={(e) => setCat(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+            <option value="all">All</option>
+            {GW.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+        <label className="text-sm text-ink2">Brand
+          <select value={brand} onChange={(e) => setBrand(e.target.value)} className="field ml-2 !w-auto !py-1.5">
+            <option value="all">All</option>
+            {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </label>
+        <label className="text-sm text-ink2">Min ₱
+          <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className="field ml-2 !w-24 !py-1.5" placeholder="0" />
+        </label>
+        <label className="text-sm text-ink2">Max ₱
+          <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className="field ml-2 !w-24 !py-1.5" placeholder="any" />
+        </label>
+        <label className="text-sm text-ink2">Min rating
+          <input type="number" step="0.1" min="0" max="5" value={minRating} onChange={(e) => setMinRating(e.target.value)} className="field ml-2 !w-20 !py-1.5" placeholder="any" />
+        </label>
+        <button type="button" onClick={reset} className="btn-ghost !py-1.5 !text-sm">Reset</button>
+      </div>
+
+      {/* counts */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink2">
+        <span><b className="mono">{filtered.length}</b> in scope</span>
+        <span className="text-[#c2872f]"><b className="mono">{result.frontier.length}</b> on the frontier</span>
+        <span><b className="mono">{result.dominated.length}</b> dominated</span>
+        <span className="text-ink3"><b className="mono">{result.excluded.length}</b> excluded (missing {xo.label.toLowerCase()} or {yo.label.toLowerCase()})</span>
+      </div>
+
+      {/* chart */}
+      {pts.length === 0 ? (
+        <div className="mt-6 rounded-lg border border-dashed border-line-strong p-8 text-center text-ink2">
+          No products have both <b>{xo.label}</b> and <b>{yo.label}</b> for this filter. Try widening the filters or a different axis.
+        </div>
+      ) : (
+      <div className="relative mt-4 overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1100px]" role="img"
+          aria-label={`Scatter plot of ${xo.label} versus ${yo.label} with Pareto frontier`}>
+          {/* most attractive quadrant */}
+          <rect x={quad.x} y={quad.y} width={Math.max(0, quad.w)} height={Math.max(0, quad.h)} fill="#dcfce7" opacity="0.5" />
+          <text x={quad.x + 8} y={quad.y + 16} fontSize="11" fill="#15803d">Most attractive quadrant</text>
+
+          {/* gridlines + ticks */}
+          {niceTicks(dy0, dy1).map((v) => (
+            <g key={"y" + v}>
+              <line x1={padL} x2={W - padR} y1={sy(v)} y2={sy(v)} stroke="#e3e7ed" />
+              <text x={padL - 8} y={sy(v) + 4} textAnchor="end" fontSize="10" fill="#64748b">{fmt(yKey, v)}</text>
+            </g>
+          ))}
+          {niceTicks(dx0, dx1).map((v) => (
+            <text key={"x" + v} x={sx(v)} y={H - 34} textAnchor="middle" fontSize="10" fill="#64748b">{fmt(xKey, v)}</text>
+          ))}
+
+          {/* axis labels with direction */}
+          <text x={padL - 48} y={padT + ih / 2} fontSize="11" fill="#3e4c61" transform={`rotate(-90 ${padL - 48} ${padT + ih / 2})`} textAnchor="middle">
+            {yo.label} — {yo.direction === "max" ? "higher is better ↑" : "lower is better ↓"}
+          </text>
+          <text x={padL + iw / 2} y={H - 10} fontSize="11" fill="#3e4c61" textAnchor="middle">
+            {xo.label} — {xo.direction === "min" ? "lower is better ↓" : "higher is better ↑"}
+          </text>
+
+          {/* Pareto line through frontier points */}
+          {line.length > 1 && (
+            <polyline points={line.map((p) => `${sx(p.x)},${sy(p.y)}`).join(" ")} fill="none" stroke="#c2872f" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.7" />
+          )}
+
+          {/* points: dominated first so frontier draws on top */}
+          {pts.filter((p) => !frontierIds.has(p.g.id)).map((p) => (
+            <Link key={p.g.id} to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+              <circle cx={sx(p.x)} cy={sy(p.y)} r={5} fill="#14213a" fillOpacity="0.55" />
+              <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
+            </Link>
+          ))}
+          {pts.filter((p) => frontierIds.has(p.g.id)).map((p) => (
+            <Link key={p.g.id} to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+              <circle cx={sx(p.x)} cy={sy(p.y)} r={7} fill="#c2872f" stroke="#fff" strokeWidth="1.5" />
+              <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
+            </Link>
+          ))}
+        </svg>
+
+        {/* tooltip */}
+        {hov && (() => {
+          const g = GW.getGadget(hov.id);
+          const isP = frontierIds.has(hov.id);
+          if (!g) return null;
+          return (
+            <div className="pointer-events-none absolute z-10 w-[230px] rounded-lg border border-line-strong bg-white p-3 shadow-lg"
+              style={{ left: Math.min(hov.x + 14, 420), top: Math.max(8, hov.y - 84) }}>
+              <p className="font-semibold text-ink">{GW.displayName(g)}</p>
+              <p className="mt-1 text-sm text-ink2">{xo.label}: <b className="mono">{fmt(xKey, hov.x)}</b></p>
+              <p className="text-sm text-ink2">{yo.label}: <b className="mono">{fmt(yKey, hov.y)}</b></p>
+              <p className={`mt-1 text-xs font-semibold ${isP ? "text-[#c2872f]" : "text-ink3"}`}>{isP ? "On the frontier" : "Dominated"} · click for details</p>
+            </div>
+          );
+        })()}
+      </div>
+      )}
+
+      {/* legend + explanation */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink2">
+        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#c2872f]" />Frontier (nothing beats it on both axes)</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#14213a] opacity-60" />Dominated</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-sm bg-[#dcfce7]" />Most attractive quadrant</span>
+      </div>
+      <p className="mt-1.5 max-w-[70ch] text-sm text-ink3">
+        A product is on the <b>Pareto frontier</b> when no other in-scope product is at least as good on both axes and strictly better on one. The green quadrant is simply the better half on each axis — a hint, not a ranking. Products missing either value are excluded rather than guessed.
+      </p>
+
+      {/* frontier shortlist */}
+      {result.frontier.length > 0 && (
+        <div className="mt-5">
+          <h3 className="font-semibold text-ink">Frontier shortlist</h3>
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {result.frontier.slice(0, 9).map((g) => (
+              <li key={g.id}>
+                <Link to={`/g/${g.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm hover:border-[#c2872f]">
+                  <span className="min-w-0 truncate text-ink">{GW.displayName(g)}</span>
+                  <span className="mono shrink-0 text-xs text-ink2">{fmt(xKey, xo.get(g))} · {fmt(yKey, yo.get(g))}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
