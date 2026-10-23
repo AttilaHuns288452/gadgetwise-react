@@ -150,6 +150,7 @@ export default function ParetoExplorer() {
         </div>
       ) : (
       <div className="relative mt-4 overflow-x-auto">
+        <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1100px]" role="img"
           aria-label={`Scatter plot of ${xo.label} versus ${yo.label} with Pareto frontier`}>
           {/* most attractive quadrant */}
@@ -194,6 +195,7 @@ export default function ParetoExplorer() {
             </Link>
           ))}
         </svg>
+        </div>
 
         {/* tooltip */}
         {hov && (() => {
@@ -229,7 +231,7 @@ export default function ParetoExplorer() {
           <h3 className="font-semibold text-ink">Frontier shortlist</h3>
           <ul className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {result.frontier.slice(0, 9).map((g) => (
-              <li key={g.id}>
+              <li key={g.id} className="min-w-0">
                 <Link to={`/g/${g.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm hover:border-[#c2872f]">
                   <span className="min-w-0 truncate text-ink">{GW.displayName(g)}</span>
                   <span className="mono shrink-0 text-xs text-ink2">{fmt(xKey, xo.get(g))} · {fmt(yKey, yo.get(g))}</span>
