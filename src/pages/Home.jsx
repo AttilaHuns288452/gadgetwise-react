@@ -1,8 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
 import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, CatalogLoadingCard, useReveal } from '../components/ui.jsx';
 import ParetoExplorer from '../components/ParetoExplorer.jsx';
+import { loadSiteSettings } from '../lib/store.js';
+
+/** Admin-managed homepage announcement. Renders only when an admin enabled it. */
+function AnnouncementBanner() {
+  const [state, setState] = useState({ text: "", enabled: false, loaded: false });
+  useEffect(() => {
+    loadSiteSettings().then((s) => setState({ text: s.announcement || "", enabled: s.announcement_enabled === "true", loaded: true }));
+  }, []);
+  if (!state.loaded || !state.enabled || !state.text.trim()) return null;
+  return (
+    <div className="border-b border-[#F0E2B8] bg-[#FFF8E6]">
+      <div className="mx-auto flex max-w-none items-start gap-3 px-6 lg:px-12 2xl:px-16 py-3">
+        <span className="mt-0.5 shrink-0 rounded bg-[#F5E4B0] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#7A5A12]">Notice</span>
+        <p className="min-w-0 break-words text-[15px] leading-relaxed text-[#6B4E12]">{state.text}</p>
+      </div>
+    </div>
+  );
+}
 
 function Hero() {
   // Real catalog: feature the top-rated real product with an image. Falls back
@@ -231,6 +249,7 @@ export default function Home({ compare, onCompare, catalogError, catalogLoading 
   useReveal();
   return (
     <>
+      <AnnouncementBanner />
       <Hero />
       {catalogLoading ? (
         <CatalogLoadingCard />

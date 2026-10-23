@@ -160,7 +160,7 @@ export async function getPublicProfile(userId) {
   try {
     const { data, error } = await supabase
       .from("public_profiles")
-      .select("id, display_name")
+      .select("id, display_name, bio, avatar_url")
       .eq("id", userId)
       .maybeSingle();
     if (error) return null;
@@ -230,6 +230,47 @@ export async function deleteRecommendation(userId, id) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+
+// ---------- profile (user-editable public fields) ----------
+export async function loadMyProfile(userId) {
+  if (!live(userId)) return null;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("full_name, bio, avatar_url")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) return null;
+  return data || { full_name: "", bio: "", avatar_url: "" };
+}
+
+export async function saveMyProfile(userId, { full_name, bio, avatar_url }) {
+  if (!live(userId)) return { ok: false, error: "Sign in required" };
+  const payload = {
+    full_name: String(full_name || "").slice(0, 120),
+    bio: String(bio || "").slice(0, 500),
+    avatar_url: String(avatar_url || "").slice(0, 500),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+// ---------- site settings (admin-managed public content) ----------
+export async function loadSiteSettings() {
+  if (!supabaseConfigured) return {};
+  const { data, error } = await supabase.from("site_settings").select("key, value");
+  if (error) return {};
+  return Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+}
+
+export async function saveSiteSetting(key, value) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase
+    .from("site_settings")
+    .upsert({ key, value: String(value), updated_at: new Date().toISOString() }, { onConflict: "key" });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
 
 /* ---- Admin catalog management (real DB persistence, admin-only writes) ---- */
 

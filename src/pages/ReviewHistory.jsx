@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { GW } from "../lib.js";
 import { useAuth } from "../lib/auth.js";
-import { loadMyReviews } from "../lib/store.js";
+import { loadMyReviews, editReview, deleteReview } from "../lib/store.js";
+import { Modal, useToast, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
 
 function Stars({ rating }) {
   return (
@@ -17,6 +18,10 @@ function ReviewHistory() {
   const { user, configured } = useAuth();
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("loading"); // loading | ready
+  const [toast, toastNode] = useToast();
+  const [edit, setEdit] = useState(null); // {id, rating, body}
+  const [remove, setRemove] = useState(null); // review being deleted
+  const [busy, setBusy] = useState(false);
 
   // Real reviews only: the signed-in user's rows from the database. Guests see
   // an honest empty state — never fabricated sample reviews.
@@ -38,6 +43,29 @@ function ReviewHistory() {
       alive = false;
     };
   }, [user, configured]);
+
+  const saveEdit = async () => {
+    if (!edit) return;
+    if (!edit.body.trim()) { toast("Review text cannot be empty", "alert"); return; }
+    setBusy(true);
+    const result = await editReview(edit.id, { rating: Number(edit.rating), body: edit.body.trim() });
+    setBusy(false);
+    if (!result.ok) { toast(result.error || "Could not save your review", "alert"); return; }
+    setRows((rows) => rows.map((r) => (r.id === edit.id ? { ...r, rating: Number(edit.rating), body: edit.body.trim() } : r)));
+    setEdit(null);
+    toast("Review saved");
+  };
+
+  const confirmDelete = async () => {
+    if (!remove) return;
+    setBusy(true);
+    const result = await deleteReview(remove.id);
+    setBusy(false);
+    if (!result.ok) { toast(result.error || "Could not delete your review", "alert"); return; }
+    setRows((rows) => rows.filter((r) => r.id !== remove.id));
+    setRemove(null);
+    toast("Review deleted");
+  };
 
   return (
     <section className="section">
@@ -74,6 +102,17 @@ function ReviewHistory() {
               {r.status && r.status !== "approved" && (
                 <p className="mt-2 text-xs font-semibold text-ink3">Status: {r.status}</p>
               )}
+              <div className="mt-4 flex items-center gap-2 border-t border-line pt-3">
+                <button type="button" className="rounded-lg border border-line-strong px-3 py-1.5 text-sm font-semibold text-ink2 transition-colors hover:border-primary hover:text-primary"
+                  onClick={() => setEdit({ id: r.id, rating: r.rating, body: r.body || "" })}>
+                  Edit
+                </button>
+                <button type="button" className="rounded-lg border border-line-strong px-3 py-1.5 text-sm font-semibold text-ink3 transition-colors hover:border-red-300 hover:text-red-700"
+                  onClick={() => setRemove(r)}>
+                  Delete
+                </button>
+                <Link to={`/g/${r.gadget_id}`} className="ml-auto text-sm font-semibold text-primary hover:underline">View product →</Link>
+              </div>
             </article>
           ))}
         </div>
@@ -82,6 +121,56 @@ function ReviewHistory() {
       <div className="mt-8">
         <Link to="/profile" className="font-semibold text-primary hover:text-primary-dark">← Back to profile</Link>
       </div>
+      {toastNode}
+
+      {edit && (
+        <Modal
+          title="Edit review"
+          sub="Your rating and text can be updated. Publication state does not change when you edit."
+          onClose={() => setEdit(null)}
+          actions={
+            <>
+              <button type="button" className={btnOutlineCls} onClick={() => setEdit(null)}>Cancel</button>
+              <button type="button" className={btnPrimaryCls} onClick={saveEdit} disabled={busy}>
+                {busy ? "Saving…" : "Save review"}
+              </button>
+            </>
+          }
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="rv-edit-rating">Rating</label>
+            <select id="rv-edit-rating" className={fieldInputCls} value={edit.rating}
+              onChange={(e) => setEdit({ ...edit, rating: e.target.value })}>
+              {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="rv-edit-body">Your review</label>
+            <textarea id="rv-edit-body" rows="4" className={fieldInputCls} value={edit.body}
+              onChange={(e) => setEdit({ ...edit, body: e.target.value })} />
+          </div>
+        </Modal>
+      )}
+
+      {remove && (
+        <Modal
+          title="Delete this review?"
+          sub="This removes the review from the product page and your history. It cannot be undone."
+          onClose={() => setRemove(null)}
+          actions={
+            <>
+              <button type="button" className={btnOutlineCls} onClick={() => setRemove(null)}>Keep it</button>
+              <button type="button" className="rounded-lg bg-red-700 px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-red-800" onClick={confirmDelete} disabled={busy}>
+                {busy ? "Deleting…" : "Delete review"}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm leading-relaxed text-ink2">
+            You are about to delete your review of <b>{GW.getGadget(remove.gadget_id) ? GW.displayName(GW.getGadget(remove.gadget_id)) : remove.gadget_id}</b>.
+          </p>
+        </Modal>
+      )}
     </section>
   );
 }

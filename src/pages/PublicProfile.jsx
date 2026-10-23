@@ -57,9 +57,18 @@ export default function PublicProfile() {
         </div>
       ) : (
         <>
-          <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">
-            {profile ? profile.display_name : "Loading…"}
-          </h1>
+          <div className="mt-2 flex items-center gap-4">
+            {profile?.avatar_url && (
+              <img src={profile.avatar_url} alt=""
+                className="h-16 w-16 shrink-0 rounded-full border border-line object-cover" />
+            )}
+            <h1 className="min-w-0 text-[2.25rem] lg:text-[2.75rem] break-words">
+              {profile ? profile.display_name : "Loading…"}
+            </h1>
+          </div>
+          {profile?.bio && (
+            <p className="mt-3 max-w-[60ch] text-ink2 leading-relaxed break-words">{profile.bio}</p>
+          )}
           <p className="mt-2 text-ink2">
             {reviews
               ? `${reviews.length} review${reviews.length === 1 ? "" : "s"} in the GadgetWise community.`

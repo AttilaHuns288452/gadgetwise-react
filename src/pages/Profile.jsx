@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { loadRecommendations, deleteRecommendation } from "../lib/store.js";
+import { loadRecommendations, deleteRecommendation, loadMyProfile, saveMyProfile } from "../lib/store.js";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
-import { GadgetCard, useWishlist } from "../components/ui.jsx";
+import { GadgetCard, useWishlist, useToast, Modal, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 import { readCompareHistory } from "./ComparisonHistory.jsx";
 
@@ -49,10 +49,25 @@ export default function Profile({ compare, onCompare }) {
   const { user, ready, configured, signOut } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationStatus, setRecommendationStatus] = useState("loading");
+  const [toast, toastNode] = useToast();
+  const [profile, setProfile] = useState({ full_name: "", bio: "", avatar_url: "" });
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ full_name: "", bio: "", avatar_url: "" });
+  const [saving, setSaving] = useState(false);
+  const [avatarBroken, setAvatarBroken] = useState(false);
 
   useEffect(() => {
     document.title = "GadgetWise — Profile";
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const uid = user?.id || null;
+    if (configured && uid) {
+      loadMyProfile(uid).then((p) => { if (alive && p) setProfile(p); });
+    }
+    return () => { alive = false; };
+  }, [user, configured]);
 
   useEffect(() => {
     let alive = true;
@@ -74,6 +89,27 @@ export default function Profile({ compare, onCompare }) {
   const removeRecommendation = async (id) => {
     const result = await deleteRecommendation(user?.id, id);
     if (result.ok) setRecommendations((rows) => rows.filter((r) => r.id !== id));
+  };
+
+  const openEdit = () => {
+    setDraft({ full_name: profile.full_name || displayName, bio: profile.bio || "", avatar_url: profile.avatar_url || "" });
+    setEditing(true);
+  };
+
+  const saveProfile = async () => {
+    const name = (draft.full_name || "").trim();
+    const avatar = (draft.avatar_url || "").trim();
+    if (!name) { toast("Display name cannot be empty", "alert"); return; }
+    if (name.length > 120) { toast("Display name must be 120 characters or fewer", "alert"); return; }
+    if (avatar && !/^https?:\/\//i.test(avatar)) { toast("Avatar must be an http(s) image URL", "alert"); return; }
+    setSaving(true);
+    const result = await saveMyProfile(user.id, { full_name: name, bio: draft.bio, avatar_url: avatar });
+    setSaving(false);
+    if (!result.ok) { toast(result.error || "Could not save your profile", "alert"); return; }
+    setProfile({ full_name: name, bio: draft.bio, avatar_url: avatar });
+    setAvatarBroken(false);
+    setEditing(false);
+    toast("Profile updated");
   };
 
   // Real account only. In Supabase mode a signed-out visitor is sent to login;
@@ -105,14 +141,27 @@ export default function Profile({ compare, onCompare }) {
         {/* profile card */}
         <aside className="card h-fit p-6 lg:col-span-4">
           <div className="flex items-center gap-4">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-[#DBEAFE] text-xl font-semibold text-[#14213A]">
-              {initials}
-            </div>
+            {profile.avatar_url && !avatarBroken ? (
+              <img src={profile.avatar_url} alt="" onError={() => setAvatarBroken(true)}
+                className="h-16 w-16 shrink-0 rounded-full border border-line object-cover" />
+            ) : (
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-[#DBEAFE] text-xl font-semibold text-[#14213A]">
+                {initials}
+              </div>
+            )}
             <div className="min-w-0">
-              <div className="text-lg font-semibold text-ink break-words">{displayName}</div>
+              <div className="text-lg font-semibold text-ink break-words">{profile.full_name || displayName}</div>
               <div className="text-sm text-ink2 break-words">{email || "Not signed in"}</div>
             </div>
           </div>
+          {profile.bio && (
+            <p className="mt-3 text-sm leading-relaxed text-ink2 break-words">{profile.bio}</p>
+          )}
+          {user && (
+            <button type="button" onClick={openEdit} className={`${btnOutlineCls} mt-4 w-full`}>
+              Edit profile
+            </button>
+          )}
 
           <dl className="mt-5 space-y-2.5 border-t border-line pt-4 text-sm">
             {stats.map(([label, value]) => (
@@ -124,6 +173,7 @@ export default function Profile({ compare, onCompare }) {
           </dl>
 
           <div className="mt-5 space-y-2 border-t border-line pt-5">
+            {toastNode}
             <Link to="/review-history" className="btn-outline flex w-full items-center justify-center gap-2">
               <DocIcon /> Review history
             </Link>
@@ -222,6 +272,41 @@ export default function Profile({ compare, onCompare }) {
           )}
         </div>
       </div>
+
+      {editing && (
+        <Modal
+          title="Edit profile"
+          sub="These fields appear on your public reviewer profile."
+          onClose={() => setEditing(false)}
+          actions={
+            <>
+              <button type="button" className={btnOutlineCls} onClick={() => setEditing(false)}>Cancel</button>
+              <button type="button" className={btnPrimaryCls} onClick={saveProfile} disabled={saving}>
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </>
+          }
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="pf-name">Display name</label>
+            <input id="pf-name" className={fieldInputCls} value={draft.full_name} maxLength={120}
+              onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} />
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="pf-bio">Bio</label>
+            <textarea id="pf-bio" rows="3" maxLength={500} className={fieldInputCls} value={draft.bio}
+              placeholder="A line about what you use gadgets for"
+              onChange={(e) => setDraft({ ...draft, bio: e.target.value })} />
+            <p className="mt-1 text-xs text-ink2">Up to 500 characters. Shown on your public profile.</p>
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="pf-avatar">Avatar image URL</label>
+            <input id="pf-avatar" className={fieldInputCls} value={draft.avatar_url} placeholder="https://…"
+              onChange={(e) => setDraft({ ...draft, avatar_url: e.target.value })} />
+            <p className="mt-1 text-xs text-ink2">Optional. Must be an http(s) image URL.</p>
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }

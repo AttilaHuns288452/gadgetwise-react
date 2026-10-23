@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -292,6 +292,27 @@ function Gadgets({ toast }) {
           </div>
         </div>
       )}
+
+      {rows.length > 0 && (() => {
+        const missingImage = rows.filter((g) => !g.image).length;
+        const missingDescription = rows.filter((g) => !g.description).length;
+        const missingPrice = rows.filter((g) => g.price == null).length;
+        const needing = missingImage + missingDescription + missingPrice;
+        if (!needing) return null;
+        return (
+          <div className="mt-6 rounded-xl border border-[#F5E2B8] bg-[#FFF8E6] px-5 py-4">
+            <div className="text-[14px] font-semibold text-[#6B4E12]">
+              {needing} field{needing === 1 ? "" : "s"} need attention across {rows.length} record{rows.length === 1 ? "" : "s"}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2 text-[13px] text-[#7A5A12]">
+              {missingImage > 0 && <span className="rounded-full bg-[#F5E4B0] px-2.5 py-1">{missingImage} missing image</span>}
+              {missingDescription > 0 && <span className="rounded-full bg-[#F5E4B0] px-2.5 py-1">{missingDescription} missing description</span>}
+              {missingPrice > 0 && <span className="rounded-full bg-[#F5E4B0] px-2.5 py-1">{missingPrice} missing price</span>}
+            </div>
+            <p className="mt-2 text-[12px] text-[#7A5A12]">Products with missing fields are hidden from public discovery. Edit a record to complete it.</p>
+          </div>
+        );
+      })()}
 
       <div className="mt-6 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white">
         <table className="w-full text-left text-[14px]">
@@ -749,13 +770,86 @@ function Users() {
   );
 }
 
+function SiteSettings({ toast }) {
+  const [text, setText] = useState("");
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    loadSiteSettings().then((s) => {
+      setText(s.announcement || "");
+      setEnabled(s.announcement_enabled === "true");
+      setLoading(false);
+    });
+  }, []);
+  const save = async () => {
+    setSaving(true);
+    const first = await saveSiteSetting("announcement", text.trim());
+    const second = first.ok ? await saveSiteSetting("announcement_enabled", enabled ? "true" : "false") : first;
+    setSaving(false);
+    if (!second.ok) { toast(second.error || "Could not save", "alert"); return; }
+    setDirty(false);
+    toast("Site settings saved — the public homepage updates immediately");
+  };
+  return (
+    <>
+      <div className="rounded-2xl border border-[#DCE7F8] bg-[linear-gradient(135deg,#F8FBFF_0%,#EEF5FF_100%)] p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2260D4]">Public content</p>
+        <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Site settings</h1>
+        <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
+          A short homepage announcement shown to every visitor. Saved to the database and applied to the
+          public homepage immediately — no redeploy needed.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6 text-[15px] text-[#6B7280]">Loading site settings…</div>
+      ) : (
+        <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
+          <h2 className="text-[19px] font-bold text-[#111827]">Homepage announcement</h2>
+          <div className="mt-4 grid gap-4">
+            <Field label="Announcement text">
+              <input
+                className={inputCls}
+                value={text}
+                maxLength={180}
+                placeholder="e.g. New: compare up to four gadgets side by side"
+                onChange={(e) => { setText(e.target.value); setDirty(true); }}
+              />
+            </Field>
+            <label className="flex items-center gap-2.5 text-[15px] text-[#344054]">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => { setEnabled(e.target.checked); setDirty(true); }}
+                className="h-4 w-4 rounded accent-[#2260D4]"
+              />
+              Show this announcement on the public homepage
+            </label>
+            <div className="flex items-center gap-2">
+              <button className={btnPrimary} onClick={save} disabled={saving || !dirty}>
+                {saving ? "Saving…" : "Save settings"}
+              </button>
+              {dirty && <span className="text-[13px] text-[#667085]">Unsaved changes</span>}
+            </div>
+            <p className="text-[13px] text-[#667085]">
+              {enabled && text.trim() ? "Currently live on the homepage." : "Currently hidden from the homepage."}
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Shell({ tabKey, tab, onOut, children }) {
   const groups = [
     ["overview", [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"]]],
     ["catalog", [["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"]]],
     ["community", [["reviews", "Reviews", "chat"]]],
     ["people", [["users", "Users", "user"]]],
-    ["system", [["integrations", "Integrations", "plug"]]],
+    ["system", [["integrations", "Integrations", "plug"], ["site", "Site settings", "star"]]],
     ["session", [["public", "View public site", "home"], ["out", "Sign out", "exit"]]],
   ];
   return (
@@ -856,6 +950,7 @@ export default function Admin() {
       )}
       {tabKey === "users" && <Users />}
       {tabKey === "integrations" && <Integrations toast={toast} />}
+      {tabKey === "site" && <SiteSettings toast={toast} />}
       {toastNode}
     </Shell>
   );
