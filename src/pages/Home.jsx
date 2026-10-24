@@ -136,7 +136,7 @@ function BudgetPicker() {
   if (!prices.length) return null;
   return (
     <section className="border-y border-line bg-surface2">
-      <div className="mx-auto grid max-w-none items-center gap-x-12 gap-y-8 px-6 lg:px-12 2xl:px-16 py-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div className="mx-auto grid max-w-none items-start gap-x-12 gap-y-8 px-6 lg:px-12 2xl:px-16 py-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="min-w-0">
           <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">What does your budget actually get?</h2>
           <p className="mt-2 max-w-[52ch] text-base text-ink2">

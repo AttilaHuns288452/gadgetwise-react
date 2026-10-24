@@ -100,6 +100,25 @@ GW.categoryMedianMonthly = function (catId) {
 
    Canonical name builder: moderation rows and the UI both route through this. */
 
-GW.displayName = (g) => (g.model.startsWith(g.brand) ? g.model : `${g.brand} ${g.model}`);
+/**
+ * Marketplace listing titles carry seller noise: full-width parentheses,
+ * "( new ! )" promo stamps, doubled brand prefixes. This is presentation
+ * cleanup only — the stored model string is never modified, and anything that
+ * is not obviously a promo stamp is kept verbatim.
+ */
+const PROMO_TAG = /\(\s*(new|hot|sale|promo|free|best|original|authentic|ready|stock|top|wow|limited|best\s*seller)[^)]*\)/gi;
+GW.cleanTitle = (s) =>
+  String(s || "")
+    .replace(/[（]/g, "(").replace(/[）]/g, ")")
+    .replace(PROMO_TAG, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+GW.displayName = (g) => {
+  const brand = String(g.brand || "").trim();
+  const model = GW.cleanTitle(g.model);
+  if (!model) return g.model;
+  return model.toLowerCase().startsWith(brand.toLowerCase()) ? model : `${brand} ${model}`.trim();
+};
 
 export default GW;
