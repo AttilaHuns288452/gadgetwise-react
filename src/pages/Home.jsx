@@ -43,7 +43,7 @@ function HeroSkeleton() {
           <div className="h-7 w-20 animate-pulse rounded-md bg-surface2" />
         </div>
       </div>
-      <div>
+      <div className="max-w-[520px]">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-on-hero2">Also in the catalog</p>
         <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[0, 1].map((i) => (
@@ -78,8 +78,8 @@ function Hero({ loading, failed }) {
   return (
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="flex min-w-0 flex-col justify-center">
-          <h1 className="anim-fade-up font-display text-[clamp(2.125rem,3.6vw,3rem)] font-bold leading-[1.02] tracking-tight" style={{ animationDelay: "220ms" }}>
+        <div className="flex min-w-0 flex-col">
+          <h1 className="anim-fade-up font-display text-[clamp(2.5rem,4.2vw,3.75rem)] font-bold leading-[1.03] tracking-tight" style={{ animationDelay: "220ms" }}>
             Find the right gadget for <span className="text-star">school.</span>
           </h1>
           <p className="anim-fade-up mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2" style={{ animationDelay: "380ms" }}>
@@ -89,7 +89,7 @@ function Hero({ loading, failed }) {
             <Link to="/recommend" className={btnPrimaryCls}>Find my gadget</Link>
             <Link to="/gadgets" className="rounded-lg border border-white/70 px-7 py-2.5 text-base font-semibold text-white transition-colors hover:bg-white/10">Browse gadgets</Link>
           </div>
-          <ul className="anim-fade-up mt-9 grid items-start gap-x-6 gap-y-3 text-sm text-on-hero2 sm:grid-cols-3" style={{ animationDelay: "820ms" }}>
+          <ul className="anim-fade-up mt-auto grid items-start gap-x-6 gap-y-3 border-t border-white/15 pt-5 text-sm text-on-hero2 sm:grid-cols-3" style={{ animationDelay: "820ms" }}>
             {['Ownership cost on every tag', 'Warranty & repair paths', 'Scores show their math'].map((t) => (
               <li key={t} className="flex items-start gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D9A441" strokeWidth="2" className="mt-[3px] shrink-0" aria-hidden="true">
@@ -106,10 +106,14 @@ function Hero({ loading, failed }) {
             {!g && <HeroSkeleton />}
             {g && (
             <>
-            <div className="anim-fade-in card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-              <div className="relative">
+            <Link
+              to={'/g/' + g.id}
+              aria-label={`View ${GW.displayName(g)}`}
+              className="anim-fade-in card hover-lift block w-full max-w-[520px] overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]"
+            >
+              <div className="relative card-media">
                 <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Top rated</span>
-                <Img gadget={g} className="w-full" imgClass="object-cover" eager />
+                <Img gadget={g} className="w-full" imgClass="object-cover" frame="16 / 10" eager />
               </div>
               {/* title gets its own 2-line block; the price moves to its own
                   row so a long listing title is never cut mid-clause */}
@@ -124,11 +128,11 @@ function Hero({ loading, failed }) {
                 <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}<span className="text-sm text-ink3">/100</span></span>
                 <span className="text-sm font-medium text-ink2">Value score</span>
               </div>
-            </div>
+            </Link>
             {/* companions: real catalog entries so the hero shows range, not one
                 isolated pick. Skipped entirely when the catalog is too small. */}
             {companions.length > 0 && (
-              <div>
+              <div className="max-w-[520px]">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-on-hero2">Also in the catalog</p>
                 <div className="stagger mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {companions.map((c, i) => (
@@ -184,11 +188,24 @@ function Stats() {
  */
 function BudgetPicker() {
   const prices = GW.gadgets.map((g) => g.price).filter((p) => Number.isFinite(p) && p > 0);
-  const lo = prices.length ? Math.min(...prices) : 0;
+  const lo = prices.length ? Math.max(1, Math.min(...prices)) : 0;
   const hi = prices.length ? Math.max(...prices) : 100000;
-  const [budget, setBudget] = useState(() => Math.round((lo + hi) / 2 / 1000) * 1000);
+  // Slider on a LOGARITHMIC price scale. A linear 0..max slider wastes its top
+  // half when prices cluster at the bottom (96% of gadgets fit at the old
+  // midpoint), so dragging felt like it did nothing. Log scale spreads the
+  // dense cheap range and still reaches every price.
+  const SLIDER = 1000;
+  const toPrice = (p) => Math.round((lo * Math.pow(hi / lo, p / SLIDER)) / 100) * 100;
+  const toPos = (price) => Math.round((SLIDER * Math.log(price / lo)) / Math.log(hi / lo));
+  const sorted = [...prices].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const [pos, setPos] = useState(() => (hi > lo ? toPos(median) : 0));
+  const budget = hi > lo ? toPrice(pos) : Math.round(hi / 100) * 100;
   const fits = GW.gadgets.filter((g) => (g.price ?? Infinity) <= budget);
-  const picks = [...fits].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3);
+  // review count breaks rating ties, or "highest rated" reads as an arbitrary pick
+  const picks = [...fits]
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0))
+    .slice(0, 3);
   if (!prices.length) return null;
   return (
     <section className="border-y border-line bg-surface2">
@@ -208,17 +225,17 @@ function BudgetPicker() {
               <span className="sr-only">Budget</span>
               <input
                 type="range"
-                min={Math.round(lo / 1000) * 1000}
-                max={Math.round(hi / 1000) * 1000}
-                step={1000}
-                value={budget}
-                onChange={(e) => setBudget(Number(e.target.value))}
+                min={0}
+                max={SLIDER}
+                step={1}
+                value={pos}
+                onChange={(e) => setPos(Number(e.target.value))}
                 className="w-full accent-[#2563EB]"
               />
             </label>
             <div className="mt-1 flex justify-between text-xs text-ink3">
-              <span>{money(Math.round(lo / 1000) * 1000)}</span>
-              <span>{money(Math.round(hi / 1000) * 1000)}</span>
+              <span>{money(toPrice(0))}</span>
+              <span>{money(toPrice(SLIDER))}</span>
             </div>
           </div>
           <Link to="/gadgets" className={btnPrimaryCls + ' mt-5 inline-flex'}>See every gadget at this budget</Link>
@@ -271,7 +288,11 @@ function Categories({ hideCounts = false }) {
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>All gadgets →</Link>
       </div>
       <div className="stagger mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {GW.categories.map((c, i) => {
+        {GW.categories
+          // empty admin-created categories ("qwert / 0 gadgets") are not
+          // navigation targets; counts are unknown on error, then show all
+          .filter((c) => hideCounts || GW.gadgetsInCategory(c.id).length > 0)
+          .map((c, i) => {
           const n = GW.gadgetsInCategory(c.id).length;
           return (
             <Link key={c.id} style={stag(i)} to={`/gadgets?cat=${c.id}`} className="card p-6 transition-colors hover:border-primary">

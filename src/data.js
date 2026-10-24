@@ -112,12 +112,17 @@ GW.categoryMedianMonthly = function (catId) {
  * is not obviously a promo stamp is kept verbatim.
  */
 const PROMO_TAG = /\(\s*(new|hot|sale|promo|free|best|original|authentic|ready|stock|top|wow|limited|best\s*seller)[^)]*\)/gi;
-GW.cleanTitle = (s) =>
-  String(s || "")
+GW.cleanTitle = (s) => {
+  const cleaned = String(s || "")
     .replace(/[（]/g, "(").replace(/[）]/g, ")")
     .replace(PROMO_TAG, " ")
+    // seller feature spam after a pipe ("HONOR X7e | Water & Drop Resistant...")
+    // is not part of the product name
+    .split("|")[0]
     .replace(/\s+/g, " ")
     .trim();
+  return cleaned || String(s || "").replace(/\s+/g, " ").trim();
+};
 
 GW.displayName = (g) => {
   const rawBrand = String(g.brand || "").trim();

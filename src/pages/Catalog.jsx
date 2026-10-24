@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
 import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, StaleCatalogNote } from "../components/ui.jsx";
@@ -43,6 +43,11 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const [maxPrice, setMaxPrice] = useState("100000");
   const [feats, setFeats] = useState(() => new Set());
   const [brands, setBrands] = useState(() => new Set());
+  // ponytail: phones get a collapsed filter panel; from lg up the sidebar is
+  // always open, so this flag never changes the desktop layout.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // when the panel closes on a phone, the results below must come into view
+  const resultsRef = useRef(null);
 
   // ponytail: resync only when the URL param value changes, so typing never fights navigation
   useEffect(() => setQ(spQ), [spQ]);
@@ -101,117 +106,176 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const headCls = "mb-3 text-xs font-bold uppercase tracking-[0.05em] text-ink";
   const rowCls = "flex cursor-pointer items-center gap-2.5 py-1 text-sm text-ink2 hover:text-ink";
 
+  // how many filters are on, so the collapsed toggle can say so
+  const activeCount =
+    (cat ? 1 : 0) +
+    feats.size +
+    brands.size +
+    (minPrice && minPrice !== "0" ? 1 : 0) +
+    (maxPrice && maxPrice !== "100000" ? 1 : 0);
+
   return (
-    <section className="section">
-      <div className="mb-8">
+    <section className="section py-8 lg:py-12">
+      <div className="mb-6 lg:mb-8">
         <h1>Browse Gadgets</h1>
-        <p className="mt-3 text-ink2">
+        {/* instructional copy: desktop guidance, pure chrome on a phone */}
+        <p className="hidden mt-2 text-sm leading-relaxed text-ink2 sm:block lg:mt-3 lg:text-base lg:leading-normal">
           Search, filter and sort the catalog. Tick “Compare” on a card to add it to the compare tray below.
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[19rem_minmax(0,1fr)]">
-        {/* Filters */}
+      <div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
+        {/* Filters. On phones the whole panel collapses behind one toggle —
+            stacked open it pushed the first product card ~3100px down. From lg
+            up the sidebar is always visible, exactly as before. */}
         <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto" aria-label="Filters">
-          <div className="card p-5">
-            <div>
-              <h4 className={headCls}>CATEGORY</h4>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            aria-controls="catalog-filter-panel"
+            className="flex w-full items-center justify-between gap-2 rounded-lg border border-line-strong bg-white px-4 py-3 text-sm font-semibold text-ink lg:hidden"
+          >
+            <span className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-ink3" aria-hidden="true">
+                <path d="M4 6h16M7 12h10M10 18h4" />
+              </svg>
+              Filters
+              {activeCount > 0 && (
+                <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary-dark">
+                  {activeCount}
+                </span>
+              )}
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={`h-4 w-4 text-ink3 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div
+            id="catalog-filter-panel"
+            className={`${filtersOpen ? "block" : "hidden"} mt-3 lg:mt-0 lg:block`}
+          >
+            <div className="card p-5">
               <div>
-                {catOptions().map(([id, label]) => (
-                  <label key={id || "all"} className={rowCls}>
-                    <input
-                      type="radio"
-                      name="fcat"
-                      checked={cat === id}
-                      onChange={() => setCat(id)}
-                      className="h-4 w-4 shrink-0 accent-primary"
-                    />
-                    {label}
-                    <span className="ml-auto text-xs text-ink3">
-                      {id ? GW.gadgetsInCategory(id).length : GW.gadgets.length}
-                    </span>
-                  </label>
-                ))}
+                <h4 className={headCls}>CATEGORY</h4>
+                <div>
+                  {catOptions().map(([id, label]) => (
+                    <label key={id || "all"} className={rowCls}>
+                      <input
+                        type="radio"
+                        name="fcat"
+                        checked={cat === id}
+                        onChange={() => setCat(id)}
+                        className="h-4 w-4 shrink-0 accent-primary"
+                      />
+                      {label}
+                      <span className="ml-auto text-xs text-ink3">
+                        {id ? GW.gadgetsInCategory(id).length : GW.gadgets.length}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={groupCls}>
+                <h4 className={headCls}>PRICE RANGE (₱)</h4>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Min"
+                    aria-label="Minimum price"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+                  />
+                  <span className="text-ink3">–</span>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Max"
+                    aria-label="Maximum price"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className={groupCls}>
+                <h4 className={headCls}>FEATURES</h4>
+                <div>
+                  {FEATURE_LABELS.map(([key, label]) => (
+                    <label key={key} className={rowCls}>
+                      <input
+                        type="checkbox"
+                        checked={feats.has(key)}
+                        onChange={() => toggle(setFeats)(key)}
+                        className="h-4 w-4 shrink-0 rounded accent-primary"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={groupCls}>
+                <h4 className={headCls}>BRAND</h4>
+                <div className="max-h-64 overflow-y-auto lg:max-h-none lg:overflow-visible">
+                  {brandList.map((b) => (
+                    <label key={b} className={rowCls}>
+                      <input
+                        type="checkbox"
+                        checked={brands.has(b)}
+                        onChange={() => toggle(setBrands)(b)}
+                        className="h-4 w-4 shrink-0 rounded accent-primary"
+                      />
+                      {b}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={groupCls}>
+                <button type="button" onClick={clearAll} className="btn btn-ghost w-full px-3 py-2 text-sm">
+                  Clear all filters
+                </button>
               </div>
             </div>
 
-            <div className={groupCls}>
-              <h4 className={headCls}>PRICE RANGE (₱)</h4>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Min"
-                  aria-label="Minimum price"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-                />
-                <span className="text-ink3">–</span>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Max"
-                  aria-label="Maximum price"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-                />
-              </div>
+            <div className="mt-4 rounded-lg bg-primary-soft p-5">
+              <h4 className="mb-1.5 text-base font-bold text-ink">Can't decide?</h4>
+              <p className="mb-3 text-sm text-ink2">Get a ranked shortlist for your budget and course load.</p>
+              <Link to="/recommend" className="btn btn-primary px-4 py-2 text-sm">
+                Get recommendations →
+              </Link>
             </div>
 
-            <div className={groupCls}>
-              <h4 className={headCls}>FEATURES</h4>
-              <div>
-                {FEATURE_LABELS.map(([key, label]) => (
-                  <label key={key} className={rowCls}>
-                    <input
-                      type="checkbox"
-                      checked={feats.has(key)}
-                      onChange={() => toggle(setFeats)(key)}
-                      className="h-4 w-4 shrink-0 rounded accent-primary"
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className={groupCls}>
-              <h4 className={headCls}>BRAND</h4>
-              <div>
-                {brandList.map((b) => (
-                  <label key={b} className={rowCls}>
-                    <input
-                      type="checkbox"
-                      checked={brands.has(b)}
-                      onChange={() => toggle(setBrands)(b)}
-                      className="h-4 w-4 shrink-0 rounded accent-primary"
-                    />
-                    {b}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className={groupCls}>
-              <button type="button" onClick={clearAll} className="btn btn-ghost w-full px-3 py-2 text-sm">
-                Clear all filters
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-lg bg-primary-soft p-5">
-            <h4 className="mb-1.5 text-base font-bold text-ink">Can't decide?</h4>
-            <p className="mb-3 text-sm text-ink2">Get a ranked shortlist for your budget and course load.</p>
-            <Link to="/recommend" className="btn btn-primary px-4 py-2 text-sm">
-              Get recommendations →
-            </Link>
+            {/* ponytail: on phones the panel is the whole screen, so it needs
+                its own way out — the results sit below the fold otherwise */}
+            <button
+              type="button"
+              onClick={() => {
+                setFiltersOpen(false);
+                resultsRef.current?.scrollIntoView({ block: "start" });
+              }}
+              className="btn btn-primary mt-4 w-full px-4 py-3 text-sm lg:hidden"
+            >
+              Show {results.length} gadget{results.length === 1 ? "" : "s"}
+            </button>
           </div>
         </aside>
 
         {/* Results */}
-        <div className="min-w-0">
+        <div className="min-w-0" ref={resultsRef}>
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full min-w-0 sm:w-auto sm:max-w-[420px] sm:flex-1">
               <svg
@@ -234,15 +298,17 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                 className="field rounded-lg py-2.5 pl-10 pr-4"
               />
             </div>
-            <div className="flex items-center gap-2 sm:ml-auto">
-              <label htmlFor="catalog-sort" className="text-sm text-ink3">
+            {/* ponytail: on phones the sort select fills the row instead of
+                hugging its label and leaving half the width empty */}
+            <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+              <label htmlFor="catalog-sort" className="shrink-0 text-sm text-ink3">
                 Sort
               </label>
               <select
                 id="catalog-sort"
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="rounded-sm border border-line-strong bg-white px-3 py-2.5 text-sm text-ink"
+                className="min-w-0 flex-1 rounded-sm border border-line-strong bg-white px-3 py-2.5 text-sm text-ink sm:flex-none"
               >
                 {SORTS.map(([v, label]) => (
                   <option key={v} value={v}>
@@ -258,7 +324,9 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
 
           <LiveSearch query={q} />
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          {/* ponytail: on phones the chips become one horizontally scrollable
+              rail — wrapped chips raggedly into 3 rows and ate the fold */}
+          <div className="scroll-fade mt-4 -mx-6 flex gap-2 overflow-x-auto px-6 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
             {catOptions().map(([id, label]) => (
               <button
                 key={id || "all"}
@@ -266,8 +334,8 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                 onClick={() => setCat(id)}
                 className={
                   cat === id
-                    ? "chip cursor-pointer bg-primary text-white"
-                    : "chip cursor-pointer border border-line-strong bg-white text-ink2 transition-colors hover:border-primary hover:text-primary"
+                    ? "chip shrink-0 cursor-pointer bg-primary text-white"
+                    : "chip shrink-0 cursor-pointer border border-line-strong bg-white text-ink2 transition-colors hover:border-primary hover:text-primary"
                 }
               >
                 {label}

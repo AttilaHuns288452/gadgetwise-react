@@ -111,7 +111,10 @@
     @apply inline-flex flex-col items-center rounded-sm border border-line-strong bg-white px-3.5 py-2.5;
   }
   @media (max-width: 640px) {
-    .oidx { max-width: 84px; } /* bounds the label so narrow rows never overflow */
+    /* The 84px cap was meant to bound the label, but it also squeezed the
+       padding out and broke "PERFORMANCE" mid-word ("PERFORMANC"). Let the
+       box size to its content and wrap the label on word boundaries. */
+    .oidx { max-width: 100%; padding-left: 0.625rem; padding-right: 0.625rem; }
   }
   .oidx b {
     font-family: var(--font-mono);
@@ -350,8 +353,17 @@ tbody tr:hover { background: #F9FAFB; }
 }
 
 /* Keep the primary nav compact on phones. The search field and account
-   actions are more useful above the nav; the nav itself remains scrollable. */
+   actions are more useful above the nav; the nav itself remains scrollable.
+   Below sm the list used to wrap, dropping "Recommendations" onto a second
+   line with a ragged left edge — it scrolls on one line instead, matching
+   what it already does from sm up. The horizontal padding is tightened so all
+   four tabs fit a 390px screen instead of clipping the last one. */
 @media (max-width: 639px) {
-  .main-nav-list { gap: 0.125rem; font-size: 0.875rem; }
-  .main-nav-list a { padding: 0.5rem 0.625rem; }
+  .main-nav-list { gap: 0.125rem; font-size: 0.875rem; flex-wrap: nowrap; white-space: nowrap; width: max-content; }
+  .main-nav-list a { padding: 0.5rem 0.4375rem; }
+}
+/* The nav fits from 384px up, so the scroll fade must not dim its last tab
+   there — a fade on a strip that does not scroll reads as clipping. */
+@media (min-width: 384px) {
+  .main-nav { -webkit-mask-image: none; mask-image: none; }
 }
