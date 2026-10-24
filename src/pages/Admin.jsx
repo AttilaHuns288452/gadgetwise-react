@@ -976,7 +976,7 @@ function SiteSettings({ toast }) {
     setSaving(false);
     if (!second.ok) { toast(second.error || "Could not save", "alert"); return; }
     setDirty(false);
-    toast("Site settings saved — the public homepage updates immediately");
+    toast("Site settings saved — they show on the homepage the next time it loads");
   };
   return (
     <>
@@ -984,8 +984,8 @@ function SiteSettings({ toast }) {
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2260D4]">Public content</p>
         <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Site settings</h1>
         <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
-          A short homepage announcement shown to every visitor. Saved to the database and applied to the
-          public homepage immediately — no redeploy needed.
+          A short homepage announcement shown to every visitor. Saved to the database and shown on the
+          public homepage the next time it loads — no redeploy needed.
         </p>
       </div>
 
