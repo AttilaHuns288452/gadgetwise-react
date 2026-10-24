@@ -715,7 +715,7 @@ export function AuthLayout({ title, subtitle, children, footer }) {
           <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/5" />
           <Logo size={20} tone="light" />
           <div className="relative">
-            <h2 className="text-[2.15rem] font-extrabold leading-[1.1]">
+            <h2 className="anim-in text-[2.15rem] font-extrabold leading-[1.1]" style={stag(0)}>
               Find the right gadget for <span className="text-star">school.</span>
             </h2>
             <p className="mt-3 max-w-[38ch] text-[15px] leading-relaxed text-on-hero2">
@@ -735,11 +735,13 @@ export function AuthLayout({ title, subtitle, children, footer }) {
 
         {/* form panel */}
         <div className="p-7 sm:p-10">
-          <div className="mb-6 lg:hidden"><Logo size={20} tone="dark" /></div>
-          <h1 className="text-[1.85rem] font-extrabold leading-tight text-ink">{title}</h1>
-          {subtitle && <p className="mt-1.5 text-[15px] text-ink2">{subtitle}</p>}
-          <div className="mt-7">{children}</div>
-          {footer && <div className="mt-6 text-center text-sm text-ink2">{footer}</div>}
+          <div className="anim-in mb-6 lg:hidden" style={stag(0)}><Logo size={20} tone="dark" /></div>
+          <h1 className="anim-in text-[1.85rem] font-extrabold leading-tight text-ink" style={stag(1)}>{title}</h1>
+          {subtitle && <p className="anim-in mt-1.5 text-[15px] text-ink2" style={stag(2)}>{subtitle}</p>}
+          {/* the form arrives as one block: animating every field would make
+              the screen tiring to read and slow to interact with */}
+          <div className="anim-in mt-7" style={stag(3)}>{children}</div>
+          {footer && <div className="anim-in mt-6 text-center text-sm text-ink2" style={stag(4)}>{footer}</div>}
         </div>
       </div>
     </section>
