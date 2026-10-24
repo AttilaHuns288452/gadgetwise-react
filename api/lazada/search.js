@@ -122,9 +122,11 @@ export default async function handler(req, res) {
   try {
     body = JSON.parse(text);
   } catch {
-    return res.status(502).json({
+    // route through the snapshot like every other failure: an unparseable
+    // upstream body is exactly when cached listings should keep the site up
+    return staleOrError(res, cacheKey, 502, {
       error: { code: "upstream_bad_response", message: "Product search is temporarily unavailable. Please try again." },
-    });
+    }, "provider bad response");
   }
 
   if (!upstream.ok) {
