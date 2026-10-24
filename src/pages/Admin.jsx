@@ -994,7 +994,10 @@ export default function Admin() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const { signOut } = useAuth();
-  const tabKey = params.get("tab") || "dashboard";
+  // unknown ?tab values used to render an empty shell; deep links fall back
+  const TAB_KEYS = ["dashboard", "reports", "gadgets", "categories", "reviews", "users", "integrations", "site"];
+  const rawTab = params.get("tab") || "dashboard";
+  const tabKey = TAB_KEYS.includes(rawTab) ? rawTab : "dashboard";
   const tab = (t) => setParams({ tab: t });
   // Real reviews from the database (never the fixture). Loaded on mount.
   const [reviews, setReviews] = useState([]);
