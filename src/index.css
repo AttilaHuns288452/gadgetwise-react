@@ -27,7 +27,7 @@
   --color-line-strong: #cdd4de;
   --color-hero: #14213a;
   --color-on-hero: #f4f6fa;
-  --color-on-hero2: #b9c3d6;
+  --color-on-hero2: #c6d1e0;
 
   --font-display: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Spline Sans Mono", "Noto Sans Mono", "DejaVu Sans Mono", "Consolas", monospace;
@@ -155,7 +155,7 @@
 
 /* product grids: an entrance that cascades like piano keys — each card takes
    its own beat instead of everything landing together after the 6th child */
-.stagger > * { animation: fade-up 320ms var(--ease-out, ease) both; }
+.stagger > * { animation: fade-up 460ms var(--ease-out, ease) both; }
 .stagger > *:nth-child(2)  { animation-delay: 55ms; }
 .stagger > *:nth-child(3)  { animation-delay: 110ms; }
 .stagger > *:nth-child(4)  { animation-delay: 165ms; }
@@ -188,12 +188,12 @@
    navigation and the entrance actually replays (a persistent element only
    ever animated once). Transform + opacity only; short enough to never delay
    reading or interaction. */
-@keyframes route-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.route-enter { animation: route-enter 220ms var(--ease-out, ease) both; }
+@keyframes route-enter { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.route-enter { animation: route-enter 360ms var(--ease-out, ease) both; }
 
 /* first paint: the chrome settles in once, never on rerenders */
-@keyframes chrome-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.site-header { animation: chrome-in 320ms var(--ease-out, ease) both; }
+@keyframes chrome-in { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+.site-header { animation: chrome-in 420ms var(--ease-out, ease) both; }
 
 /* ---- Motion system: restrained, transform/opacity only, one easing family ---- */
 :root {
@@ -203,7 +203,7 @@
   --dur: 250ms;
   --dur-slow: 450ms;
 }
-@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 

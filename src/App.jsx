@@ -196,7 +196,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
       {!isAdminRoute && (
-      <header className="site-header sticky top-0 z-20 border-b border-line bg-white">
+      <header className="site-header sticky top-0 z-20 border-b border-[#E7DFCF] bg-[#FBFAF6] shadow-[0_1px_0_rgba(217,164,65,0.25)]">
         <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-3 px-6 lg:flex-nowrap lg:px-12 2xl:px-16 py-4">
           {/* logo */}
           <Link to="/" className="order-1 flex min-w-0 shrink-0 items-center gap-2">
@@ -287,8 +287,11 @@ export default function App() {
                     to={href}
                     end={href === "/"}
                     className={({ isActive }) =>
-                      `inline-block rounded-lg px-3.5 py-2 ${
-                        isActive ? "bg-[#EFF6FF] text-[#2563EB]" : "text-ink2 hover:text-[#2563EB]"
+                      `inline-block rounded-lg px-3.5 py-2 transition-colors ${
+                        // gold hairline marks the route you are on
+                        isActive
+                          ? "border-b-2 border-[#D9A441] bg-[#FAF1DE] text-[#2563EB]"
+                          : "text-ink2 hover:text-[#2563EB] hover:bg-[#F6F1E6]"
                       }`
                     }
                   >

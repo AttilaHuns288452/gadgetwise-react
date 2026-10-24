@@ -47,10 +47,10 @@ function Hero() {
             <Link to="/recommend" className={btnPrimaryCls}>Find my gadget</Link>
             <Link to="/gadgets" className="rounded-lg border border-white/70 px-7 py-2.5 text-base font-semibold text-white transition-colors hover:bg-white/10">Browse gadgets</Link>
           </div>
-          <ul className="anim-fade-up mt-9 grid gap-3 text-base text-on-hero2 sm:grid-cols-3" style={{ animationDelay: "280ms" }}>
-            {['Ownership cost on every tag', 'Warranty & repair paths surfaced', 'Scores show their math'].map((t) => (
+          <ul className="anim-fade-up mt-9 grid items-start gap-x-6 gap-y-3 text-sm text-on-hero2 sm:grid-cols-3" style={{ animationDelay: "280ms" }}>
+            {['Ownership cost on every tag', 'Warranty & repair paths', 'Scores show their math'].map((t) => (
               <li key={t} className="flex items-start gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fb0ec" strokeWidth="2" className="mt-[3px] shrink-0" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D9A441" strokeWidth="2" className="mt-[3px] shrink-0" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M8 12.5l2.5 2.5 5-5.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
