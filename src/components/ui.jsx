@@ -282,12 +282,12 @@ export function GadgetCard({ g, compare, onCompare }) {
           {g.brand && g.brand !== "Unknown" && (
             <div className="text-xs font-semibold uppercase tracking-wide text-ink3">{g.brand}</div>
           )}
-          <a href={`#/g/${g.id}`} title={g.model} className="line-clamp-2 min-h-[3.85rem] text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
+          <a href={`#/g/${g.id}`} title={g.model} className="line-clamp-2 h-[3.1rem] overflow-hidden text-lg font-semibold leading-snug text-ink hover:text-primary [overflow-wrap:anywhere]">
             {g.model}
           </a>
         </div>
         <Stars rating={g.rating} count={g.reviewCount} />
-        <div><Oidx g={g} /></div>
+        <div className="self-start"><Oidx g={g} /></div>
         {g.goodFor?.length > 0 && (
           <p className="text-sm text-ink2">
             <b className="font-semibold text-ink">Best for:</b> {g.goodFor.slice(0, 2).join(" + ")}

@@ -36,20 +36,20 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 
-  /* coherent app scale: larger desktop UI, unchanged mobile density */
-  --text-xs: calc(0.875rem * var(--ui-scale, 1));
-  --text-sm: calc(1rem * var(--ui-scale, 1));
-  --text-base: calc(1.125rem * var(--ui-scale, 1));
-  --text-lg: calc(1.25rem * var(--ui-scale, 1));
-  --text-xl: calc(1.5rem * var(--ui-scale, 1));
-  --text-2xl: calc(1.875rem * var(--ui-scale, 1));
-  --text-3xl: calc(2.375rem * var(--ui-scale, 1));
-  --text-4xl: calc(2.75rem * var(--ui-scale, 1));
+  /* Type scale. Standard desktop sizes: the old tokens sat one step high and
+     were then multiplied by a desktop --ui-scale, which made the public site
+     read as browser-zoomed next to the admin panel's fixed px sizing. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
 }
 
 :root { --ui-scale: 1; }
-@media (min-width: 1024px) { :root { --ui-scale: 1.1; } }
-@media (min-width: 1700px) { :root { --ui-scale: 1.16; } }
 
 @layer base {
   body {
@@ -61,8 +61,8 @@
   }
   h1, h2, h3 { letter-spacing: -0.015em; }
   /* type contract (css/styles.css in the prototype), display sizes raised 2026-10 for 1080p */
-  h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
-  h2 { font-size: clamp(1.75rem, 2.6vw, 2.375rem); font-weight: 700; line-height: 1.15; }
+  h1 { font-size: clamp(2.125rem, 3.6vw, 3rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; text-wrap: balance; }
+  h2 { font-size: clamp(1.5rem, 2.2vw, 2rem); font-weight: 700; line-height: 1.15; }
   h3 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 }
 
@@ -113,7 +113,8 @@
   .oidx b {
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 1.75rem;
+    /* the score is a secondary metric: it must not out-anchor the price */
+    font-size: 1.25rem;
     color: var(--color-primary-dark);
     line-height: 1;
   }
