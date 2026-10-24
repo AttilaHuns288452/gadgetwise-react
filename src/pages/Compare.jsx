@@ -144,7 +144,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
   const rows = rowsFor(list);
 
   return (
-    <main className="mx-auto w-full max-w-none px-6 lg:px-12 2xl:px-16 pb-24 pt-10">
+    <section className="mx-auto w-full max-w-none px-6 lg:px-12 2xl:px-16 pb-24 pt-10">
       <h1 className="text-[calc(32px*var(--tscale,1))] font-extrabold leading-tight">Compare Gadgets</h1>
       <p className="mt-2 max-w-[640px] text-ink2">
         Two to four gadgets side by side. Meaningful differences are highlighted — near-ties stay quiet, so the table
@@ -313,6 +313,6 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
           })()}
         </>
       )}
-    </main>
+    </section>
   );
 }

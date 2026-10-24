@@ -686,9 +686,9 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
                     <button className="rounded-md bg-[#111827] px-3 py-1.5 text-[13px] font-semibold text-white disabled:bg-[#D0D5DD] disabled:text-[#98A2B3]"
-                      disabled={r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
-                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7]"
-                      onClick={() => setStatus(r.id, "rejected")}>Reject</button>
+                      disabled={busy === r.id || r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
+                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7] disabled:opacity-50"
+                      disabled={busy === r.id} onClick={() => setStatus(r.id, "rejected")}>Reject</button>
                     <button className={iconBtn} title="Edit" onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
                     <button className={iconBtn} title="Delete" onClick={() => setDel(r)}><Ico n="trash" /></button>
                   </div>
@@ -796,6 +796,18 @@ function Users() {
     };
   }, [reload]);
 
+  // Privilege grants are consequential: confirm first. Sign-out too.
+  const [grantTarget, setGrantTarget] = useState(null);
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [outBusy, setOutBusy] = useState(false);
+  const [outError, setOutError] = useState(null);
+  const doSignOut = async () => {
+    setOutBusy(true); setOutError(null);
+    const res = await signOut().catch((e) => ({ error: e }));
+    if (res && res.error) { setOutError("Could not sign out. Please try again."); setOutBusy(false); return; }
+    setOutBusy(false); setConfirmOut(false);
+    nav("/");
+  };
   const grantAdmin = async (u) => {
     setRoleBusy(true);
     const result = await setUserRole(u.id, true);
@@ -873,7 +885,7 @@ function Users() {
                       </button>
                     )
                   ) : (
-                    <button className={iconBtn} title="Make admin" disabled={roleBusy} onClick={() => grantAdmin(u)}>
+                    <button className={iconBtn} title="Make admin" aria-label={`Make ${u.email} an admin`} disabled={roleBusy} onClick={() => setGrantTarget(u)}>
                       <Ico n="user" />
                     </button>
                   )}
@@ -1083,7 +1095,28 @@ export default function Admin() {
   };
 
   return (
-    <Shell tabKey={tabKey} tab={tab} onOut={async () => { await signOut(); nav("/"); }}>
+    <Shell tabKey={tabKey} tab={tab} onOut={() => setConfirmOut(true)}>
+      {confirmOut && (
+        <ConfirmDialog
+          title="Sign out of GadgetWise?"
+          message="Are you sure you want to sign out of the admin console?"
+          confirmLabel="Sign Out"
+          busy={outBusy}
+          error={outError}
+          onConfirm={doSignOut}
+          onClose={() => { if (!outBusy) { setConfirmOut(false); setOutError(null); } }}
+        />
+      )}
+      {grantTarget && (
+        <ConfirmDialog
+          title="Grant admin access?"
+          message={<span>Give <b>{grantTarget.email}</b> full admin access to the console? They will be able to manage products, categories, reviews and settings.</span>}
+          confirmLabel="Grant admin"
+          busy={roleBusy}
+          onConfirm={async () => { const u = grantTarget; setGrantTarget(null); await grantAdmin(u); }}
+          onClose={() => { if (!roleBusy) setGrantTarget(null); }}
+        />
+      )}
       {tabKey === "dashboard" && (
         <Dashboard tab={tab} stats={stats} pendingRows={reviews.filter((r) => r.status === "pending")} />
       )}

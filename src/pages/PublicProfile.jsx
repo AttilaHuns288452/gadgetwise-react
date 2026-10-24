@@ -104,9 +104,9 @@ export default function PublicProfile() {
                       )}
                     </div>
                   </div>
-                  {m.text ? <p className="mt-2 text-ink2">{m.text}</p> : null}
+                  {r.text ? <p className="mt-2 text-ink2">{r.text}</p> : null}
                   <div className="mt-3">
-                    <ReviewVotes review={m} />
+                    <ReviewVotes review={r} />
                   </div>
                   </article>
               ))}

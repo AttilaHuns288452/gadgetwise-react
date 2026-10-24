@@ -250,7 +250,7 @@ function GadgetDetail({ compare, onCompare }) {
     setText("");
     setRating(5);
     if (!res.ok) {
-      toast("Could not save review: " + res.error);
+      toast("Could not save review: " + res.error, "alert");
       return;
     }
     toast(
@@ -291,11 +291,17 @@ function GadgetDetail({ compare, onCompare }) {
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => wish.toggle(g.id)}
+              onClick={async () => {
+                const wasSaved = wish.has(g.id);
+                const res = await wish.toggle(g.id);
+                if (res && res.gated) return; // auth prompt shown; nothing changed
+                if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
+                else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
+              }}
               aria-pressed={wish.has(g.id)}
               className={wish.has(g.id) ? "btn-primary" : "btn-ghost"}
             >
-              Add to Wishlist
+              {wish.has(g.id) ? "In your Wishlist" : "Add to Wishlist"}
             </button>
             <button
               type="button"
@@ -441,7 +447,7 @@ function GadgetDetail({ compare, onCompare }) {
 
           {/* Specifications (frame: collapsed accordion) */}
           <div className="mt-8">
-            <Disclose title="Warranty &amp; repair">
+            <Disclose title="Warranty & repair">
               {/* specs live in the Specifications tab; this accordion is warranty only */}
               <div className="card mt-6 p-6">
                 <dl className="mt-4">

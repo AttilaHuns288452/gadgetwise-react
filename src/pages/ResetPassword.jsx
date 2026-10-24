@@ -1,6 +1,6 @@
 /**
  * Password recovery, same tab, one page: email -> check inbox -> enter the
- * 6-digit code -> set a new password -> done -> sign in.
+ * 8-digit code -> set a new password -> done -> sign in.
  *
  * The code is verified by Supabase (verifyOtp, type "recovery"). Nothing here
  * decides whether a code is valid, and no code is ever stored: the flow only

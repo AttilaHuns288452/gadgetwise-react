@@ -261,16 +261,21 @@ export function useWishlist() {
   return {
     ids,
     has: (id) => ids.has(id),
-    // returns true only when the save actually changed
-    toggle: (id) => {
+    // returns {ok, error?, gated?}. The DB mirror is AWAITED and its result
+    // reported: claiming "Added to wishlist" before the write lands is a
+    // false success when the sync fails.
+    toggle: async (id) => {
       // Account-gated: favourites are user data, so a guest must sign in first.
-      if (!requireAuth("save gadgets to your wishlist")) return false;
+      if (!requireAuth("save gadgets to your wishlist")) return { ok: false, gated: true };
       const s = _wishRead(_wishKey(uid));
       s.has(id) ? s.delete(id) : s.add(id);
       _wishLocalSeq += 1;
       _wishWrite(s, _wishKey(uid));
-      if (uid) syncWishlist(uid, [...s]); // mirror to DB; RLS enforces ownership
-      return true;
+      if (uid) {
+        const res = await syncWishlist(uid, [...s]).catch((e) => ({ ok: false, error: String(e) })); // mirror to DB; RLS enforces ownership
+        if (res && res.ok === false) return { ok: false, error: res.error };
+      }
+      return { ok: true };
     },
   };
 }
@@ -336,11 +341,12 @@ export function GadgetCard({ g, compare, onCompare, i }) {
             <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const wasSaved = wish.has(g.id);
-                const changed = wish.toggle(g.id);
-                // never claim a save that did not happen (guests are gated)
-                if (changed) toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
+                const res = await wish.toggle(g.id);
+                if (res && res.gated) return; // auth prompt shown; nothing changed
+                if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
+                else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
               }}
               aria-pressed={wish.has(g.id)}
               aria-label={wish.has(g.id) ? "Remove from wishlist" : "Add to wishlist"}

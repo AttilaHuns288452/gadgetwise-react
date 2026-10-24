@@ -352,7 +352,7 @@ export function useAuth() {
     const clean = String(email || "").trim();
     const code = String(token || "").trim();
     if (!clean) return { error: { message: "Enter your email address." } };
-    if (!code) return { error: { message: "Enter the 6-digit code from your email." } };
+    if (!code) return { error: { message: "Enter the 8-digit code from your email." } };
     const { data, error } = await supabase.auth.verifyOtp({
       email: clean,
       token: code,
@@ -380,11 +380,17 @@ export function useAuth() {
   }, []);
 
   const signOut = useCallback(async () => {
-    if (supabaseConfigured) await supabase.auth.signOut();
+    if (supabaseConfigured) {
+      // surface the real result: a failed logout must not look like a
+      // successful one. The SDK returns {error}; we used to discard it.
+      const res = await supabase.auth.signOut().catch((e) => ({ error: e }));
+      if (res && res.error) return { error: res.error };
+    }
     setUser(null);
     // A sign-out ends any recovery session with it.
     _recoveryActive = false;
     setRecovery(recoveryFlowActive());
+    return { error: null };
   }, []);
 
   return { user, ready, admin, adminChecked, recovery, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut, requestRecoveryCode, verifyRecoveryCode, setNewPassword };

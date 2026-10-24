@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { loadRecommendations, deleteRecommendation, loadMyProfile, saveMyProfile, uploadAvatar, removeAvatar } from "../lib/store.js";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
-import { GadgetCard, useWishlist, useToast, Modal, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
+import { GadgetCard, useWishlist, useToast, Modal, ConfirmDialog, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 import { readCompareHistory } from "./ComparisonHistory.jsx";
 
@@ -110,9 +110,29 @@ export default function Profile({ compare, onCompare }) {
     return () => { alive = false; };
   }, [user, configured]);
 
-  const removeRecommendation = async (id) => {
-    const result = await deleteRecommendation(user?.id, id);
-    if (result.ok) setRecommendations((rows) => rows.filter((r) => r.id !== id));
+  // Destructive: confirm the removal and report the real result.
+  const [remTarget, setRemTarget] = useState(null); // {id, title}
+  const [remBusy, setRemBusy] = useState(false);
+  const [remError, setRemError] = useState(null);
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [outBusy, setOutBusy] = useState(false);
+  const [outError, setOutError] = useState(null);
+  const removeRecommendation = async () => {
+    if (!remTarget) return;
+    setRemBusy(true); setRemError(null);
+    const result = await deleteRecommendation(user?.id, remTarget.id).catch((e) => ({ ok: false, error: String(e) }));
+    setRemBusy(false);
+    if (!result.ok) { setRemError(result.error || "Could not remove this run"); return; }
+    setRecommendations((rows) => rows.filter((r) => r.id !== remTarget.id));
+    setRemTarget(null);
+    toast("Recommendation run removed");
+  };
+  const doSignOut = async () => {
+    setOutBusy(true); setOutError(null);
+    const res = await signOut().catch((e) => ({ error: e }));
+    if (res && res.error) { setOutError("Could not sign out. Please try again."); setOutBusy(false); return; }
+    setOutBusy(false); setConfirmOut(false);
+    navigate("/");
   };
 
   const openEdit = () => {
@@ -215,21 +235,41 @@ export default function Profile({ compare, onCompare }) {
 
           <div className="mt-5 space-y-2 border-t border-line pt-5">
             {toastNode}
-            <Link to="/review-history" className="btn-outline flex w-full items-center justify-center gap-2">
+            {remTarget && (
+              <ConfirmDialog
+                title="Remove this recommendation run?"
+                message={<span>Permanently remove the run “{remTarget.title || "Untitled"}”? This cannot be undone.</span>}
+                confirmLabel="Remove"
+                danger
+                busy={remBusy}
+                error={remError}
+                onConfirm={removeRecommendation}
+                onClose={() => { if (!remBusy) { setRemTarget(null); setRemError(null); } }}
+              />
+            )}
+            {confirmOut && (
+              <ConfirmDialog
+                title="Sign out of GadgetWise?"
+                message="Are you sure you want to sign out of your account?"
+                confirmLabel="Sign Out"
+                busy={outBusy}
+                error={outError}
+                onConfirm={doSignOut}
+                onClose={() => { if (!outBusy) { setConfirmOut(false); setOutError(null); } }}
+              />
+            )}
+            <Link to="/review-history" className={btnOutlineCls + " flex w-full items-center justify-center gap-2"}>
               <DocIcon /> Review history
             </Link>
-            <Link to="/compare-history" className="btn-outline flex w-full items-center justify-center gap-2">
+            <Link to="/compare-history" className={btnOutlineCls + " flex w-full items-center justify-center gap-2"}>
               <ClockIcon /> Comparison history
             </Link>
-            <Link to="/wishlist" className="btn-outline flex w-full items-center justify-center gap-2">
+            <Link to="/wishlist" className={btnOutlineCls + " flex w-full items-center justify-center gap-2"}>
               <HeartOutlineIcon /> Wishlist
             </Link>
             <button
               type="button"
-              onClick={async () => {
-                await signOut();
-                navigate("/");
-              }}
+              onClick={() => setConfirmOut(true)}
               className="mt-2 flex w-full items-center justify-center gap-2 text-sm font-semibold text-[#2563EB] hover:underline"
             >
               <ExitIcon /> Sign out
@@ -306,7 +346,7 @@ export default function Profile({ compare, onCompare }) {
                     <p className="mt-1 text-sm text-ink2">For {run.use_case} · {new Date(run.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</p>
                     <p className="mt-3 text-sm text-ink3">{(run.result_titles || []).slice(0, 3).join(" · ")}</p>
                   </div>
-                  <button type="button" onClick={() => removeRecommendation(run.id)} className="shrink-0 text-sm font-semibold text-ink3 hover:text-red-700">Remove</button>
+                  <button type="button" onClick={() => setRemTarget({ id: run.id, title: run.use_case })} className="shrink-0 text-sm font-semibold text-ink3 hover:text-red-700">Remove</button>
                 </article>
               ))}
             </div>
