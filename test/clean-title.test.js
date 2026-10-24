@@ -19,6 +19,14 @@ test("whitespace is collapsed and full-width parens normalized", () => {
   assert.equal(GW.cleanTitle("  Pixel   9  （ 8GB ）  "), "Pixel 9 ( 8GB )");
 });
 
+test("getCategory never returns null so .name reads cannot blank a page", () => {
+  assert.equal(typeof GW.getCategory("does-not-exist").name, "string");
+  assert.equal(GW.getCategory("does-not-exist").name, "does-not-exist");
+  assert.equal(GW.getCategory(undefined).name, "Other");
+  // known categories still resolve normally
+  assert.ok(GW.getCategory("smartphones").name.length > 0);
+});
+
 test("displayName keeps the brand exactly once", () => {
   const g = { brand: "Xiaomi", model: "Xiaomi REDMI Turbo 5 Max" };
   assert.equal(GW.displayName(g), "Xiaomi REDMI Turbo 5 Max");

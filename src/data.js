@@ -72,7 +72,12 @@ GW.getGadget = function (id) {
   return GW.listingResolver ? GW.listingResolver(id) : null;
 };
 
-GW.getCategory = function (id) { return GW.categories.find(c => c.id === id) || null; };
+GW.getCategory = function (id) {
+  const found = GW.categories.find((c) => c.id === id);
+  // Never null: every caller renders .name straight off this lookup, and an
+  // incomplete listing (missing or unknown category) used to blank whole pages.
+  return found || { id: id || "", name: id ? String(id) : "Other" };
+};
 
 GW.gadgetsInCategory = function (catId) { return GW.gadgets.filter(g => g.category === catId); };
 

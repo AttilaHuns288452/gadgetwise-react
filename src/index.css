@@ -153,6 +153,14 @@
 .hover-lift:hover .card-media img { transform: scale(1.09); }
 .hover-lift:active .card-media img { transform: scale(1.03); }
 
+/* Reusable entrance. Any element can join a sequence: give it `anim-in` and
+   set `--i` to its position. One rule serves every route instead of
+   per-page animation classes with hand-written delays. */
+.anim-in {
+  animation: fade-up var(--dur-in, 620ms) var(--ease-out, ease) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger, 110ms));
+}
+
 /* product grids: an entrance that cascades like piano keys — each card takes
    its own beat instead of everything landing together after the 6th child */
 .stagger > * { animation: fade-up 620ms var(--ease-out, ease) both; }
@@ -186,9 +194,12 @@
 
 /* Route continuity. The class sits on a keyed <main>, so it remounts per
    navigation and the entrance actually replays (a persistent element only
-   ever animated once). Transform + opacity only; short enough to never delay
-   reading or interaction. */
-@keyframes route-enter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+   ever animated once). */
+/* Route continuity. Transform ONLY: the page's own children carry the opacity
+   choreography, and a fading parent multiplies against every child opacity
+   (child on screen = parent x child), which turns a clean stagger into one
+   muddy combined fade that reads as "popping". */
+@keyframes route-enter { from { transform: translateY(30px); } to { transform: none; } }
 .route-enter { animation: route-enter 520ms var(--ease-out, ease) both; }
 
 /* first paint: the chrome settles in once, never on rerenders */

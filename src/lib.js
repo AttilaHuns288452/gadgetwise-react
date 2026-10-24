@@ -323,7 +323,9 @@ export function enrich(g) {
     out.push({
       id: "priceCompetitiveness", label: "Price competitiveness", value: pct, unit: "%",
       status: "calculated",
-      method: `Priced at or below ${pct}% of ${n} ${g.category.toLowerCase()} listings`,
+      // a gadget may carry no category (incomplete listing); never let the
+      // metric text throw and blank the whole detail page
+      method: `Priced at or below ${pct}% of ${n} ${String(g.category || "product").toLowerCase()} listings`,
       note: "Relative price position only, not product quality.",
     });
   } else {
