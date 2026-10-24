@@ -27,6 +27,18 @@ function niceTicks(min, max, n = 5) {
   return out;
 }
 
+// Decade ticks for log axes (raw values back out). 2x/5x marks fill in when
+// the visible range is narrow.
+function logTicks(lo, hi) {
+  const out = [];
+  const dense = hi - lo < 2.5;
+  for (let e = Math.ceil(lo); e <= hi + 1e-9; e++) {
+    out.push(10 ** e);
+    if (dense) out.push(2 * 10 ** e, 5 * 10 ** e);
+  }
+  return out.filter((v) => Math.log10(v) >= lo - 1e-9 && Math.log10(v) <= hi + 1e-9);
+}
+
 export default function ParetoExplorer() {
   const [xKey, setXKey] = useState("price");
   const [yKey, setYKey] = useState("rating");
@@ -70,12 +82,22 @@ export default function ParetoExplorer() {
   const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
   const xMin = xs.length ? Math.min(...xs) : 0, xMax = xs.length ? Math.max(...xs) : 1;
   const yMin = ys.length ? Math.min(...ys) : 0, yMax = ys.length ? Math.max(...ys) : 1;
-  const padX = (xMax - xMin) * 0.08 || 1, padY = (yMax - yMin) * 0.12 || 1;
-  const dx0 = xMin - padX, dx1 = xMax + padX, dy0 = yMin - padY, dy1 = yMax + padY;
+  // Price-like axes span orders of magnitude (₱293 … ₱139,990): a linear
+  // scale smashes ~90% of the dots against the left edge. Log positions for
+  // those axes; ratings/percentages stay linear.
+  const logish = (k) => k === "price" || k === "monthly" || k === "reviewCount";
+  const logX = logish(xKey) && xMin > 0, logY = logish(yKey) && yMin > 0;
+  const tx = (v) => (logX ? Math.log10(Math.max(v, 1)) : v);
+  const ty = (v) => (logY ? Math.log10(Math.max(v, 1)) : v);
+  const X0 = tx(xMin), X1 = tx(xMax), Y0 = ty(yMin), Y1 = ty(yMax);
+  const padX = (X1 - X0) * 0.06 || 1, padY = (Y1 - Y0) * 0.10 || 1;
+  const dx0 = X0 - padX, dx1 = X1 + padX, dy0 = Y0 - padY, dy1 = Y1 + padY;
   const W = 760, H = 460, padL = 72, padR = 28, padT = 28, padB = 60;
   const iw = W - padL - padR, ih = H - padT - padB;
-  const sx = (v) => padL + ((v - dx0) / (dx1 - dx0)) * iw;
-  const sy = (v) => padT + (1 - (v - dy0) / (dy1 - dy0)) * ih;
+  const sx = (v) => padL + ((tx(v) - dx0) / (dx1 - dx0)) * iw;
+  const sy = (v) => padT + (1 - (ty(v) - dy0) / (dy1 - dy0)) * ih;
+  const xTicks = logX ? logTicks(dx0, dx1) : niceTicks(dx0, dx1);
+  const yTicks = logY ? logTicks(dy0, dy1) : niceTicks(dy0, dy1);
 
   // "Most attractive quadrant": the corner where BOTH objectives are better
   // (lower for min-direction, higher for max-direction), split at the median.
@@ -104,12 +126,12 @@ export default function ParetoExplorer() {
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">X axis
           <select value={xKey} onChange={(e) => setXKey(e.target.value)} className="field min-w-0 !w-auto max-w-[13rem] !py-1.5">
-            {X_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
+            {X_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} {OBJECTIVES[k].direction === "min" ? "↓" : "↑"}</option>)}
           </select>
         </label>
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Y axis
           <select value={yKey} onChange={(e) => setYKey(e.target.value)} className="field min-w-0 !w-auto max-w-[13rem] !py-1.5">
-            {Y_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
+            {Y_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} {OBJECTIVES[k].direction === "min" ? "↓" : "↑"}</option>)}
           </select>
         </label>
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Category
@@ -154,27 +176,35 @@ export default function ParetoExplorer() {
         <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1100px] overflow-hidden" role="img"
           aria-label={`Scatter plot of ${xo.label} versus ${yo.label} with Pareto frontier`}>
-          {/* most attractive quadrant */}
-          <rect x={quad.x} y={quad.y} width={Math.max(0, quad.w)} height={Math.max(0, quad.h)} fill="#dcfce7" opacity="0.5" />
-          <text x={quad.x + 8} y={quad.y + 16} fontSize="11" fill="#15803d">Most attractive quadrant</text>
+          {/* better-half quadrant: median splits as dashed lines so the box
+              has a visible, explained boundary */}
+          <rect x={quad.x} y={quad.y} width={Math.max(0, quad.w)} height={Math.max(0, quad.h)} fill="#dcfce7" opacity="0.75" />
+          <line x1={sx(medX)} x2={sx(medX)} y1={padT} y2={H - padB} stroke="#94a3b8" strokeDasharray="3 4" opacity="0.6" />
+          <line x1={padL} x2={W - padR} y1={sy(medY)} y2={sy(medY)} stroke="#94a3b8" strokeDasharray="3 4" opacity="0.6" />
+          <text x={sx(medX) + 4} y={H - padB - 5} fontSize="9" fill="#8a97a8">median {fmt(xKey, medX)}</text>
+          <text x={W - padR - 4} y={sy(medY) - 4} fontSize="9" fill="#8a97a8" textAnchor="end">median {fmt(yKey, medY)}</text>
+          <text x={quad.x + quad.w - 8} y={quad.y + quad.h - 10} textAnchor="end" fontSize="11" fontWeight="600" fill="#15803d">Better half on both axes</text>
 
           {/* gridlines + ticks */}
-          {niceTicks(dy0, dy1).map((v) => (
+          {yTicks.map((v) => (
             <g key={"y" + v}>
               <line x1={padL} x2={W - padR} y1={sy(v)} y2={sy(v)} stroke="#e3e7ed" />
               <text x={padL - 8} y={sy(v) + 4} textAnchor="end" fontSize="10" fill="#64748b">{fmt(yKey, v)}</text>
             </g>
           ))}
-          {niceTicks(dx0, dx1).map((v) => (
-            <text key={"x" + v} x={sx(v)} y={H - 34} textAnchor="middle" fontSize="10" fill="#64748b">{fmt(xKey, v)}</text>
+          {xTicks.map((v) => (
+            <g key={"x" + v}>
+              <line x1={sx(v)} x2={sx(v)} y1={padT} y2={H - padB} stroke="#e3e7ed" />
+              <text x={sx(v)} y={H - 34} textAnchor="middle" fontSize="10" fill="#64748b">{fmt(xKey, v)}</text>
+            </g>
           ))}
 
-          {/* axis labels with direction */}
-          <text x={padL - 48} y={padT + ih / 2} fontSize="11" fill="#3e4c61" transform={`rotate(-90 ${padL - 48} ${padT + ih / 2})`} textAnchor="middle">
-            {yo.label} — {yo.direction === "max" ? "higher is better ↑" : "lower is better ↓"}
+          {/* axis labels with direction (horizontal: rotated text is slow to parse) */}
+          <text x={padL} y={16} fontSize="11" fontWeight="600" fill="#3e4c61">
+            {yo.label} {yo.direction === "max" ? "↑ higher is better" : "↓ lower is better"}
           </text>
-          <text x={padL + iw / 2} y={H - 10} fontSize="11" fill="#3e4c61" textAnchor="middle">
-            {xo.label} — {xo.direction === "min" ? "lower is better ↓" : "higher is better ↑"}
+          <text x={padL + iw / 2} y={H - 10} fontSize="11" fontWeight="600" fill="#3e4c61" textAnchor="middle">
+            {xo.label} {xo.direction === "min" ? "↓ lower is better" : "↑ higher is better"}{logX ? " · log scale" : ""}
           </text>
 
           {/* Pareto line through frontier points */}
@@ -184,15 +214,17 @@ export default function ParetoExplorer() {
 
           {/* points: dominated first so frontier draws on top */}
           {pts.filter((p) => !frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
-              <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={5} fill="#14213a" fillOpacity="0.55" />
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+              <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={4} fill="#14213a" fillOpacity="0.32" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
             </Link>
           ))}
           {pts.filter((p) => frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
-              <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={7} fill="#c2872f" stroke="#fff" strokeWidth="1.5" />
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+              <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="#c2872f" fillOpacity="0.16" />
+              <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={8} fill="#c2872f" stroke="#fff" strokeWidth="2" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
+              <text x={sx(p.x) + 12} y={sy(p.y) - 10} fontSize="10" fontWeight="600" fill="#8a5c12" stroke="#fff" strokeWidth="3" paintOrder="stroke">{fmt(xKey, p.x)} · {fmt(yKey, p.y)}</text>
             </Link>
           ))}
         </svg>
@@ -205,10 +237,10 @@ export default function ParetoExplorer() {
           if (!g) return null;
           return (
             <div className="pointer-events-none absolute z-10 w-[230px] rounded-lg border border-line-strong bg-white p-3 shadow-lg"
-              style={{ left: Math.min(hov.x + 14, 420), top: Math.max(8, hov.y - 84) }}>
+              style={{ left: `min(calc(${(hov.x / W) * 100}% + 14px), calc(100% - 244px))`, top: `max(8px, calc(${(hov.y / H) * 100}% - 84px))` }}>
               <p className="font-semibold text-ink">{GW.displayName(g)}</p>
-              <p className="mt-1 text-sm text-ink2">{xo.label}: <b className="mono">{fmt(xKey, hov.x)}</b></p>
-              <p className="text-sm text-ink2">{yo.label}: <b className="mono">{fmt(yKey, hov.y)}</b></p>
+              <p className="mt-1 text-sm text-ink2">{xo.label}: <b className="mono">{fmt(xKey, hov.vx)}</b></p>
+              <p className="text-sm text-ink2">{yo.label}: <b className="mono">{fmt(yKey, hov.vy)}</b></p>
               <p className={`mt-1 text-xs font-semibold ${isP ? "text-[#c2872f]" : "text-ink3"}`}>{isP ? "On the frontier" : "Dominated"} · click for details</p>
             </div>
           );
@@ -220,7 +252,7 @@ export default function ParetoExplorer() {
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink2">
         <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#c2872f]" />Frontier (nothing beats it on both axes)</span>
         <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#14213a] opacity-60" />Dominated</span>
-        <span className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-sm bg-[#dcfce7]" />Most attractive quadrant</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-sm bg-[#dcfce7]" />Better half on both axes (median split)</span>
       </div>
       <p className="mt-1.5 max-w-[70ch] text-sm text-ink3">
         A product is on the <b>Pareto frontier</b> when no other in-scope product is at least as good on both axes and strictly better on one. The green quadrant is simply the better half on each axis — a hint, not a ranking. Products missing either value are excluded rather than guessed.
