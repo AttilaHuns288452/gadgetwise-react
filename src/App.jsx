@@ -234,11 +234,8 @@ export default function App() {
             {!ready ? null : user ? (
               // Signed in: real initials, role, and a sign-out affordance.
               <div className="flex items-center gap-1">
-                {isAdminUser && (
-                  <span className="rounded-full bg-[#EFF6FF] px-2 py-0.5 text-xs font-semibold text-[#2563EB]">
-                    Admin
-                  </span>
-                )}
+                {/* role already reads from the Admin button; a second badge was
+                    duplicate chrome that crowded the mobile header */}
                 <Link
                   to="/profile"
                   aria-label="Profile"
