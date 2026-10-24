@@ -34,14 +34,14 @@ function Hero() {
           <h1 className="anim-fade-up font-display text-[clamp(38px,5vw,68px)] font-bold leading-[1.02] tracking-tight">
             Find the right gadget for <span className="text-star">school.</span>
           </h1>
-          <p className="anim-fade-up mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2" style={{ animationDelay: "80ms" }}>
+          <p className="anim-fade-up mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2" style={{ animationDelay: "70ms" }}>
             Compare <strong className="font-semibold text-white">verified specifications, monthly costs, and student priorities</strong> before you buy — with recommendations whose scoring you can actually read.
           </p>
-          <div className="anim-fade-up mt-7 flex flex-wrap gap-3" style={{ animationDelay: "160ms" }}>
+          <div className="anim-fade-up mt-7 flex flex-wrap gap-3" style={{ animationDelay: "140ms" }}>
             <Link to="/recommend" className={btnPrimaryCls}>Find my gadget</Link>
             <Link to="/gadgets" className="rounded-lg border border-white/70 px-7 py-2.5 text-base font-semibold text-white transition-colors hover:bg-white/10">Browse gadgets</Link>
           </div>
-          <ul className="anim-fade-up mt-9 grid gap-3 text-base text-on-hero2 sm:grid-cols-3" style={{ animationDelay: "240ms" }}>
+          <ul className="anim-fade-up mt-9 grid gap-3 text-base text-on-hero2 sm:grid-cols-3" style={{ animationDelay: "280ms" }}>
             {['Ownership cost on every tag', 'Warranty & repair paths surfaced', 'Scores show their math'].map((t) => (
               <li key={t} className="flex items-start gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fb0ec" strokeWidth="2" className="mt-[3px] shrink-0" aria-hidden="true">
@@ -54,7 +54,7 @@ function Hero() {
           </ul>
         </div>
         {g && (
-          <div className="card anim-fade-up overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]" style={{ animationDelay: "200ms" }}>
+          <div className="card anim-fade-up overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]" style={{ animationDelay: "210ms" }}>
             <div className="relative">
               <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Student favorite</span>
               <Img gadget={g} className="w-full" imgClass="object-cover" eager />
