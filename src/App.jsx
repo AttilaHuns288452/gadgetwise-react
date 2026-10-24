@@ -196,7 +196,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
       {!isAdminRoute && (
-      <header className="sticky top-0 z-20 border-b border-line bg-white">
+      <header className="site-header sticky top-0 z-20 border-b border-line bg-white">
         <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-3 px-6 lg:flex-nowrap lg:px-12 2xl:px-16 py-4">
           {/* logo */}
           <Link to="/" className="order-1 flex min-w-0 shrink-0 items-center gap-2">
@@ -361,7 +361,8 @@ export default function App() {
       </header>
       )}
 
-      <main className="flex-1">
+      {/* keyed by route so the entrance replays on navigation */}
+      <main key={pathname} className="flex-1 route-enter">
         {catalogError && needsCatalog ? (
           <CatalogErrorCard />
         ) : (

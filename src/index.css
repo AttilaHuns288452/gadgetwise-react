@@ -170,8 +170,16 @@
 }
 .pareto-g:hover .pareto-dot { transform: scale(1.4); }
 
-/* route/page continuity: one short fade, no entrance choreography */
-main.flex-1 { animation: fade-in 180ms var(--ease-out, ease) both; }
+/* Route continuity. The class sits on a keyed <main>, so it remounts per
+   navigation and the entrance actually replays (a persistent element only
+   ever animated once). Transform + opacity only; short enough to never delay
+   reading or interaction. */
+@keyframes route-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.route-enter { animation: route-enter 220ms var(--ease-out, ease) both; }
+
+/* first paint: the chrome settles in once, never on rerenders */
+@keyframes chrome-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.site-header { animation: chrome-in 320ms var(--ease-out, ease) both; }
 
 /* ---- Motion system: restrained, transform/opacity only, one easing family ---- */
 :root {
