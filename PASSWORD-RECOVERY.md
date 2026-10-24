@@ -14,16 +14,21 @@ password. No reset link, no new tab.
 
 `type: "recovery"` is what makes step 2 a password reset and not a
 passwordless sign-in. The code is never validated locally: the only thing the
-client decides is whether the input is 6 digits, so a wrong code is rejected
+client decides is whether the input is 8 digits, so a wrong code is rejected
 by Supabase, not by the app.
 
-## Required Supabase dashboard configuration
+## Supabase dashboard configuration — DONE and E2E-verified 2026-10-24
+
+Everything below is configured on the live project (custom Gmail SMTP,
+recovery template carries `{{ .Token }}`, redirect allow-list set) and the
+full email → 8-digit code → new password → sign-in flow was completed by a
+real user on production. Kept for reference.
 
 **This is the one part of the flow that cannot live in the repository.**
-Until the recovery email template is changed, Supabase mails a *reset link*
-(`{{ .ConfirmationURL }}`) and the member receives no code to type.
+Before the template was changed, Supabase mailed a *reset link*
+(`{{ .ConfirmationURL }}`) and the member received no code to type.
 
-### 1. Recovery email template (required)
+### 1. Recovery email template (configured 2026-10-24)
 
 Dashboard → **Authentication → Email Templates → Reset Password**
 
@@ -54,7 +59,7 @@ fallback link), but the code is what the app asks for.
 The **Magic Link** template keeps `{{ .ConfirmationURL }}`; it is a
 sign-in flow, not a recovery flow, and must not be changed.
 
-### 2. Redirect URLs (required)
+### 2. Redirect URLs (configured 2026-10-24)
 
 Dashboard → **Authentication → URL Configuration**
 
