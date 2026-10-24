@@ -16,7 +16,9 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
   const ph =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#F1F3F6"/><text x="200" y="155" text-anchor="middle" font-family="Arial" font-size="18" fill="#64748B">${gadget.category}</text></svg>`
+      // never interpolate a raw field: a product without a category used to
+      // render the literal text "undefined" into the image slot
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#F1F3F6"/><text x="200" y="155" text-anchor="middle" font-family="Arial" font-size="18" fill="#64748B">${gadget.category || gadget.brand || "GadgetWise"}</text></svg>`
     );
   return (
     <div

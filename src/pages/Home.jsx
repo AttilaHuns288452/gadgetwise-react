@@ -63,31 +63,40 @@ function Hero() {
           <div className="anim-fade-up flex min-w-0 flex-col gap-3" style={{ animationDelay: "680ms" }}>
             <div className="card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
               <div className="relative">
-                <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Student favorite</span>
+                <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Top rated</span>
                 <Img gadget={g} className="w-full" imgClass="object-cover" eager />
               </div>
-              <div className="flex items-center justify-between gap-3 px-5 pt-4">
-                <p className="min-w-0 truncate font-display text-lg font-bold text-ink">{GW.displayName(g)}</p>
-                <p className="mono shrink-0 text-xl font-bold text-ink">{money(g.price)}</p>
+              {/* title gets its own 2-line block; the price moves to its own
+                  row so a long listing title is never cut mid-clause */}
+              <div className="px-5 pt-4">
+                <p className="line-clamp-2 min-h-[3.25rem] font-display text-lg font-bold leading-snug text-ink">{GW.displayName(g)}</p>
+                <div className="mt-1 flex items-baseline justify-between gap-3">
+                  <p className="mono text-xl font-bold text-ink">{money(g.price)}</p>
+                  <p className="text-sm text-ink3">Total price</p>
+                </div>
               </div>
-              <div className="mt-4 flex items-center gap-3 bg-primary-wash px-5 py-3">
-                <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}</span>
-                <span className="text-sm font-medium text-ink2">Performance to Cost</span>
+              <div className="mt-3 flex items-center gap-3 bg-primary-wash px-5 py-3">
+                <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}<span className="text-sm text-ink3">/100</span></span>
+                <span className="text-sm font-medium text-ink2">Value score</span>
               </div>
             </div>
             {/* companions: real catalog entries so the hero shows range, not one
                 isolated pick. Skipped entirely when the catalog is too small. */}
             {companions.length > 0 && (
-              <div className="stagger grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {companions.map((c) => (
-                  <Link key={c.id} to={'/g/' + c.id} className="card hover-lift flex min-w-0 items-center gap-3 p-2.5">
-                    <Img gadget={c} className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line" imgClass="object-cover" frame="1 / 1" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-ink">{GW.displayName(c)}</p>
-                      <p className="mono truncate text-sm text-ink2">≈ {money(GW.monthlyCost(c))}/mo</p>
-                    </div>
-                  </Link>
-                ))}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-on-hero2">Also in the catalog</p>
+                <div className="stagger mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {companions.map((c) => (
+                    <Link key={c.id} to={'/g/' + c.id} className="card hover-lift flex min-w-0 items-center gap-3 p-2.5">
+                      <Img gadget={c} className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line" imgClass="object-cover" frame="1 / 1" />
+                      <div className="min-w-0">
+                        {/* same unit as the featured card so the three are comparable */}
+                        <p className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{GW.displayName(c)}</p>
+                        <p className="mono text-sm text-ink2">{money(c.price)}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>

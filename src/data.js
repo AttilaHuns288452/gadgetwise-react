@@ -120,9 +120,14 @@ GW.cleanTitle = (s) =>
     .trim();
 
 GW.displayName = (g) => {
-  const brand = String(g.brand || "").trim();
+  const rawBrand = String(g.brand || "").trim();
+  // marketplace placeholders are not a brand: prefixing "Unknown" onto a
+  // listing title reads as broken data, not as information
+  const placeholder = /^(unknown|no brand|n\/a|none)$/i.test(rawBrand);
+  const brand = placeholder ? "" : rawBrand;
   const model = GW.cleanTitle(g.model);
   if (!model) return g.model;
+  if (!brand) return model;
   return model.toLowerCase().startsWith(brand.toLowerCase()) ? model : `${brand} ${model}`.trim();
 };
 

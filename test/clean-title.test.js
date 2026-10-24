@@ -19,6 +19,13 @@ test("whitespace is collapsed and full-width parens normalized", () => {
   assert.equal(GW.cleanTitle("  Pixel   9  （ 8GB ）  "), "Pixel 9 ( 8GB )");
 });
 
+test("marketplace placeholder brands are never prefixed onto the name", () => {
+  assert.equal(GW.displayName({ brand: "Unknown", model: "2026 Intel Core i7 Laptop" }), "2026 Intel Core i7 Laptop");
+  assert.equal(GW.displayName({ brand: "No Brand", model: "KC15 Powerbank" }), "KC15 Powerbank");
+  // real brands are still shown exactly once
+  assert.equal(GW.displayName({ brand: "Acer", model: "SF14-51-768H Ultra 7" }), "Acer SF14-51-768H Ultra 7");
+});
+
 test("getCategory never returns null so .name reads cannot blank a page", () => {
   assert.equal(typeof GW.getCategory("does-not-exist").name, "string");
   assert.equal(GW.getCategory("does-not-exist").name, "does-not-exist");
