@@ -157,7 +157,12 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name.trim() } },
+      // confirmation links must come back to THIS deployment, not the project's
+      // default Site URL, or the email-confirmation flow lands on the wrong host
+      options: {
+        data: { full_name: name.trim() },
+        emailRedirectTo: window.location.origin + "/",
+      },
     });
     return { error, needsConfirm: Boolean(data?.user && !data?.session) };
   }, []);
@@ -166,9 +171,17 @@ export function useAuth() {
   // user follows it (the recovery session fires PASSWORD_RECOVERY).
   const resetPassword = useCallback(async (email) => {
     if (!supabaseConfigured) return notConfigured();
+    // The redirect target must NOT carry a hash fragment. Supabase appends its
+    // token to this URL, and with "#/login" in place the token lands inside the
+    // fragment where detectSessionInUrl never reads it, so the recovery session
+    // was never established. A hash-router SPA still lands on #/login afterwards.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/#/login",
+      redirectTo: window.location.origin + "/",
     });
+    if (error && /rate limit|over_email_send/i.test(error.message || "")) {
+      // raw provider text ("email rate limit exceeded") is not actionable
+      return { error: { ...error, message: "Too many reset requests. Wait about a minute, then try again." } };
+    }
     return { error };
   }, []);
 

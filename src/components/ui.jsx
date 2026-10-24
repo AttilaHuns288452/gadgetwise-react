@@ -568,13 +568,17 @@ export function Logo({ size = 20, tone = "dark", showWordmark = true, className 
 }
 
 
-/** Scroll reveal: toggles .is-visible on .reveal elements as they enter view. */
+/**
+ * Scroll reveal. Observes every `.reveal:not(.is-visible)` element, including
+ * ones that mount later (catalog sections appear only after loading finishes),
+ * which the old mount-time-only query missed and left stuck at opacity 0.
+ * A MutationObserver picks up late additions; the same IntersectionObserver
+ * handles them, so there is one observer of each kind regardless of re-renders.
+ */
 export function useReveal() {
   useEffect(() => {
-    const els = Array.from(document.querySelectorAll(".reveal:not(.is-visible)"));
-    if (!els.length) return;
     if (!("IntersectionObserver" in window)) {
-      els.forEach((e) => e.classList.add("is-visible"));
+      document.querySelectorAll(".reveal").forEach((e) => e.classList.add("is-visible"));
       return;
     }
     const io = new IntersectionObserver((entries) => {
@@ -585,10 +589,30 @@ export function useReveal() {
         }
       }
     }, { threshold: 0.08, rootMargin: "0px 0px -5% 0px" });
-    els.forEach((e) => io.observe(e));
-    // failsafe: never leave content stuck hidden if the observer misfires
-    const t = setTimeout(() => els.forEach((e) => e.classList.add("is-visible")), 2500);
-    return () => { clearTimeout(t); io.disconnect(); };
+
+    const scan = () => {
+      for (const el of document.querySelectorAll(".reveal:not(.is-visible)")) io.observe(el);
+    };
+    scan();
+
+    // sections rendered after loading (or on a route change) must animate too
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          if (node.matches?.(".reveal:not(.is-visible)")) io.observe(node);
+          node.querySelectorAll?.(".reveal:not(.is-visible)").forEach((e) => io.observe(e));
+        }
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    // failsafe: nothing may stay invisible because an observer missed it
+    const t = setTimeout(() => {
+      document.querySelectorAll(".reveal").forEach((e) => e.classList.add("is-visible"));
+    }, 2500);
+
+    return () => { clearTimeout(t); mo.disconnect(); io.disconnect(); };
   }, []);
 }
 
