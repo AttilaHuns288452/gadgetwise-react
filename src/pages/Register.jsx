@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout } from "../components/ui.jsx";
-import { useAuth, safeNext } from "../lib/auth.js";
+import { useAuth, safeNext, PASSWORD_MIN } from "../lib/auth.js";
 
 function Register() {
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ function Register() {
   const submit = async (e) => {
     e.preventDefault();
     setError(""); setNotice("");
-    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (password.length < PASSWORD_MIN) { setError(`Password must be at least ${PASSWORD_MIN} characters.`); return; }
     if (password !== confirm) { setError("The two passwords do not match."); return; }
     setBusy(true);
     const { error: err, needsConfirm } = await signUp(name, email.trim(), password);
@@ -54,13 +54,13 @@ function Register() {
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password">Password</label>
-          <PasswordField id="reg-password" minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters" />
-          <p className="mt-1.5 text-xs text-ink2">At least 8 characters. Name, email, and password are required.</p>
+          <PasswordField id="reg-password" minLength={PASSWORD_MIN} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
+            placeholder={`At least ${PASSWORD_MIN} characters`} />
+          <p className="mt-1.5 text-xs text-ink2">At least {PASSWORD_MIN} characters. Name, email, and password are required.</p>
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password-confirm">Confirm password</label>
-          <PasswordField id="reg-password-confirm" minLength={8} autoComplete="new-password" value={confirm}
+          <PasswordField id="reg-password-confirm" minLength={PASSWORD_MIN} autoComplete="new-password" value={confirm}
             onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the password" />
         </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">

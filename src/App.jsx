@@ -17,7 +17,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword.jsx"));
 const ReviewHistory = lazy(() => import("./pages/ReviewHistory.jsx"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile.jsx"));
 import Home from "./pages/Home.jsx";
-import { useAuth } from "./lib/auth.js";
+import { useAuth, recoveryFlowActive } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
 import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal } from "./components/ui.jsx";
@@ -170,10 +170,19 @@ export default function App() {
     && !pathname.startsWith("/u/");
   const { user, ready, admin: isAdminUser, adminChecked, signOut, recovery } = useAuth();
   // A recovery session is not a normal signed-in session: the user still has to
-  // choose a new password. While one is live, the account-only routes must not
-  // look like a normal signed-in visit, and the recovery page must not be
-  // blocked by the catalog guard.
-  const inRecovery = recovery || pathname === "/reset-password";
+  // choose a new password. While one is live, no other route (and no automatic
+  // redirect) may take them away from the recovery page.
+  // recoveryFlowActive() reads the persisted stage too, so the guard still
+  // holds right after a refresh (the auth client restores the session with
+  // SIGNED_IN, not PASSWORD_RECOVERY, so the event alone is not enough).
+  const [flowActive, setFlowActive] = useState(() => recoveryFlowActive());
+  useEffect(() => {
+    const sync = () => setFlowActive(recoveryFlowActive());
+    sync();
+    window.addEventListener("gw-recovery-changed", sync);
+    return () => window.removeEventListener("gw-recovery-changed", sync);
+  }, []);
+  const inRecovery = flowActive || recovery || pathname === "/reset-password";
   // the account avatar in the nav: one profile read per signed-in user
   const [navAvatar, setNavAvatar] = useState(null);
   const navUserId = user?.id || null;

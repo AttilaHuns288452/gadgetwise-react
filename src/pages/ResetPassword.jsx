@@ -82,6 +82,7 @@ export default function ResetPassword() {
       if (readRecoveryState()?.stage === "done") {
         clearRecoveryState();
         notifyRecoveryChanged();
+        setStage("email");
       }
     };
     window.addEventListener("hashchange", onLeave);
