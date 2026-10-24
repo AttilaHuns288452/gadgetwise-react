@@ -539,11 +539,13 @@ export function useToast() {
  * admin). Tone controls the wordmark contrast for light vs dark chrome.
  * ------------------------------------------------------------------ */
 export function LogoMark({ size = 20, className = "" }) {
+  // Original GadgetWise mark recovered from gadgetwise-prototype (js/app.js):
+  // flat blue tile, white cube outline, three warm-gold interior rules.
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z" />
-      <path d="M3 7l9 5 9-5" />
-      <path d="M12 12v10" />
+    <svg viewBox="0 0 28 28" width={size} height={size} className={className} aria-hidden="true">
+      <rect x="1.5" y="1.5" width="25" height="25" rx="6" fill="#1D5BA4" />
+      <path d="M14 6.5 7.5 10v8L14 21.5 20.5 18v-8L14 6.5Z" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M14 10v8M10.7 8.9v10.2M17.3 8.9v10.2" stroke="#D9A441" strokeWidth="1.4" />
     </svg>
   );
 }
@@ -551,12 +553,11 @@ export function LogoMark({ size = 20, className = "" }) {
 /** Mark + "GadgetWise" wordmark. tone="dark" for light chrome, "light" for dark. */
 export function Logo({ size = 20, tone = "dark", showWordmark = true, className = "" }) {
   const primary = tone === "light" ? "text-white" : "text-[#111827]";
-  const accent = tone === "light" ? "text-[#A9C4F5]" : "text-[#2563EB]";
+  const accent = tone === "light" ? "text-[#A9C4F5]" : "text-[#1D5BA4]";
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <span className={`flex items-center justify-center rounded-xl bg-[#2563EB] text-white ${tone === "light" ? "" : ""}`} style={{ width: size * 2, height: size * 2 }}>
-        <LogoMark size={size} />
-      </span>
+      {/* the mark carries its own tile, so no wrapper box */}
+      <LogoMark size={size * 1.4} />
       {showWordmark && (
         <span className={`font-bold ${primary}`} style={{ fontSize: size * 1.05 }}>
           Gadget<span className={accent}>Wise</span>
