@@ -11,7 +11,8 @@ const Y_OPTS = ["rating", "reviewCount", "completeness"];
 const fmt = (key, v) => {
   if (key === "price") return money(v);
   if (key === "monthly") return money(v) + "/mo";
-  if (key === "rating") return v + "/5";
+  // ratings arrive as raw marketplace floats; never render one unrounded
+  if (key === "rating") return (Math.round(Number(v) * 10) / 10).toFixed(1) + "/5";
   if (key === "reviewCount") return Number(v).toLocaleString() + " reviews";
   return v + "%";
 };
@@ -102,12 +103,12 @@ export default function ParetoExplorer() {
       {/* controls */}
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">X axis
-          <select value={xKey} onChange={(e) => setXKey(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
+          <select value={xKey} onChange={(e) => setXKey(e.target.value)} className="field min-w-0 !w-auto max-w-[13rem] !py-1.5">
             {X_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
           </select>
         </label>
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Y axis
-          <select value={yKey} onChange={(e) => setYKey(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
+          <select value={yKey} onChange={(e) => setYKey(e.target.value)} className="field min-w-0 !w-auto max-w-[13rem] !py-1.5">
             {Y_OPTS.map((k) => <option key={k} value={k}>{OBJECTIVES[k].label} ({OBJECTIVES[k].direction === "min" ? "lower better" : "higher better"})</option>)}
           </select>
         </label>
@@ -151,7 +152,7 @@ export default function ParetoExplorer() {
       ) : (
       <div className="relative mt-4 overflow-x-auto">
         <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1100px]" role="img"
+        <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto w-full min-w-[560px] max-w-[1100px] overflow-hidden" role="img"
           aria-label={`Scatter plot of ${xo.label} versus ${yo.label} with Pareto frontier`}>
           {/* most attractive quadrant */}
           <rect x={quad.x} y={quad.y} width={Math.max(0, quad.w)} height={Math.max(0, quad.h)} fill="#dcfce7" opacity="0.5" />

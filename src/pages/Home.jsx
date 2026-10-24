@@ -27,6 +27,12 @@ function Hero() {
   // to any product, and renders nothing if the catalog is still empty.
   const g =
     [...GW.gadgets].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0] || null;
+  // two more real entries beside the hero pick, so the first screen shows the
+  // catalog has range instead of a single staged product
+  const companions = [...GW.gadgets]
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .filter((x) => x.id !== g?.id)
+    .slice(0, 2);
   return (
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
@@ -54,19 +60,36 @@ function Hero() {
           </ul>
         </div>
         {g && (
-          <div className="card anim-fade-up overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]" style={{ animationDelay: "210ms" }}>
-            <div className="relative">
-              <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Student favorite</span>
-              <Img gadget={g} className="w-full" imgClass="object-cover" eager />
+          <div className="anim-fade-up flex min-w-0 flex-col gap-3" style={{ animationDelay: "210ms" }}>
+            <div className="card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+              <div className="relative">
+                <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Student favorite</span>
+                <Img gadget={g} className="w-full" imgClass="object-cover" eager />
+              </div>
+              <div className="flex items-center justify-between gap-3 px-5 pt-4">
+                <p className="min-w-0 truncate font-display text-lg font-bold text-ink">{GW.displayName(g)}</p>
+                <p className="mono shrink-0 text-xl font-bold text-ink">{money(g.price)}</p>
+              </div>
+              <div className="mt-4 flex items-center gap-3 bg-primary-wash px-5 py-3">
+                <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}</span>
+                <span className="text-sm font-medium text-ink2">Performance to Cost</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 pt-4">
-              <p className="font-display text-lg font-bold text-ink">{g.model}</p>
-              <p className="mono text-xl font-bold text-ink">{money(g.price)}</p>
-            </div>
-            <div className="mt-4 flex items-center gap-3 bg-primary-wash px-5 py-3">
-              <span className="mono text-2xl font-bold text-hero">{ownIndex(g)}</span>
-              <span className="text-sm font-medium text-ink2">Performance to Cost</span>
-            </div>
+            {/* companions: real catalog entries so the hero shows range, not one
+                isolated pick. Skipped entirely when the catalog is too small. */}
+            {companions.length > 0 && (
+              <div className="stagger grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {companions.map((c) => (
+                  <Link key={c.id} to={'/g/' + c.id} className="card hover-lift flex min-w-0 items-center gap-3 p-2.5">
+                    <Img gadget={c} className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line" imgClass="object-cover" frame="1 / 1" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-ink">{GW.displayName(c)}</p>
+                      <p className="mono truncate text-sm text-ink2">≈ {money(GW.monthlyCost(c))}/mo</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -93,6 +116,80 @@ function Stats() {
             {label}
           </p>
         ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Budget preview. Every number here is read from the live catalog at render
+ * time, so this is a real filter over real listings — not a staged demo. The
+ * links go to the same product pages the rest of the app uses.
+ */
+function BudgetPicker() {
+  const prices = GW.gadgets.map((g) => g.price).filter((p) => Number.isFinite(p) && p > 0);
+  const lo = prices.length ? Math.min(...prices) : 0;
+  const hi = prices.length ? Math.max(...prices) : 100000;
+  const [budget, setBudget] = useState(() => Math.round((lo + hi) / 2 / 1000) * 1000);
+  const fits = GW.gadgets.filter((g) => (g.price ?? Infinity) <= budget);
+  const picks = [...fits].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3);
+  if (!prices.length) return null;
+  return (
+    <section className="border-y border-line bg-surface2">
+      <div className="mx-auto grid max-w-none items-center gap-x-12 gap-y-8 px-6 lg:px-12 2xl:px-16 py-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="min-w-0">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">What does your budget actually get?</h2>
+          <p className="mt-2 max-w-[52ch] text-base text-ink2">
+            Move the slider. These are real listings from the live catalog, with the same 36-month ownership math used everywhere else on GadgetWise.
+          </p>
+          <div className="mt-6">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink3">Max budget</p>
+              <p className="text-sm font-semibold text-ink">{fits.length} of {GW.gadgets.length} gadgets fit</p>
+            </div>
+            <p className="mono mt-1 text-2xl font-bold text-hero">{money(budget)}</p>
+            <label className="mt-3 block">
+              <span className="sr-only">Budget</span>
+              <input
+                type="range"
+                min={Math.round(lo / 1000) * 1000}
+                max={Math.round(hi / 1000) * 1000}
+                step={1000}
+                value={budget}
+                onChange={(e) => setBudget(Number(e.target.value))}
+                className="w-full accent-[#2563EB]"
+              />
+            </label>
+            <div className="mt-1 flex justify-between text-xs text-ink3">
+              <span>{money(Math.round(lo / 1000) * 1000)}</span>
+              <span>{money(Math.round(hi / 1000) * 1000)}</span>
+            </div>
+          </div>
+          <Link to="/gadgets" className={btnPrimaryCls + ' mt-5 inline-flex'}>See every gadget at this budget</Link>
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink3">Highest rated that fit</p>
+          <ul className="stagger mt-3 min-w-0 space-y-3">
+          {picks.length === 0 && (
+            <li className="card p-6 text-base text-ink2">Nothing in the catalog fits that budget yet. Try moving the slider up.</li>
+          )}
+          {picks.map((g) => (
+            <li key={g.id}>
+              <Link to={'/g/' + g.id} className="card hover-lift flex min-w-0 items-center gap-4 p-3">
+                <Img gadget={g} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line" imgClass="object-cover" frame="1 / 1" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-ink">{GW.displayName(g)}</p>
+                  <div className="mt-1"><Stars rating={g.rating} count={g.reviewCount} /></div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-semibold text-ink">{money(g.price)}</p>
+                  <p className="mono text-sm text-primary">≈ {money(GW.monthlyCost(g))}/mo</p>
+                </div>
+              </Link>
+            </li>
+          ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
@@ -262,6 +359,7 @@ export default function Home({ compare, onCompare, catalogError, catalogLoading 
           {!catalogError && (
             <>
               <div className="reveal"><Stats /></div>
+              <BudgetPicker />
               <div className="reveal"><Miss /></div>
               <div className="reveal"><TopRated compare={compare} onCompare={onCompare} /></div>
               <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 pb-14">
