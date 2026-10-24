@@ -1,20 +1,21 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { GW, money } from "./lib.js";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+// ponytail: Home eager (landing must paint immediately), every other route lazy
+const Catalog = lazy(() => import("./pages/Catalog.jsx"));
+const GadgetDetail = lazy(() => import("./pages/GadgetDetail.jsx"));
+const Compare = lazy(() => import("./pages/Compare.jsx"));
+const Quiz = lazy(() => import("./pages/Quiz.jsx"));
+const Admin = lazy(() => import("./pages/Admin.jsx"));
+const Wishlist = lazy(() => import("./pages/Wishlist.jsx"));
+const ComparisonHistory = lazy(() => import("./pages/ComparisonHistory.jsx"));
+const Profile = lazy(() => import("./pages/Profile.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Register = lazy(() => import("./pages/Register.jsx"));
+const ReviewHistory = lazy(() => import("./pages/ReviewHistory.jsx"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile.jsx"));
 import Home from "./pages/Home.jsx";
-import Catalog from "./pages/Catalog.jsx";
-import GadgetDetail from "./pages/GadgetDetail.jsx";
-import Compare from "./pages/Compare.jsx";
-import Quiz from "./pages/Quiz.jsx";
-import Admin from "./pages/Admin.jsx";
-import Wishlist from "./pages/Wishlist.jsx";
-import ComparisonHistory from "./pages/ComparisonHistory.jsx";
-import Profile from "./pages/Profile.jsx";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import ReviewHistory from "./pages/ReviewHistory.jsx";
-import PublicProfile from "./pages/PublicProfile.jsx";
 import { useAuth } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
@@ -369,6 +370,7 @@ export default function App() {
         {catalogError && needsCatalog ? (
           <CatalogErrorCard />
         ) : (
+        <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} catalogLoading={catalogLoading} />} />
           <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} catalogError={catalogError} />} />
@@ -395,6 +397,7 @@ export default function App() {
             }
           />
         </Routes>
+        </Suspense>
         )}
       </main>
 

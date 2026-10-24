@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
 /* Ledger Slate tokens — ported from the gadgetwise-prototype identity */
 @theme {
@@ -29,8 +30,8 @@
   --color-on-hero: #f4f6fa;
   --color-on-hero2: #c6d1e0;
 
-  --font-display: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Spline Sans Mono", "Noto Sans Mono", "DejaVu Sans Mono", "Consolas", monospace;
+  --font-display: "Hanken Grotesk", "GW Fallback Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Spline Sans Mono", "GW Fallback Mono", "Noto Sans Mono", "DejaVu Sans Mono", "Consolas", monospace;
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -245,8 +246,10 @@
 @keyframes route-enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .route-enter { animation: route-enter 300ms var(--ease-out, ease) backwards; }
 
-/* entrance items rise WITHOUT fading: the page already handles the fade */
-@keyframes rise-in { from { transform: translateY(var(--rise, 28px)); } to { transform: none; } }
+/* entrance items rise AND fade, each on its own staggered start. The page-level
+   route-enter fade is the wrapper only: children must arrive one after another,
+   not as a solid block inside a fading parent. */
+@keyframes rise-in { from { opacity: 0; transform: translateY(var(--rise, 28px)); } to { opacity: 1; transform: none; } }
 
 /* first paint: the chrome settles in once, never on rerenders */
 @keyframes chrome-in { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
@@ -307,6 +310,9 @@ html.reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    /* delays must go too: with fill:backwards a staggered delay holds the item
+       at its invisible `from` state long after the animation has "ended". */
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
