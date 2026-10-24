@@ -29,6 +29,14 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
         src={gadget.image || ph}
         alt={`${gadget.brand} ${gadget.model}`}
         loading={eager ? "eager" : "lazy"}
+        ref={(el) => {
+          // a cache-hit image can be complete before React attaches onLoad, so
+          // it would pop in with no fade at all
+          if (el?.complete && el.naturalWidth > 0) {
+            el.classList.add("img-loaded");
+            setAr(el.naturalWidth / el.naturalHeight);
+          }
+        }}
         onLoad={(e) => {
           setAr(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight);
           // fade the photo in over its fixed frame instead of popping it in
