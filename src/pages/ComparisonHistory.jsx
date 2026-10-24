@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { GW } from "../lib.js";
 import { useAuth } from "../lib/auth.js";
 import { loadComparisons, saveComparison } from "../lib/store.js";
+import { btnPrimaryCls } from "../components/ui.jsx";
 
 const KEY = "gw_compare_history";
 
@@ -88,14 +89,14 @@ function ComparisonHistory({ compare }) {
   return (
     <section className="section">
       <div className="eyebrow">Compare</div>
-      <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">Comparison history</h1>
+      <h1 className="mt-2">Comparison history</h1>
       <p className="mt-2 text-ink2">Your past compare sessions, newest first.</p>
 
       {history.length === 0 ? (
         <div className="card mt-8 p-10 text-center">
           <p className="text-lg font-semibold text-ink">No comparisons yet.</p>
           <p className="mt-2 text-ink2">Pick a few gadgets to compare and they will show up here.</p>
-          <Link to="/gadgets" className="btn-primary mt-6 inline-flex">Browse gadgets</Link>
+          <Link to="/gadgets" className={btnPrimaryCls + " mt-6 inline-flex"}>Browse gadgets</Link>
         </div>
       ) : (
         <ul className="mt-8 space-y-3">

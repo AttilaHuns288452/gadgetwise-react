@@ -367,8 +367,8 @@ function Gadgets({ toast }) {
                 <td className="px-4 py-3 mono text-[#111827]">{g.price != null ? money(g.price) : "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
-                    <button className={iconBtn} title="Edit" onClick={() => setForm({ ...g })}><Ico n="pencil" /></button>
-                    <button className={iconBtn} title="Delete" onClick={() => setDelTarget({ id: g.id, name: [g.brand, g.model].filter(Boolean).join(" ") || "this gadget" })}><Ico n="trash" /></button>
+                    <button className={iconBtn} title="Edit" aria-label={`Edit ${[g.brand, g.model].filter(Boolean).join(" ") || "gadget"}`} onClick={() => setForm({ ...g })}><Ico n="pencil" /></button>
+                    <button className={iconBtn} title="Delete" aria-label={`Delete ${[g.brand, g.model].filter(Boolean).join(" ") || "this gadget"}`} onClick={() => setDelTarget({ id: g.id, name: [g.brand, g.model].filter(Boolean).join(" ") || "this gadget" })}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
@@ -472,8 +472,8 @@ function Categories({ toast }) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className={iconBtn} title="Edit" onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0, slug: c.slug, query: c.query || "" })}><Ico n="pencil" /></button>
-                <button className={iconBtn} title="Delete" onClick={() => setDelTarget({ id: c.id, name: c.name || "this category" })}><Ico n="trash" /></button>
+                <button className={iconBtn} title="Edit" aria-label={`Edit ${c.name || "category"}`} onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0, slug: c.slug, query: c.query || "" })}><Ico n="pencil" /></button>
+                <button className={iconBtn} title="Delete" aria-label={`Delete ${c.name || "this category"}`} onClick={() => setDelTarget({ id: c.id, name: c.name || "this category" })}><Ico n="trash" /></button>
               </div>
             </div>
             <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.blurb || "No description."}</p>
@@ -689,8 +689,8 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
                       disabled={busy === r.id || r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
                     <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7] disabled:opacity-50"
                       disabled={busy === r.id} onClick={() => setStatus(r.id, "rejected")}>Reject</button>
-                    <button className={iconBtn} title="Edit" onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
-                    <button className={iconBtn} title="Delete" onClick={() => setDel(r)}><Ico n="trash" /></button>
+                    <button className={iconBtn} title="Edit" aria-label={`Edit review of ${r.gadget}`} onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
+                    <button className={iconBtn} title="Delete" aria-label={`Delete review of ${r.gadget}`} onClick={() => setDel(r)}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
@@ -880,7 +880,7 @@ function Users() {
                     me?.id === u.id ? (
                       <span className="text-[13px] text-[#98A2B3]">That's you</span>
                     ) : (
-                      <button className={iconBtn} title="Remove admin" disabled={roleBusy} onClick={() => setRevokeTarget(u)}>
+                      <button className={iconBtn} title="Remove admin" aria-label={`Remove admin access from ${u.email}`} disabled={roleBusy} onClick={() => setRevokeTarget(u)}>
                         <Ico n="exit" />
                       </button>
                     )

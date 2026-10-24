@@ -130,6 +130,10 @@ export default function App() {
   // fill it before the routes render and force one re-render when it's ready.
   const [, setCatalogReady] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
+  // The catalog settled but has zero products. That is NOT a filter miss and
+  // NOT a load failure — it is its own state, and saying "no gadgets match
+  // your filters" for it is a lie (the user set no filters).
+  const [catalogEmpty, setCatalogEmpty] = useState(false);
   // true until the live catalog has settled: pages must show "loading", never a
   // false empty state like "no gadgets match" while results are still arriving.
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -149,7 +153,11 @@ export default function App() {
       if (!alive) return;
       // If we have anything (marketplace or curated), show it; only error when empty.
       if (GW.gadgets.length) setCatalogReady(true);
-      else setCatalogError(catOk ? null : "catalog unavailable");
+      else {
+        // A successful-but-empty fetch is its own state, not a filter miss.
+        setCatalogEmpty(catOk);
+        setCatalogError(catOk ? null : "catalog unavailable");
+      }
       setCatalogLoading(false);
     })();
     return () => {
@@ -452,7 +460,7 @@ export default function App() {
         ) : (
         <Routes>
           <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} catalogLoading={catalogLoading} />} />
-          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} catalogError={catalogError} />} />
+          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} catalogError={catalogError} catalogEmpty={catalogEmpty} />} />
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
           <Route path="/recommend" element={<Quiz />} />

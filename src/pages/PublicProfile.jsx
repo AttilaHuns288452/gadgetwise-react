@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getPublicProfile, loadPublicUserReviews } from "../lib/store.js";
-import { ReviewVotes } from "../components/ui.jsx";
+import { ReviewVotes, btnPrimaryCls } from "../components/ui.jsx";
 
 function MiniStars({ n }) {
   return (
@@ -54,7 +54,7 @@ export default function PublicProfile() {
         <div className="card mt-6 p-8 text-center">
           <h1 className="text-2xl font-semibold">Profile not found</h1>
           <p className="mt-2 text-ink2">This member doesn't exist or the profile is unavailable.</p>
-          <Link to="/gadgets" className="btn-primary mt-4 inline-flex">Browse gadgets</Link>
+          <Link to="/gadgets" className={btnPrimaryCls + " mt-4 inline-flex"}>Browse gadgets</Link>
         </div>
       ) : (
         <>
@@ -63,7 +63,7 @@ export default function PublicProfile() {
               <img src={profile.avatar_url} alt=""
                 className="h-16 w-16 shrink-0 rounded-full border border-line object-cover" />
             )}
-            <h1 className="min-w-0 text-[2.25rem] lg:text-[2.75rem] break-words">
+            <h1 className="min-w-0 break-words">
               {profile ? profile.display_name : "Loading…"}
             </h1>
           </div>

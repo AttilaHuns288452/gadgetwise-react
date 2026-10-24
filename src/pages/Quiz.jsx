@@ -120,7 +120,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
 
   return (
     <section className="mx-auto w-full max-w-none px-6 lg:px-12 2xl:px-16 pb-24 pt-10">
-      <h1 className="text-[calc(32px*var(--tscale,1))] font-extrabold leading-tight">Get Recommendations</h1>
+      <h1>Get Recommendations</h1>
       <p className="mt-2 max-w-[560px] text-ink2">
         Four questions, then a ranked shortlist. Every score shows its full breakdown.
       </p>
@@ -218,7 +218,17 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {CUSTOM_CHIPS.map(([v, label]) => (
-                      <button key={label} type="button" onClick={() => setAmount(String(v))} className="chip">
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setAmount(String(v))}
+                        aria-pressed={amount === String(v)}
+                        className={
+                          amount === String(v)
+                            ? "chip-blue cursor-pointer border border-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            : "chip cursor-pointer border border-line-strong bg-white text-ink2 transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        }
+                      >
                         {label}
                       </button>
                     ))}
@@ -429,7 +439,12 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <button
                           type="button"
                           onClick={() => onCompare(g.id)}
-                          className={compare.has(g.id) ? "chip-blue" : "chip"}
+                          aria-pressed={compare.has(g.id)}
+                          className={
+                            compare.has(g.id)
+                              ? "chip-blue cursor-pointer border border-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                              : "chip cursor-pointer border border-line-strong bg-white text-ink2 transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                          }
                         >
                           Compare this gadget
                         </button>

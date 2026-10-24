@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
-import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, StaleCatalogNote } from "../components/ui.jsx";
+import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, StaleCatalogNote, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
 import LiveSearch from "../components/LiveSearch.jsx";
 
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
@@ -33,7 +33,7 @@ const toggle = (setter) => (val) =>
     return n;
   });
 
-export default function Catalog({ compare, onCompare, catalogLoading, catalogError }) {
+export default function Catalog({ compare, onCompare, catalogLoading, catalogError, catalogEmpty }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const cat = searchParams.get("cat") || "";
   const spQ = searchParams.get("search") ?? searchParams.get("q") ?? "";
@@ -246,7 +246,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
               </div>
 
               <div className={groupCls}>
-                <button type="button" onClick={clearAll} className="btn btn-ghost w-full px-3 py-2 text-sm">
+                <button type="button" onClick={clearAll} className={btnOutlineCls + " w-full !px-3 !py-2 !text-sm"}>
                   Clear all filters
                 </button>
               </div>
@@ -255,7 +255,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
             <div className="mt-4 rounded-lg bg-primary-soft p-5">
               <h4 className="mb-1.5 text-base font-bold text-ink">Can't decide?</h4>
               <p className="mb-3 text-sm text-ink2">Get a ranked shortlist for your budget and course load.</p>
-              <Link to="/recommend" className="btn btn-primary px-4 py-2 text-sm">
+              <Link to="/recommend" className={btnPrimaryCls + " !px-4 !py-2 !text-sm"}>
                 Get recommendations →
               </Link>
             </div>
@@ -268,7 +268,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                 setFiltersOpen(false);
                 resultsRef.current?.scrollIntoView({ block: "start" });
               }}
-              className="btn btn-primary mt-4 w-full px-4 py-3 text-sm lg:hidden"
+              className={btnPrimaryCls + " mt-4 w-full !px-4 !py-3 !text-sm lg:hidden"}
             >
               Show {results.length} gadget{results.length === 1 ? "" : "s"}
             </button>
@@ -352,6 +352,13 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
             <div className="mt-6">
               <CatalogErrorCard bare />
             </div>
+          ) : catalogEmpty ? (
+            /* the fetch SUCCEEDED and the catalog really has zero products:
+               saying "no gadgets match your filters" here would blame the
+               user for a filter they never set */
+            <div className="mt-6">
+              <CatalogErrorCard bare variant="empty" />
+            </div>
           ) : (
             <>
               {/* keyed on the deliberate controls so a real result change
@@ -369,10 +376,28 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
               </div>
 
               {results.length === 0 && (
-                <div className="card mt-6 p-8 text-center">
-                  <div className="text-lg font-semibold text-ink">No gadgets match your filters</div>
-                  <p className="mt-2 text-sm text-ink2">Try clearing a filter or broadening the price range.</p>
-                </div>
+                scope.length === 0 ? (
+                  /* the scope itself has no products (empty catalog, or a
+                     category the marketplace returned nothing for). Saying
+                     "no gadgets match your filters" would blame the user for
+                     filters they never set. */
+                  <div className="card mt-6 p-8 text-center">
+                    <div className="text-lg font-semibold text-ink">There are no gadgets in this category yet</div>
+                    <p className="mt-2 text-sm text-ink2">
+                      {cat
+                        ? "The catalog loaded, but this category has no products right now."
+                        : "The catalog loaded, but it has no products right now."}
+                    </p>
+                    <Link to="/gadgets" className={btnPrimaryCls + " mt-4 inline-flex"}>
+                      Browse all gadgets
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="card mt-6 p-8 text-center">
+                    <div className="text-lg font-semibold text-ink">No gadgets match your filters</div>
+                    <p className="mt-2 text-sm text-ink2">Try clearing a filter or broadening the price range.</p>
+                  </div>
+                )
               )}
             </>
           )}

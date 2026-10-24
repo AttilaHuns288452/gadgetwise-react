@@ -194,7 +194,7 @@ function GadgetDetail({ compare, onCompare }) {
         <p className="mt-3 text-ink2">
           This gadget is not in the catalog. Marketplace listings can also disappear when the seller removes them.
         </p>
-        <Link to="/gadgets" className="btn-primary mt-4">
+        <Link to="/gadgets" className={btnPrimaryCls + " mt-4"}>
           Back to catalog
         </Link>
       </section>
@@ -299,7 +299,7 @@ function GadgetDetail({ compare, onCompare }) {
                 else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
               }}
               aria-pressed={wish.has(g.id)}
-              className={wish.has(g.id) ? "btn-primary" : "btn-ghost"}
+              className={wish.has(g.id) ? btnPrimaryCls : btnOutlineCls}
             >
               {wish.has(g.id) ? "In your Wishlist" : "Add to Wishlist"}
             </button>
@@ -307,11 +307,11 @@ function GadgetDetail({ compare, onCompare }) {
               type="button"
               onClick={() => onCompare(g.id)}
               aria-pressed={compare.has(g.id)}
-              className={compare.has(g.id) ? "btn-primary" : "btn-ghost"}
+              className={compare.has(g.id) ? btnPrimaryCls : btnOutlineCls}
             >
               Add to Compare
             </button>
-            <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className="btn-primary">
+            <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className={btnPrimaryCls}>
               Write Review
             </button>
             {g.productUrl && (
@@ -319,7 +319,7 @@ function GadgetDetail({ compare, onCompare }) {
                 href={g.productUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-ghost"
+                className={btnOutlineCls}
               >
                 View on Lazada ↗
               </a>
@@ -725,7 +725,7 @@ function GadgetDetail({ compare, onCompare }) {
               ))}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className="btn-primary">
+              <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className={btnPrimaryCls}>
                 Write a review
               </button>
               <span className="text-sm text-ink3">

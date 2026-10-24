@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls } from "../components/ui.jsx";
 import {
   useAuth, maskEmail, sanitizeOtp, cooldownSeconds, liveSessionUserId,
   readRecoveryState, writeRecoveryState, clearRecoveryState, notifyRecoveryChanged, endRecoveryFlow,
@@ -243,8 +243,8 @@ export default function ResetPassword() {
               <input id="reset-email" type="email" required autoComplete="email" value={email}
                 onChange={(e) => setEmail(e.target.value)} placeholder="you@student.edu" className={fieldInputCls} />
             </div>
-            {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
-            <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
               {busy ? "Sending code…" : "Send recovery code"}
             </button>
             {!configured && (
@@ -262,9 +262,9 @@ export default function ResetPassword() {
                 If an account exists for <span className="font-semibold">{masked}</span>, we&apos;ve sent a {OTP_LENGTH}-digit recovery code.
               </p>
             </div>
-            {notice && <p role="status" className="rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">{notice}</p>}
-            {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
-            <button type="button" onClick={() => { setStage("otp"); setError(""); setNotice(""); }} className="btn-primary w-full">
+            {notice && <p role="status" className="rounded-lg bg-[#FFF8E6] px-4 py-2.5 text-sm font-medium text-[#6B4E12]">{notice}</p>}
+            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            <button type="button" onClick={() => { setStage("otp"); setError(""); setNotice(""); }} className={btnPrimaryCls + " w-full"}>
               Enter verification code
             </button>
             <button type="button" onClick={() => { setStage("email"); setError(""); setNotice(""); }}
@@ -302,8 +302,8 @@ export default function ResetPassword() {
                 {OTP_LENGTH} digits. Paste the code from the email if you like.
               </p>
             </div>
-            {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
-            <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
               {busy ? "Verifying…" : "Verify code"}
             </button>
             <div className="flex items-center justify-between text-sm">
@@ -332,8 +332,8 @@ export default function ResetPassword() {
               <PasswordField id="new-pw-confirm" minLength={PASSWORD_MIN} autoComplete="new-password" value={confirm}
                 onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat it" />
             </div>
-            {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
-            <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
               {busy ? "Saving…" : "Set new password"}
             </button>
           </form>
@@ -346,7 +346,7 @@ export default function ResetPassword() {
               <p className="mt-3 text-[15px] font-semibold text-emerald-900">Your password has been updated</p>
               <p className="mt-1 text-sm text-emerald-800">Sign in with your new password to get back to GadgetWise.</p>
             </div>
-            <button type="button" onClick={leaveFlow} className="btn-primary w-full">
+            <button type="button" onClick={leaveFlow} className={btnPrimaryCls + " w-full"}>
               Continue to sign in
             </button>
           </div>

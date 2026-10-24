@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { OBJECTIVES, paretoFrontier, listingCompleteness } from "../lib/pareto.js";
+import { btnOutlineCls } from "./ui.jsx";
 
 /* X-axis candidates (cost-like) and Y-axis candidates (quality-like). Only
    objectives with a real definition for the current marketplace data appear. */
@@ -155,7 +156,7 @@ export default function ParetoExplorer() {
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Min rating
           <input type="number" step="0.1" min="0" max="5" value={minRating} onChange={(e) => setMinRating(e.target.value)} className="field ml-2 !w-20 !py-1.5" placeholder="any" />
         </label>
-        <button type="button" onClick={reset} className="btn-ghost !py-1.5 !text-sm">Reset</button>
+        <button type="button" onClick={reset} className={btnOutlineCls + " !py-1.5 !text-sm"}>Reset</button>
       </div>
 
       {/* counts */}

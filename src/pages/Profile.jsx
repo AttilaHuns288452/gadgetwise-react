@@ -195,7 +195,7 @@ export default function Profile({ compare, onCompare }) {
 
   return (
     <section className="section">
-      <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">My Account</h1>
+      <h1 className="mt-2">My Account</h1>
       <p className="mt-2 text-ink2">Your profile, saved gadgets, and activity history.</p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-12">
@@ -286,7 +286,7 @@ export default function Profile({ compare, onCompare }) {
                 <h2 className="mt-2 text-2xl font-semibold text-ink">Keep your shortlist moving.</h2>
                 <p className="mt-2 max-w-[48ch] text-sm leading-relaxed text-ink2">Saved gadgets, comparisons, reviews, and recommendations in one calm place.</p>
               </div>
-              <Link to="/recommend" className="btn-primary shrink-0">Run a recommendation →</Link>
+              <Link to="/recommend" className={btnPrimaryCls + " shrink-0"}>Run a recommendation →</Link>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {[["Saved", wish.ids.size, "/wishlist"], ["Comparisons", compareCount, "/compare-history"], ["Recommendations", recommendations.length, "#recommendation-history"]].map(([label, value, to]) => (
@@ -307,7 +307,7 @@ export default function Profile({ compare, onCompare }) {
           {saved.length === 0 ? (
             <div className="card mt-4 p-8 text-center">
               <p className="font-semibold text-ink">No saved gadgets yet.</p>
-              <Link to="/gadgets" className="btn-primary mt-4 inline-flex">Browse gadgets</Link>
+              <Link to="/gadgets" className={btnPrimaryCls + " mt-4 inline-flex"}>Browse gadgets</Link>
             </div>
           ) : (
             <div className="stagger mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -332,7 +332,7 @@ export default function Profile({ compare, onCompare }) {
             <div className="card mt-4 border-dashed p-8 text-center">
               <p className="font-semibold text-ink">No recommendation runs saved yet.</p>
               <p className="mt-1 text-sm text-ink2">Complete the wizard and your ranked shortlist will be saved here.</p>
-              <Link to="/recommend" className="btn-primary mt-4 inline-flex">Find my gadget</Link>
+              <Link to="/recommend" className={btnPrimaryCls + " mt-4 inline-flex"}>Find my gadget</Link>
             </div>
           ) : (
             <div className="mt-4 grid gap-3">

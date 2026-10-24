@@ -20,8 +20,6 @@
   --color-gold-hair: #d9a441;
   --color-success: #1f7a44;
   --color-success-soft: #e3f2e9;
-  --color-warning: #96631f;
-  --color-warning-soft: #faf0dc;
   --color-danger: #b3372e;
   --color-danger-soft: #f9e9e7;
   --color-line: #e3e7ed;
@@ -38,7 +36,7 @@
   --radius-lg: 12px;
 
   /* Type scale. Standard desktop sizes: the old tokens sat one step high and
-     were then multiplied by a desktop --ui-scale, which made the public site
+     were then multiplied by a desktop scale factor, which made the public site
      read as browser-zoomed next to the admin panel's fixed px sizing. */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -49,8 +47,6 @@
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
 }
-
-:root { --ui-scale: 1; }
 
 @layer base {
   /* smooth in-page movement; the reduced-motion block below overrides it */
@@ -73,15 +69,6 @@
   .mono { font-family: var(--font-mono); }
 
   /* v4 note: @apply can't reference custom classes, so each variant repeats the base utilities */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors;
-  }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-primary text-white hover:bg-primary-dark; }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-white text-primary border border-line-strong hover:border-primary hover:bg-primary-wash; }
-  .btn-amber { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-warm text-white hover:bg-warm-dark; }
-  .btn-hero { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors bg-gold-hair text-hero hover:brightness-105; }
-  .btn-hero-ghost { @apply inline-flex items-center justify-center gap-2 rounded-sm px-5 py-3.5 text-base font-semibold transition-colors border border-white/35 text-on-hero hover:bg-white/10; }
-
   .chip {
     @apply inline-flex items-center rounded-sm px-3 py-2 text-xs font-medium;
   }
@@ -142,16 +129,10 @@
   }
 }
 
-/* one scale at every width — the old desktop 1.25x bump made headings huge while hardcoded px text stayed tiny */
-
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in .25s var(--ease-out, ease) backwards; }
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 .toast-out { animation: toast-out 180ms var(--ease-out, ease) both; }
-
-/* state-change motion for shared product surfaces */
-@keyframes success-pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
-.success-pop { animation: success-pop var(--dur, 250ms) var(--ease-out, ease) both; }
 
 /* card media: a gentle zoom on hover, the product stays the visual anchor */
 .card-media { overflow: hidden; }
@@ -172,9 +153,8 @@
 
 /* Interaction layer. The premium feel comes from every control answering the
    pointer the same way, not from bigger entrance animations: colour-only
-   transitions read as flat no matter how good the page-load choreography is. */
-.btn,
-.btn-primary, .btn-ghost, .btn-amber, .btn-hero, .btn-hero-ghost,
+   transitions read as flat no matter how good the page-load choreography is.
+   Buttons carry their own motion in btnCls (ui.jsx); chips get it here. */
 .chip, .chip-tag, .chip-good, .chip-bad, .chip-neutral, .chip-blue {
   transition:
     color var(--dur-fast) var(--ease-out),
@@ -183,19 +163,6 @@
     box-shadow var(--dur) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
   will-change: transform;
-}
-.btn:hover,
-.btn-primary:hover, .btn-ghost:hover, .btn-amber:hover,
-.btn-hero:hover, .btn-hero-ghost:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(15, 23, 34, 0.14);
-}
-.btn:active,
-.btn-primary:active, .btn-ghost:active, .btn-amber:active,
-.btn-hero:active, .btn-hero-ghost:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 6px rgba(15, 23, 34, 0.10);
-  transition-duration: 60ms;
 }
 .chip:hover, .chip-tag:hover, .chip-good:hover, .chip-bad:hover,
 .chip-neutral:hover, .chip-blue:hover {
@@ -301,16 +268,6 @@ html.reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
 .hover-lift { will-change: transform; }
 .hover-lift:hover { transform: translateY(-6px); box-shadow: 0 22px 44px rgba(15, 23, 34, 0.16); }
 .hover-lift:active { transform: translateY(-2px) scale(0.99); }
-
-/* button press feedback + smoother color transitions */
-.btn, .btn-primary, .btn-ghost, .btn-amber, .btn-hero, .btn-hero-ghost {
-  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
-              border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out),
-              box-shadow var(--dur-fast) var(--ease-out);
-}
-.btn:active, .btn-primary:active, .btn-ghost:active, .btn-amber:active, .btn-hero:active, .btn-hero-ghost:active {
-  transform: scale(0.98);
-}
 
 /* keyboard focus — one ring for every interactive element */
 :focus-visible {

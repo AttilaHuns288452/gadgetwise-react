@@ -70,7 +70,7 @@ function ReviewHistory() {
   return (
     <section className="section">
       <div className="eyebrow">Account</div>
-      <h1 className="mt-2 text-[2.25rem] lg:text-[2.75rem]">Review history</h1>
+      <h1 className="mt-2">Review history</h1>
       <p className="mt-2 text-ink2">
         Everything you have reviewed{status === "ready" ? ` · ${rows.length} review${rows.length === 1 ? "" : "s"}` : ""}
       </p>
@@ -83,7 +83,7 @@ function ReviewHistory() {
           <p className="mt-1 text-sm text-ink2">
             Open a gadget and share your experience — your reviews will appear here.
           </p>
-          <Link to="/gadgets" className="btn-primary mt-4 inline-flex">Browse gadgets</Link>
+          <Link to="/gadgets" className={btnPrimaryCls + " mt-4 inline-flex"}>Browse gadgets</Link>
         </div>
       )}
 

@@ -448,7 +448,7 @@ export function Modal({ title, sub, children, actions, onClose }) {
   return (
     <div className="anim-fade-in fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={dialogRef} onClick={(e) => e.stopPropagation()} className="anim-scale-in max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
-        <h3 className="text-[calc(22px*var(--tscale,1))] font-bold leading-snug text-[#111827]">{title}</h3>
+        <h3 className="text-2xl font-bold leading-snug text-[#111827]">{title}</h3>
         {sub && <p className="mt-1.5 text-sm leading-relaxed text-[#6B7280]">{sub}</p>}
         <div className="mt-6 space-y-5">{children}</div>
         <div className="mt-6 flex justify-end gap-2.5">{actions}</div>
@@ -534,14 +534,18 @@ export function StaleCatalogNote() {
 }
 
 /* Honest "products unavailable" card. Shown when the live marketplace can't be
-   reached — never replaced by fake product data. */
-export function CatalogErrorCard({ bare = false }) {
+   reached — never replaced by fake product data.
+   variant="empty" is the other honest state: the fetch SUCCEEDED and the
+   catalog really has zero products (not a filter miss). */
+export function CatalogErrorCard({ bare = false, variant = "error" }) {
+  const empty = variant === "empty";
   const card = (
       <div className="card max-w-xl p-8 text-center mx-auto">
-        <h2 className="text-2xl">Couldn't load live products</h2>
+        <h2 className="text-2xl">{empty ? "The catalog is empty right now" : "Couldn't load live products"}</h2>
         <p className="mt-3 text-ink2">
-          GadgetWise pulls real listings from the marketplace and it looks like that
-          request failed. Nothing here is being faked. Try again in a moment.
+          {empty
+            ? "The catalog loaded successfully but there are no products in it yet. Nothing is being faked — try again in a moment."
+            : "GadgetWise pulls real listings from the marketplace and it looks like that request failed. Nothing here is being faked. Try again in a moment."}
         </p>
         <button
           type="button"
@@ -800,7 +804,7 @@ export function AuthLayout({ title, subtitle, children, footer }) {
         {/* form panel */}
         <div className="p-7 sm:p-10">
           <div className="anim-in mb-6 lg:hidden" style={stag(0)}><Logo size={20} tone="dark" /></div>
-          <h1 className="anim-in text-[1.85rem] font-extrabold leading-tight text-ink" style={stag(1)}>{title}</h1>
+          <h1 className="anim-in text-ink" style={stag(1)}>{title}</h1>
           {subtitle && <p className="anim-in mt-1.5 text-[15px] text-ink2" style={stag(2)}>{subtitle}</p>}
           {/* the form arrives as one block: animating every field would make
               the screen tiring to read and slow to interact with */}
