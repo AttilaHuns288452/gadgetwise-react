@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, AuthLayout } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout } from "../components/ui.jsx";
 import { useAuth, safeNext } from "../lib/auth.js";
 
 function Login() {
@@ -62,13 +62,13 @@ function Login() {
         <form onSubmit={savePassword} className="space-y-5">
           <div>
             <label className={fieldLabelCls} htmlFor="new-pw">New password</label>
-            <input id="new-pw" type="password" required minLength={8} autoComplete="new-password" value={password}
-              onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={fieldInputCls} />
+            <PasswordField id="new-pw" minLength={8} autoComplete="new-password" value={password}
+              onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
           </div>
           <div>
             <label className={fieldLabelCls} htmlFor="new-pw-confirm">Confirm new password</label>
-            <input id="new-pw-confirm" type="password" required minLength={8} autoComplete="new-password" value={confirm}
-              onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the new password" className={fieldInputCls} />
+            <PasswordField id="new-pw-confirm" minLength={8} autoComplete="new-password" value={confirm}
+              onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the new password" />
           </div>
           {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
@@ -119,8 +119,7 @@ function Login() {
               <button type="button" onClick={() => { setMode("forgot"); setError(""); }}
                 className="text-xs font-semibold text-primary hover:text-primary-dark">Forgot password?</button>
             </div>
-            <input id="login-password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" className={fieldInputCls} />
+            <PasswordField id="login-password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
             {busy ? "Signing in…" : "Log in"}

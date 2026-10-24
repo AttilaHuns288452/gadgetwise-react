@@ -352,6 +352,42 @@ export const btnDangerCls = btnCls + " bg-[#B3372E] text-white hover:bg-[#93291F
 export const fieldLabelCls = "block text-sm font-bold text-[#111827]";
 export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-base text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
 
+/**
+ * Password input with an accessible show/hide toggle. Hidden by default, and
+ * the button is a real toggle (aria-pressed) so screen readers announce state.
+ * One component for every auth field instead of five copies of the same markup.
+ */
+export function PasswordField({ id, value, onChange, autoComplete, minLength, placeholder, required = true }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        required={required}
+        minLength={minLength}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        aria-describedby={`${id}-toggle`}
+        className={fieldInputCls + " pr-20"}
+      />
+      <button
+        type="button"
+        id={`${id}-toggle`}
+        onClick={() => setShow((s) => !s)}
+        aria-pressed={show}
+        aria-controls={id}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-ink3 transition-colors hover:text-primary"
+      >
+        {show ? "Hide" : "Show"}
+      </button>
+    </div>
+  );
+}
+
 export function Modal({ title, sub, children, actions, onClose }) {
   const dialogRef = useRef(null);
   useEffect(() => {

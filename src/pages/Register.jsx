@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, AuthLayout } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout } from "../components/ui.jsx";
 import { useAuth, safeNext } from "../lib/auth.js";
 
 function Register() {
@@ -54,14 +54,14 @@ function Register() {
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password">Password</label>
-          <input id="reg-password" type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters" className={fieldInputCls} />
+          <PasswordField id="reg-password" minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters" />
           <p className="mt-1.5 text-xs text-ink2">At least 8 characters. Name, email, and password are required.</p>
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password-confirm">Confirm password</label>
-          <input id="reg-password-confirm" type="password" required minLength={8} autoComplete="new-password" value={confirm}
-            onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the password" className={fieldInputCls} />
+          <PasswordField id="reg-password-confirm" minLength={8} autoComplete="new-password" value={confirm}
+            onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the password" />
         </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
           {busy ? "Creating account…" : "Create account"}
