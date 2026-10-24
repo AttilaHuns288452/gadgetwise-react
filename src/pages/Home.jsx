@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
-import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, CatalogLoadingCard, useReveal } from '../components/ui.jsx';
+import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, CatalogLoadingCard, useReveal, stag } from '../components/ui.jsx';
 import ParetoExplorer from '../components/ParetoExplorer.jsx';
 import { loadSiteSettings } from '../lib/store.js';
 
@@ -86,8 +86,8 @@ function Hero() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-on-hero2">Also in the catalog</p>
                 <div className="stagger mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {companions.map((c) => (
-                    <Link key={c.id} to={'/g/' + c.id} className="card hover-lift flex min-w-0 items-center gap-3 p-2.5">
+                  {companions.map((c, i) => (
+                    <Link key={c.id} style={stag(i)} to={'/g/' + c.id} className="card hover-lift flex min-w-0 items-center gap-3 p-2.5">
                       <Img gadget={c} className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line" imgClass="object-cover" frame="1 / 1" />
                       <div className="min-w-0">
                         {/* same unit as the featured card so the three are comparable */}
@@ -182,8 +182,8 @@ function BudgetPicker() {
           {picks.length === 0 && (
             <li className="card p-6 text-base text-ink2">Nothing in the catalog fits that budget yet. Try moving the slider up.</li>
           )}
-          {picks.map((g) => (
-            <li key={g.id}>
+          {picks.map((g, i) => (
+            <li key={g.id} style={stag(i)}>
               <Link to={'/g/' + g.id} className="card hover-lift flex min-w-0 items-center gap-4 p-3">
                 <Img gadget={g} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line" imgClass="object-cover" frame="1 / 1" />
                 <div className="min-w-0 flex-1">
@@ -224,10 +224,10 @@ function Categories({ hideCounts = false }) {
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>All gadgets →</Link>
       </div>
       <div className="stagger mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {GW.categories.map((c) => {
+        {GW.categories.map((c, i) => {
           const n = GW.gadgetsInCategory(c.id).length;
           return (
-            <Link key={c.id} to={`/gadgets?cat=${c.id}`} className="card p-6 transition-colors hover:border-primary">
+            <Link key={c.id} style={stag(i)} to={`/gadgets?cat=${c.id}`} className="card p-6 transition-colors hover:border-primary">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-line-strong text-primary">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">{CAT_ICONS[c.id] || CAT_ICONS.smartwatches}</svg>
               </span>
@@ -277,7 +277,7 @@ function TopRated({ compare, onCompare }) {
         <Link to="/gadgets" className={btnOutlineCls + ' rounded-full'}>See all rankings</Link>
       </div>
       <div className="stagger mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {top.map((g) => <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />)}
+        {top.map((g, i) => <GadgetCard key={g.id} i={i} g={g} compare={compare} onCompare={onCompare} />)}
       </div>
     </section>
   );

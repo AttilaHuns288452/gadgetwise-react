@@ -263,7 +263,7 @@ export function useWishlist() {
   };
 }
 
-export function GadgetCard({ g, compare, onCompare }) {
+export function GadgetCard({ g, compare, onCompare, i }) {
   const monthly = GW.monthlyCost(g);
   const wish = useWishlist();
   const [toast, toastNode] = useToast();
@@ -271,6 +271,7 @@ export function GadgetCard({ g, compare, onCompare }) {
   const specRows = Object.entries(g.specs || {}).slice(0, 3);
   return (
     <article
+      style={i == null ? undefined : stag(i)}
       className={`card hover-lift flex flex-col overflow-hidden transition-shadow ${compare?.has(g.id) ? "ring-2 ring-primary shadow-md" : ""}`}
     >
       <a href={`#/g/${g.id}`} className="block">
@@ -350,6 +351,13 @@ export function GadgetCard({ g, compare, onCompare }) {
 // Shared button base. transform + shadow transitions are here, not per-button:
 // this constant is the ancestor of every CTA in the app, so colour-only
 // transitions here made the whole product feel flat on hover.
+/**
+ * Stagger index for a direct child of a `.stagger` container. One place to cap
+ * the wave: items past the cap enter together rather than queuing behind
+ * hundreds of predecessors.
+ */
+export const stag = (i) => ({ "--i": Math.min(Number(i) || 0, 12), "--stagger": "80ms" });
+
 export const btnCls = "rounded-lg px-7 py-2.5 text-base font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(15,23,34,0.14)] active:translate-y-0 active:scale-[0.98] active:duration-75";
 export const btnPrimaryCls = btnCls + " bg-[#2563EB] text-white hover:bg-[#1D4ED8]";
 export const btnOutlineCls = btnCls + " border border-[#C7C7CC] bg-white text-[#111827] hover:bg-[#F9FAFB]";

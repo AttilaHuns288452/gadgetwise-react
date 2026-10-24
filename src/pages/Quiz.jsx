@@ -347,7 +347,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                 {results.map((r, i) => {
                   const g = r.gadget;
                   return (
-                    <article key={g.id} className="card hover-lift p-5 sm:p-6">
+                    <article key={g.id} style={stag(i)} className="card hover-lift p-5 sm:p-6">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="flex items-start gap-4">
                           <span className="mono text-xl font-semibold text-ink2">#{i + 1}</span>

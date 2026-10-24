@@ -764,8 +764,8 @@ function GadgetDetail({ compare, onCompare }) {
           {GW.gadgetsInCategory(g.category)
             .filter((x) => x.id !== g.id)
             .slice(0, 3)
-            .map((x) => (
-              <GadgetCard key={x.id} g={x} compare={compare} onCompare={onCompare} />
+            .map((x, i) => (
+              <GadgetCard key={x.id} i={i} g={x} compare={compare} onCompare={onCompare} />
             ))}
         </div>
       </section>

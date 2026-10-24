@@ -211,29 +211,15 @@
   border-radius: 4px;
 }
 
-/* product grids: an entrance that cascades like piano keys — each card takes
-   its own beat instead of everything landing together after the 6th child */
-/* `backwards` (not `both`): an animation fill state outranks normal
-   declarations, so `both` pinned transform to the end value forever and
-   silently killed every hover-lift on these cards. */
-.stagger > * { animation: fade-up 620ms var(--ease-out, ease) backwards; }
-.stagger > *:nth-child(2)  { animation-delay: 55ms; }
-.stagger > *:nth-child(3)  { animation-delay: 110ms; }
-.stagger > *:nth-child(4)  { animation-delay: 165ms; }
-.stagger > *:nth-child(5)  { animation-delay: 220ms; }
-.stagger > *:nth-child(6)  { animation-delay: 275ms; }
-.stagger > *:nth-child(7)  { animation-delay: 330ms; }
-.stagger > *:nth-child(8)  { animation-delay: 385ms; }
-.stagger > *:nth-child(9)  { animation-delay: 440ms; }
-.stagger > *:nth-child(10) { animation-delay: 495ms; }
-.stagger > *:nth-child(11) { animation-delay: 550ms; }
-.stagger > *:nth-child(12) { animation-delay: 605ms; }
-.stagger > *:nth-child(13) { animation-delay: 660ms; }
-.stagger > *:nth-child(14) { animation-delay: 715ms; }
-.stagger > *:nth-child(15) { animation-delay: 770ms; }
-.stagger > *:nth-child(16) { animation-delay: 825ms; }
-/* ponytail: the wave stops at 16 so a long grid never delays reading; raise
-   the count only if a page shows more than four columns of content above it */
+/* Piano-key entrance. Each item carries its own --i (see stag() in ui.jsx);
+   the delay is capped so a 240-card grid never makes anyone wait. `backwards`
+   (not `both`): an animation fill state outranks normal declarations, so
+   `both` pinned transform to the end value forever and silently killed every
+   hover-lift on these cards. */
+.stagger > * {
+  animation: fade-up 560ms var(--ease-out, ease) backwards;
+  animation-delay: calc(min(var(--i, 0), 12) * var(--stagger, 80ms));
+}
 
 /* Pareto chart points: enter with the data, respond to hover */
 @keyframes pop-in { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }

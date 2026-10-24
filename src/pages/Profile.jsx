@@ -271,8 +271,8 @@ export default function Profile({ compare, onCompare }) {
             </div>
           ) : (
             <div className="stagger mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {saved.map((g) => (
-                <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
+              {saved.map((g, i) => (
+                <GadgetCard key={g.id} i={i} g={g} compare={compare} onCompare={onCompare} />
               ))}
             </div>
           )}

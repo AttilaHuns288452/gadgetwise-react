@@ -22,8 +22,8 @@ function Wishlist() {
         </div>
       ) : (
         <div className="stagger mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {gadgets.map((g) => (
-            <GadgetCard key={g.id} g={g} />
+          {gadgets.map((g, i) => (
+            <GadgetCard key={g.id} i={i} g={g} />
           ))}
         </div>
       )}

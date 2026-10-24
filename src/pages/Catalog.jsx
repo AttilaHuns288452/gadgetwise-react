@@ -294,8 +294,8 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                 key={`${cat}|${sort}|${[...feats].sort().join(",")}|${[...brands].sort().join(",")}|${minPrice}|${maxPrice}`}
                 className="stagger mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
               >
-                {results.map((g) => (
-                  <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
+                {results.map((g, i) => (
+                  <GadgetCard key={g.id} i={i} g={g} compare={compare} onCompare={onCompare} />
                 ))}
               </div>
 
