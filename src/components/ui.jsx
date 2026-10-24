@@ -652,19 +652,28 @@ export function Logo({ size = 20, tone = "dark", showWordmark = true, className 
 
 
 /**
- * Scroll reveal. Observes every `.reveal:not(.is-visible)` element, including
- * ones that mount later (catalog sections appear only after loading finishes).
- * Reveals are driven by live scroll position, so late-mounted content is
- * handled and nothing can be revealed before the reader actually reaches it.
+ * Scroll reveal + entrance wave. Drives two things from live scroll position:
+ *
+ * - `.reveal` sections fade in when the reader reaches them (including ones
+ *   that mount later: catalog sections appear only after loading finishes).
+ * - `.stagger` children start their piano-key entrance when THEY enter the
+ *   viewport, indexed per visible batch (`.is-live` + a `--j` wave index), so a
+ *   grid cascades on arrival and again row by row while scrolling — instead of
+ *   playing every card's animation off-screen where nobody ever sees it.
+ *
+ * Late-mounted content is picked up by a MutationObserver, so a grid that lands
+ * seconds after first paint starts its wave on the next frame, not on the next
+ * scroll or tick.
  */
 export function useReveal() {
   useEffect(() => {
-    // mark the system ready so the hidden state is applied at all
+    // mark the system ready so the hidden/paused states are applied at all
     document.documentElement.classList.add("reveal-ready");
 
-    if (!("IntersectionObserver" in window)) {
-      // no observer support: never leave content hidden
+    if (!(typeof IntersectionObserver === "function")) {
+      // no observer support: never leave content hidden or frozen
       document.querySelectorAll(".reveal").forEach((e) => e.classList.add("is-visible"));
+      document.querySelectorAll(".stagger > *").forEach((e) => e.classList.add("is-live"));
       return;
     }
 
@@ -674,8 +683,9 @@ export function useReveal() {
     // revealed while briefly "in view", then pushed thousands of pixels down
     // and never animate when actually scrolled to. Checking live positions on
     // scroll + a slow tick is correct by construction and also picks up
-    // content mounted later, so no MutationObserver is needed.
+    // content mounted later.
     const sweep = () => {
+      const vh = window.innerHeight;
       // During initial load the page is still short (catalog sections arrive
       // later), so a section can sit inside the viewport and then be pushed
       // thousands of pixels down. Revealing it at that moment meant it never
@@ -683,24 +693,44 @@ export function useReveal() {
       // off-screen is re-armed while the reader has not scrolled yet.
       for (const e of document.querySelectorAll(".reveal")) {
         const r = e.getBoundingClientRect();
-        const inView = r.top < window.innerHeight * 0.92 && r.bottom > 0;
+        const inView = r.top < vh * 0.92 && r.bottom > 0;
         if (inView) e.classList.add("is-visible");
-        else if (window.scrollY === 0 && r.top > window.innerHeight + 120) e.classList.remove("is-visible");
+        else if (window.scrollY === 0 && r.top > vh + 120) e.classList.remove("is-visible");
       }
+      // Entrance wave: start each pending item as it arrives on screen, and
+      // index it within the batch that arrived together. Reads are collected
+      // first and writes applied after — interleaving them reflows once per
+      // card when a 240-card grid mounts.
+      const batch = [];
+      for (const e of document.querySelectorAll(".stagger > *:not(.is-live)")) {
+        const r = e.getBoundingClientRect();
+        if (r.top < vh * 0.92 && r.bottom > 0) batch.push(e);
+      }
+      batch.forEach((e, n) => {
+        // --j (not --i): the page's own stag() index can be rewritten by a
+        // React re-render, and changing an animation's delay replays it
+        e.style.setProperty("--j", String(Math.min(n, 12)));
+        e.classList.add("is-live");
+      });
     };
     let raf = 0;
-    const onScroll = () => {
+    const schedule = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => { raf = 0; sweep(); });
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    // grids mount when data arrives, long after first paint — their wave must
+    // start the frame they appear, not up to a second later
+    const mo = new MutationObserver(schedule);
+    mo.observe(document.body, { childList: true, subtree: true });
     const t = setInterval(sweep, 1000);
     sweep();
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      mo.disconnect();
       clearInterval(t);
       if (raf) cancelAnimationFrame(raf);
     };

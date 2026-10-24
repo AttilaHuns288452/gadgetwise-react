@@ -19,7 +19,7 @@ import Home from "./pages/Home.jsx";
 import { useAuth } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
-import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard } from "./components/ui.jsx";
+import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal } from "./components/ui.jsx";
 
 const NAV = [
   ["/", "Home"],
@@ -119,6 +119,10 @@ function FooterColumn({ title, items, links }) {
 
 export default function App() {
   const navigate = useNavigate();
+  // one reveal + entrance-wave system for the whole app (every route), not a
+  // per-page hook: without it non-home routes run entrance animations at mount
+  // time, where half of them play off-screen and never get seen
+  useReveal();
   const [compare, setCompare] = useState(new Set());
   // Real catalog load. Every product page reads the GW.gadgets global, so we
   // fill it before the routes render and force one re-render when it's ready.

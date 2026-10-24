@@ -215,15 +215,24 @@
   border-radius: 4px;
 }
 
-/* Piano-key entrance. Each item carries its own --i (see stag() in ui.jsx);
-   the delay is capped so a 240-card grid never makes anyone wait. `backwards`
-   (not `both`): an animation fill state outranks normal declarations, so
-   `both` pinned transform to the end value forever and silently killed every
-   hover-lift on these cards. */
+/* Piano-key entrance. Each item carries its own index; the delay is capped so a
+   240-card grid never makes anyone wait. `backwards` (not `both`): an
+   animation fill state outranks normal declarations, so `both` pinned transform
+   to the end value forever and silently killed every hover-lift on these cards.
+   --j is the wave index assigned by useReveal's sweep when the item actually
+   enters the viewport; --i (stag()) stays as the no-JS fallback. Two vars on
+   purpose: a React re-render that rewrites --i can never change the delay of an
+   item that already started (a changed animation-delay replays the animation). */
+html.reveal-ready .stagger > * { animation-play-state: paused; }
+html.reveal-ready .stagger > *.is-live { animation-play-state: running; }
 .stagger > * {
   animation: rise-in 560ms var(--ease-out, ease) backwards;
-  animation-delay: calc(min(var(--i, 0), 12) * var(--stagger, 80ms));
+  animation-delay: calc(min(var(--j, var(--i, 0)), 12) * var(--stagger, 80ms));
 }
+/* Cards inside a .reveal section leave the fading to the section wrapper and
+   only move — the same page-fade/card-move split as route-enter below. */
+@keyframes rise-move { from { transform: translateY(var(--rise, 28px)); } to { transform: none; } }
+html.reveal-ready .reveal .stagger > * { animation-name: rise-move; }
 
 /* Pareto chart points: enter with the data, respond to hover */
 @keyframes pop-in { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }
@@ -244,7 +253,7 @@
    parent and its children at once multiplies their opacities into one muddy
    blur; moving children while the page fades keeps both effects legible. */
 @keyframes route-enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.route-enter { animation: route-enter 300ms var(--ease-out, ease) backwards; }
+.route-enter { animation: route-enter var(--dur-slow, 450ms) var(--ease-out, ease) backwards; }
 
 /* entrance items rise AND fade, each on its own staggered start. The page-level
    route-enter fade is the wrapper only: children must arrive one after another,
@@ -314,6 +323,8 @@ html.reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
        at its invisible `from` state long after the animation has "ended". */
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
+    /* and paused waves must run: play-state is not a motion preference */
+    animation-play-state: running !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }

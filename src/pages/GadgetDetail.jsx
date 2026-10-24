@@ -760,7 +760,7 @@ function GadgetDetail({ compare, onCompare }) {
             See all in category
           </Link>
         </div>
-        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {GW.gadgetsInCategory(g.category)
             .filter((x) => x.id !== g.id)
             .slice(0, 3)

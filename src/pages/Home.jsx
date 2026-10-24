@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GW, money, ownIndex } from '../lib.js';
-import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, CatalogLoadingCard, useReveal, stag } from '../components/ui.jsx';
+import { Img, Stars, GadgetCard, btnPrimaryCls, btnOutlineCls, CatalogErrorCard, CatalogLoadingCard, stag } from '../components/ui.jsx';
 import ParetoExplorer from '../components/ParetoExplorer.jsx';
 import { loadSiteSettings } from '../lib/store.js';
 
@@ -22,7 +22,46 @@ function AnnouncementBanner() {
   );
 }
 
-function Hero() {
+/** Loading stand-in for the hero's featured card block. Same frame as the real
+ *  card + companion rows, so the first screen never shifts when the catalog
+ *  lands — and the hero sequence has something to carry at its 680ms beat. */
+function HeroSkeleton() {
+  return (
+    <>
+      <div className="card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+        <div className="relative">
+          <div className="aspect-[4/3] w-full animate-pulse bg-surface2" />
+        </div>
+        <div className="px-5 pt-4">
+          <div className="min-h-[3.25rem] pt-1"><div className="h-4 w-3/4 animate-pulse rounded-md bg-surface2" /></div>
+          <div className="mt-1 flex items-baseline justify-between gap-3">
+            <div className="h-6 w-28 animate-pulse rounded-md bg-surface2" />
+            <div className="h-4 w-16 animate-pulse rounded-md bg-surface2" />
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-3 bg-primary-wash px-5 py-3">
+          <div className="h-7 w-20 animate-pulse rounded-md bg-surface2" />
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-on-hero2">Also in the catalog</p>
+        <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {[0, 1].map((i) => (
+            <div key={i} className="card flex min-w-0 items-center gap-3 p-2.5">
+              <div className="h-12 w-12 shrink-0 animate-pulse rounded-md bg-surface2" />
+              <div className="min-w-0 flex-1">
+                <div className="h-3 w-3/4 animate-pulse rounded-md bg-surface2" />
+                <div className="mt-1.5 h-3 w-1/3 animate-pulse rounded-md bg-surface2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Hero({ loading, failed }) {
   // Real catalog: feature the top-rated real product with an image. Falls back
   // to any product, and renders nothing if the catalog is still empty.
   const g =
@@ -33,6 +72,9 @@ function Hero() {
     .sort((a, b) => (b.rating || 0) - (a.rating || 0))
     .filter((x) => x.id !== g?.id)
     .slice(0, 2);
+  // the featured block occupies its final frame from the first paint: skeleton
+  // while genuinely loading, nothing when the catalog genuinely failed
+  const showFeatured = Boolean(g) || (loading && !failed);
   return (
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
@@ -59,9 +101,12 @@ function Hero() {
             ))}
           </ul>
         </div>
-        {g && (
+        {showFeatured && (
           <div className="anim-fade-up flex min-w-0 flex-col gap-3" style={{ animationDelay: "680ms" }}>
-            <div className="card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+            {!g && <HeroSkeleton />}
+            {g && (
+            <>
+            <div className="anim-fade-in card overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
               <div className="relative">
                 <span className="absolute left-4 top-4 z-10 rounded-full bg-[#FBF5E7] px-3 py-1 text-xs font-semibold text-star">Top rated</span>
                 <Img gadget={g} className="w-full" imgClass="object-cover" eager />
@@ -98,6 +143,8 @@ function Hero() {
                   ))}
                 </div>
               </div>
+            )}
+            </>
             )}
           </div>
         )}
@@ -352,11 +399,10 @@ function CTA() {
 }
 
 export default function Home({ compare, onCompare, catalogError, catalogLoading }) {
-  useReveal();
   return (
     <>
       <AnnouncementBanner />
-      <Hero />
+      <Hero loading={catalogLoading} failed={Boolean(catalogError)} />
       {catalogLoading ? (
         <CatalogLoadingCard />
       ) : (
