@@ -345,7 +345,10 @@ export function GadgetCard({ g, compare, onCompare }) {
   );
 }
 
-export const btnCls = "rounded-lg px-7 py-2.5 text-base font-semibold transition-colors";
+// Shared button base. transform + shadow transitions are here, not per-button:
+// this constant is the ancestor of every CTA in the app, so colour-only
+// transitions here made the whole product feel flat on hover.
+export const btnCls = "rounded-lg px-7 py-2.5 text-base font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(15,23,34,0.14)] active:translate-y-0 active:scale-[0.98] active:duration-75";
 export const btnPrimaryCls = btnCls + " bg-[#2563EB] text-white hover:bg-[#1D4ED8]";
 export const btnOutlineCls = btnCls + " border border-[#C7C7CC] bg-white text-[#111827] hover:bg-[#F9FAFB]";
 export const btnDangerCls = btnCls + " bg-[#B3372E] text-white hover:bg-[#93291F]";

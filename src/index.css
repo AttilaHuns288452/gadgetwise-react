@@ -52,6 +52,8 @@
 :root { --ui-scale: 1; }
 
 @layer base {
+  /* smooth in-page movement; the reduced-motion block below overrides it */
+  html { scroll-behavior: smooth; }
   body {
     background: var(--color-bg);
     color: var(--color-ink);
@@ -159,6 +161,54 @@
 .anim-in {
   animation: fade-up var(--dur-in, 620ms) var(--ease-out, ease) both;
   animation-delay: calc(var(--i, 0) * var(--stagger, 110ms));
+}
+
+/* Interaction layer. The premium feel comes from every control answering the
+   pointer the same way, not from bigger entrance animations: colour-only
+   transitions read as flat no matter how good the page-load choreography is. */
+.btn,
+.btn-primary, .btn-ghost, .btn-amber, .btn-hero, .btn-hero-ghost,
+.chip, .chip-tag, .chip-good, .chip-bad, .chip-neutral, .chip-blue {
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  will-change: transform;
+}
+.btn:hover,
+.btn-primary:hover, .btn-ghost:hover, .btn-amber:hover,
+.btn-hero:hover, .btn-hero-ghost:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(15, 23, 34, 0.14);
+}
+.btn:active,
+.btn-primary:active, .btn-ghost:active, .btn-amber:active,
+.btn-hero:active, .btn-hero-ghost:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px rgba(15, 23, 34, 0.10);
+  transition-duration: 60ms;
+}
+.chip:hover, .chip-tag:hover, .chip-good:hover, .chip-bad:hover,
+.chip-neutral:hover, .chip-blue:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 34, 0.08);
+}
+/* nav answers the pointer instead of only recolouring */
+.main-nav-list a {
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.main-nav-list a:hover { transform: translateY(-1px); }
+/* fields ease into focus instead of snapping */
+.field, input, select, textarea {
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+/* one consistent keyboard ring across the app */
+:where(a, button, input, select, textarea, [role="button"], [role="tab"]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* product grids: an entrance that cascades like piano keys — each card takes
