@@ -451,6 +451,26 @@ export function Modal({ title, sub, children, actions, onClose }) {
   );
 }
 
+/* Confirmation dialog for consequential/destructive actions. Built on Modal
+   (focus trap + Escape + focus restore come free). busy=true disables both
+   buttons and swallows Escape/backdrop closes so a running operation cannot
+   be double-submitted or abandoned half-way with a lying UI. */
+export function ConfirmDialog({ title, message, confirmLabel = "Confirm", cancelLabel = "Cancel", danger = false, busy = false, error = null, onConfirm, onClose, children }) {
+  return (
+    <Modal title={title} onClose={busy ? () => {} : onClose} actions={<>
+      <button type="button" className={btnOutlineCls + " !px-5 !py-2 !text-sm"} onClick={onClose} disabled={busy}>{cancelLabel}</button>
+      <button type="button" className={(danger ? btnDangerCls : btnPrimaryCls) + " !px-5 !py-2 !text-sm inline-flex items-center gap-2"} onClick={onConfirm} disabled={busy}>
+        {busy && <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
+        {busy ? "Working…" : confirmLabel}
+      </button>
+    </>}>
+      {message && <p className="text-[17px] leading-relaxed text-[#111827]">{message}</p>}
+      {children}
+      {error && <p role="alert" className="rounded-lg border border-[#F5C2C0] bg-[#FDF3F2] px-3.5 py-2.5 text-sm text-[#B42318]">{error}</p>}
+    </Modal>
+  );
+}
+
 /* Honest "still loading" card. The catalog is fetched live per category, so
    there is a real gap between first paint and results: say so instead of
    letting pages show a false empty state ("no gadgets match"). */

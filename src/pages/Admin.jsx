@@ -6,7 +6,7 @@ import { Logo } from "../components/ui.jsx";
 import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
-import { Modal, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
+import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
 
 const ICONS = {
   dashboard: "M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z",
@@ -283,9 +283,16 @@ function Gadgets({ toast }) {
     if (res.ok) { setForm(null); reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
     else toast(res.error || "Could not save", "alert");
   };
-  const del = async (id) => {
-    const res = await deleteProduct(id);
-    if (res.ok) { reload(); toast("Gadget deleted"); } else toast(res.error || "Could not delete", "alert");
+  const [delTarget, setDelTarget] = useState(null); // {id, name}
+  const [delBusy, setDelBusy] = useState(false);
+  const [delError, setDelError] = useState(null);
+  const confirmDelete = async () => {
+    if (!delTarget) return;
+    setDelBusy(true); setDelError(null);
+    const res = await deleteProduct(delTarget.id);
+    if (!res.ok) { setDelError(res.error || "Could not delete"); setDelBusy(false); return; }
+    reload(); toast("Gadget deleted", "trash");
+    setDelBusy(false); setDelTarget(null);
   };
   return (
     <>
@@ -361,7 +368,7 @@ function Gadgets({ toast }) {
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <button className={iconBtn} title="Edit" onClick={() => setForm({ ...g })}><Ico n="pencil" /></button>
-                    <button className={iconBtn} title="Delete" onClick={() => del(g.id)}><Ico n="trash" /></button>
+                    <button className={iconBtn} title="Delete" onClick={() => setDelTarget({ id: g.id, name: [g.brand, g.model].filter(Boolean).join(" ") || "this gadget" })}><Ico n="trash" /></button>
                   </div>
                 </td>
               </tr>
@@ -370,6 +377,18 @@ function Gadgets({ toast }) {
           </tbody>
         </table>
       </div>
+      {delTarget && (
+        <ConfirmDialog
+          title="Delete gadget?"
+          message={<span>Permanently delete <b>{delTarget.name}</b> from the catalog? This cannot be undone.</span>}
+          confirmLabel="Delete"
+          danger
+          busy={delBusy}
+          error={delError}
+          onConfirm={confirmDelete}
+          onClose={() => { if (!delBusy) { setDelTarget(null); setDelError(null); } }}
+        />
+      )}
     </>
   );
 }
@@ -389,9 +408,16 @@ function Categories({ toast }) {
     if (res.ok) { setForm(null); reload(); toast(form.id ? "Category updated" : "Category added"); }
     else toast(res.error || "Could not save", "alert");
   };
-  const del = async (id) => {
-    const res = await deleteCategory(id);
-    if (res.ok) { reload(); toast("Category deleted"); } else toast(res.error || "Could not delete", "alert");
+  const [delTarget, setDelTarget] = useState(null); // {id, name}
+  const [delBusy, setDelBusy] = useState(false);
+  const [delError, setDelError] = useState(null);
+  const confirmDelete = async () => {
+    if (!delTarget) return;
+    setDelBusy(true); setDelError(null);
+    const res = await deleteCategory(delTarget.id);
+    if (!res.ok) { setDelError(res.error || "Could not delete"); setDelBusy(false); return; }
+    reload(); toast("Category deleted", "trash");
+    setDelBusy(false); setDelTarget(null);
   };
   return (
     <>
@@ -447,7 +473,7 @@ function Categories({ toast }) {
               </div>
               <div className="flex gap-2">
                 <button className={iconBtn} title="Edit" onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0, slug: c.slug, query: c.query || "" })}><Ico n="pencil" /></button>
-                <button className={iconBtn} title="Delete" onClick={() => del(c.id)}><Ico n="trash" /></button>
+                <button className={iconBtn} title="Delete" onClick={() => setDelTarget({ id: c.id, name: c.name || "this category" })}><Ico n="trash" /></button>
               </div>
             </div>
             <p className="mt-3 text-[15px] leading-relaxed text-[#4B5563]">{c.blurb || "No description."}</p>
@@ -466,6 +492,18 @@ function Categories({ toast }) {
           </div>
         )}
       </div>
+      {delTarget && (
+        <ConfirmDialog
+          title="Delete category?"
+          message={<span>Permanently delete <b>{delTarget.name}</b>? Products keep their data but fall back to the default marketplace grouping.</span>}
+          confirmLabel="Delete"
+          danger
+          busy={delBusy}
+          error={delError}
+          onConfirm={confirmDelete}
+          onClose={() => { if (!delBusy) { setDelTarget(null); setDelError(null); } }}
+        />
+      )}
     </>
   );
 }
@@ -589,6 +627,8 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
   const [filter, setFilter] = useState("all");
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
+  const [delBusy, setDelBusy] = useState(false);
+  const [delError, setDelError] = useState(null);
   const [busy, setBusy] = useState(null);
   const pending = rows.filter((r) => r.status === "pending").length;
   const shown = rows.filter((r) => filter === "all" || r.status === filter);
@@ -696,22 +736,24 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
       )}
 
       {del && (
-        <Modal
-          title="Delete review"
-          onClose={() => setDel(null)}
-          actions={<>
-            <button className={btnOutlineCls} onClick={() => setDel(null)}>Cancel</button>
-            <button className={btnDangerCls} onClick={async () => {
-              const res = await deleteReview(del.id);
-              if (!res.ok) { toast(`Could not delete review: ${res.error}`, "alert"); return; }
-              setRows(rows.filter((x) => x.id !== del.id));
-              setDel(null);
-              toast("Review deleted", "trash");
-            }}>Delete</button>
-          </>}
-        >
-          <p className="text-[17px] text-[#111827]">Permanently remove the review by <b>{del.user}</b>?</p>
-        </Modal>
+        <ConfirmDialog
+          title="Delete review?"
+          message={<span>Permanently remove the review by <b>{del.user}</b>? This cannot be undone.</span>}
+          confirmLabel="Delete"
+          danger
+          busy={delBusy}
+          error={delError}
+          onConfirm={async () => {
+            setDelBusy(true); setDelError(null);
+            const res = await deleteReview(del.id);
+            if (!res.ok) { setDelError(`Could not delete review: ${res.error}`); setDelBusy(false); return; }
+            setRows(rows.filter((x) => x.id !== del.id));
+            setDelBusy(false);
+            setDel(null);
+            toast("Review deleted", "trash");
+          }}
+          onClose={() => { if (!delBusy) setDel(null); }}
+        />
       )}
     </>
   );

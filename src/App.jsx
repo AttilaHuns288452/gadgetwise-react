@@ -20,7 +20,7 @@ import Home from "./pages/Home.jsx";
 import { useAuth, recoveryFlowActive } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
-import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal } from "./components/ui.jsx";
+import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal, ConfirmDialog } from "./components/ui.jsx";
 import { createPortal } from "react-dom";
 
 const NAV = [
@@ -169,6 +169,23 @@ export default function App() {
   const needsCatalog = ![ "/", "/login", "/register", "/reset-password", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare", "/gadgets" ].includes(pathname)
     && !pathname.startsWith("/u/");
   const { user, ready, admin: isAdminUser, adminChecked, signOut, recovery } = useAuth();
+  // Sign-out is consequential: confirm first, await the real result, and only
+  // then leave. A failed logout must NOT look like a successful one.
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [outBusy, setOutBusy] = useState(false);
+  const [outError, setOutError] = useState(null);
+  const doSignOut = async () => {
+    setOutBusy(true); setOutError(null);
+    const res = await Promise.resolve(signOut()).catch((e) => ({ error: e }));
+    if (res && res.error) {
+      setOutError("Could not sign out. Please try again.");
+      setOutBusy(false);
+      return;
+    }
+    setOutBusy(false);
+    setConfirmOut(false);
+    navigate("/");
+  };
   // A recovery session is not a normal signed-in session: the user still has to
   // choose a new password. While one is live, no other route (and no automatic
   // redirect) may take them away from the recovery page.
@@ -271,14 +288,22 @@ export default function App() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    signOut();
-                    navigate("/");
-                  }}
+                  onClick={() => setConfirmOut(true)}
                   className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:text-[#2563EB]"
                 >
                   Sign out
                 </button>
+                {confirmOut && (
+                  <ConfirmDialog
+                    title="Sign out of GadgetWise?"
+                    message="Are you sure you want to sign out of your account?"
+                    confirmLabel="Sign Out"
+                    busy={outBusy}
+                    error={outError}
+                    onConfirm={doSignOut}
+                    onClose={() => { if (!outBusy) { setConfirmOut(false); setOutError(null); } }}
+                  />
+                )}
               </div>
             ) : (
               // Signed out: real sign-in / sign-up entry points.
