@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
-import { Img, useWishlist, btnPrimaryCls } from "../components/ui.jsx";
+import { Img, useWishlist, useToast, btnPrimaryCls } from "../components/ui.jsx";
 import { readCompareHistory } from "./ComparisonHistory.jsx";
 
 const THRESHOLD = 0.08;
@@ -117,6 +117,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
   const [hidden, setHidden] = useState(new Set());
   const [history, setHistory] = useState(readCompareHistory);
   const wish = useWishlist();
+  const { toast, node: toastNode } = useToast();
 
   // A shared / history link restores exactly that selection (the prototype's
   // ?ids= contract); otherwise the compare tray drives the table.
@@ -187,7 +188,13 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                         {GW.getCategory(g.category).name} · {g.rating.toFixed(1)}★ ({g.reviewCount})
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => wish.toggle(g.id)} className={ghostBtnCls}>
+                        <button type="button" onClick={async () => {
+                          const wasSaved = wish.has(g.id);
+                          const res = await wish.toggle(g.id);
+                          if (res && res.gated) return; // auth prompt shown; nothing changed
+                          if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
+                          else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
+                        }} className={ghostBtnCls}>
                           <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <path d="M8 13.5S2 10 2 5.9C2 3.7 3.7 2.5 5.3 2.5c1 0 2 .5 2.7 1.4.7-.9 1.7-1.4 2.7-1.4 1.6 0 3.3 1.2 3.3 3.4 0 4.1-6 7.6-6 7.6Z" />
                           </svg>
@@ -313,6 +320,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
           })()}
         </>
       )}
+      {toastNode}
     </section>
   );
 }

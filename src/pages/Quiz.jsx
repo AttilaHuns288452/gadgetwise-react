@@ -451,10 +451,16 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <div className="flex items-center gap-5">
                           <button
                             type="button"
-                            onClick={() => wish.toggle(g.id)}
+                            onClick={async () => {
+                              const wasSaved = wish.has(g.id);
+                              const res = await wish.toggle(g.id);
+                              if (res && res.gated) return; // auth prompt shown; nothing changed
+                              if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
+                              else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
+                            }}
                             className={`text-sm font-semibold ${wish.has(g.id) ? "text-primary" : "text-ink2 hover:text-primary"}`}
                           >
-                            Save
+                            {wish.has(g.id) ? "Saved" : "Save to wishlist"}
                           </button>
                           <Link to={`/g/${g.id}`} className="text-sm font-semibold text-primary hover:underline">
                             Details

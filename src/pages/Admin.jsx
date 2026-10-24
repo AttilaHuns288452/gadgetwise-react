@@ -280,9 +280,15 @@ function Gadgets({ toast }) {
     if (price != null && (!Number.isFinite(price) || price <= 0)) { toast("Price must be a number greater than zero", "alert"); return; }
     if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { toast("Original price must be a number greater than zero", "alert"); return; }
     const res = await saveProduct(form.id || null, { ...form, price, original_price: orig });
-    if (res.ok) { setForm(null); reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
+    if (res.ok) { setForm(null); await reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
     else toast(res.error || "Could not save", "alert");
   };
+  // Unsaved-changes guard: cancelling an edited form must not silently eat it.
+  const [pristine, setPristine] = useState(null);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const formDirty = !!form && !!pristine && JSON.stringify(form) !== JSON.stringify(pristine);
+  const requestClose = () => (formDirty ? setDiscardOpen(true) : setForm(null));
+  const openForm = (f) => { setForm(f); setPristine(f); };
   const [delTarget, setDelTarget] = useState(null); // {id, name}
   const [delBusy, setDelBusy] = useState(false);
   const [delError, setDelError] = useState(null);
@@ -302,7 +308,7 @@ function Gadgets({ toast }) {
           <p className="mt-1 text-[15px] text-[#6B7280]">GadgetWise-curated products. Add, edit, or remove them — saved to the database and shown in the catalog.</p>
           <p className="mt-2 text-[13px] text-[#B42318]">Remove any propagation-test or placeholder rows before publishing a product.</p>
         </div>
-        <button className={btnPrimary} onClick={() => setForm({ model: "", brand: "", category: "smartphones", price: "", image: "" })}><Ico n="plus" size={16} /> Add gadget</button>
+        <button className={btnPrimary} onClick={() => openForm({ model: "", brand: "", category: "smartphones", price: "", image: "" })}><Ico n="plus" size={16} /> Add gadget</button>
       </div>
 
       {form && (
@@ -323,7 +329,7 @@ function Gadgets({ toast }) {
           </div>
           <div className="mt-4 flex gap-2">
             <button className={btnPrimary} onClick={save}>Save</button>
-            <button className={iconBtn} onClick={() => setForm(null)}>Cancel</button>
+            <button className={iconBtn} onClick={requestClose}>Cancel</button>
           </div>
         </div>
       )}
@@ -367,7 +373,7 @@ function Gadgets({ toast }) {
                 <td className="px-4 py-3 mono text-[#111827]">{g.price != null ? money(g.price) : "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
-                    <button className={iconBtn} title="Edit" aria-label={`Edit ${[g.brand, g.model].filter(Boolean).join(" ") || "gadget"}`} onClick={() => setForm({ ...g })}><Ico n="pencil" /></button>
+                    <button className={iconBtn} title="Edit" aria-label={`Edit ${[g.brand, g.model].filter(Boolean).join(" ") || "gadget"}`} onClick={() => openForm({ ...g })}><Ico n="pencil" /></button>
                     <button className={iconBtn} title="Delete" aria-label={`Delete ${[g.brand, g.model].filter(Boolean).join(" ") || "this gadget"}`} onClick={() => setDelTarget({ id: g.id, name: [g.brand, g.model].filter(Boolean).join(" ") || "this gadget" })}><Ico n="trash" /></button>
                   </div>
                 </td>
@@ -377,6 +383,16 @@ function Gadgets({ toast }) {
           </tbody>
         </table>
       </div>
+      {discardOpen && (
+        <ConfirmDialog
+          title="Discard unsaved changes?"
+          message="This gadget form has edits that have not been saved. Discard them?"
+          confirmLabel="Discard changes"
+          danger
+          onConfirm={() => { setDiscardOpen(false); setForm(null); setPristine(null); }}
+          onClose={() => setDiscardOpen(false)}
+        />
+      )}
       {delTarget && (
         <ConfirmDialog
           title="Delete gadget?"
@@ -405,9 +421,15 @@ function Categories({ toast }) {
     // never rename it afterwards (products and quiz cases reference it)
     const slug = form.slug || form.name;
     const res = await saveCategory(form.id || null, { ...form, slug });
-    if (res.ok) { setForm(null); reload(); toast(form.id ? "Category updated" : "Category added"); }
+    if (res.ok) { setForm(null); await reload(); toast(form.id ? "Category updated" : "Category added"); }
     else toast(res.error || "Could not save", "alert");
   };
+  // Unsaved-changes guard: cancelling an edited form must not silently eat it.
+  const [pristine, setPristine] = useState(null);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const formDirty = !!form && !!pristine && JSON.stringify(form) !== JSON.stringify(pristine);
+  const requestClose = () => (formDirty ? setDiscardOpen(true) : setForm(null));
+  const openForm = (f) => { setForm(f); setPristine(f); };
   const [delTarget, setDelTarget] = useState(null); // {id, name}
   const [delBusy, setDelBusy] = useState(false);
   const [delError, setDelError] = useState(null);
@@ -428,7 +450,7 @@ function Categories({ toast }) {
             <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Categories</h1>
             <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">Categories are lightweight navigation labels for the marketplace catalog. Use them to group products and power filters, not to invent product records.</p>
           </div>
-          <button className={btnPrimary} onClick={() => setForm({ name: "", blurb: "", sort_order: rows.length, query: "" })}><Ico n="plus" size={16} /> Add category</button>
+          <button className={btnPrimary} onClick={() => openForm({ name: "", blurb: "", sort_order: rows.length, query: "" })}><Ico n="plus" size={16} /> Add category</button>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-white/80 bg-white/75 px-4 py-3"><div className="mono text-2xl font-bold text-[#14213A]">{rows.length}</div><div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#667085]">Configured labels</div></div>
@@ -455,7 +477,7 @@ function Categories({ toast }) {
           </div>
           <div className="mt-4 flex gap-2">
             <button className={btnPrimary} onClick={save} disabled={!form?.name?.trim()}>Save</button>
-            <button className={iconBtn} onClick={() => setForm(null)}>Cancel</button>
+            <button className={iconBtn} onClick={requestClose}>Cancel</button>
           </div>
         </div>
       )}
@@ -472,7 +494,7 @@ function Categories({ toast }) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className={iconBtn} title="Edit" aria-label={`Edit ${c.name || "category"}`} onClick={() => setForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0, slug: c.slug, query: c.query || "" })}><Ico n="pencil" /></button>
+                <button className={iconBtn} title="Edit" aria-label={`Edit ${c.name || "category"}`} onClick={() => openForm({ id: c.id, name: c.name, blurb: c.blurb || "", sort_order: c.sort_order || 0, slug: c.slug, query: c.query || "" })}><Ico n="pencil" /></button>
                 <button className={iconBtn} title="Delete" aria-label={`Delete ${c.name || "this category"}`} onClick={() => setDelTarget({ id: c.id, name: c.name || "this category" })}><Ico n="trash" /></button>
               </div>
             </div>
@@ -492,6 +514,16 @@ function Categories({ toast }) {
           </div>
         )}
       </div>
+      {discardOpen && (
+        <ConfirmDialog
+          title="Discard unsaved changes?"
+          message="This category form has edits that have not been saved. Discard them?"
+          confirmLabel="Discard changes"
+          danger
+          onConfirm={() => { setDiscardOpen(false); setForm(null); setPristine(null); }}
+          onClose={() => setDiscardOpen(false)}
+        />
+      )}
       {delTarget && (
         <ConfirmDialog
           title="Delete category?"

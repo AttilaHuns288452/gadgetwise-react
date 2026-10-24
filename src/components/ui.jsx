@@ -152,7 +152,7 @@ export function Stars({ rating, count }) {
           );
         })}
       </span>
-      <span className="mono tabular-nums text-ink2">{rating.toFixed(1)}</span>
+      <span className="mono tabular-nums text-ink2">{rating == null ? "—" : Number(rating).toFixed(1)}</span>
       {count != null && <span className="tabular-nums text-ink3">({count.toLocaleString()})</span>}
     </span>
   );

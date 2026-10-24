@@ -115,6 +115,11 @@ export default function Profile({ compare, onCompare }) {
   const [remBusy, setRemBusy] = useState(false);
   const [remError, setRemError] = useState(null);
   const [confirmOut, setConfirmOut] = useState(false);
+  // Unsaved-changes guard for the edit dialog (draft or pending photo change).
+  const [draftPristine, setDraftPristine] = useState(null);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const editDirty = editing && (JSON.stringify(draft) !== JSON.stringify(draftPristine) || !!photo || !!removePhoto);
+  const requestCloseEdit = () => (editDirty ? setDiscardOpen(true) : setEditing(false));
   const [outBusy, setOutBusy] = useState(false);
   const [outError, setOutError] = useState(null);
   const removeRecommendation = async () => {
@@ -136,7 +141,9 @@ export default function Profile({ compare, onCompare }) {
   };
 
   const openEdit = () => {
-    setDraft({ full_name: profile.full_name || displayName, bio: profile.bio || "", avatar_url: profile.avatar_url || "" });
+    const d = { full_name: profile.full_name || displayName, bio: profile.bio || "", avatar_url: profile.avatar_url || "" };
+    setDraft(d);
+    setDraftPristine(d);
     setPhoto(null);
     setPreview(null);
     setRemovePhoto(false);
@@ -246,6 +253,19 @@ export default function Profile({ compare, onCompare }) {
                 onConfirm={removeRecommendation}
                 onClose={() => { if (!remBusy) { setRemTarget(null); setRemError(null); } }}
               />
+            )}
+            {discardOpen && (
+              <div className="relative z-[95]">{/* above the edit Modal's z-90 */}
+              <ConfirmDialog
+                title="Discard unsaved changes?"
+                message="Your profile edits have not been saved. Discard them?"
+                confirmLabel="Discard changes"
+                cancelLabel="Keep editing"
+                danger
+                onConfirm={() => { setDiscardOpen(false); setEditing(false); }}
+                onClose={() => setDiscardOpen(false)}
+              />
+              </div>
             )}
             {confirmOut && (
               <ConfirmDialog
@@ -358,10 +378,10 @@ export default function Profile({ compare, onCompare }) {
         <Modal
           title="Edit profile"
           sub="These fields appear on your public reviewer profile."
-          onClose={() => setEditing(false)}
+          onClose={requestCloseEdit}
           actions={
             <>
-              <button type="button" className={btnOutlineCls} onClick={() => setEditing(false)}>Cancel</button>
+              <button type="button" className={btnOutlineCls} onClick={requestCloseEdit}>Cancel</button>
               <button type="button" className={btnPrimaryCls} onClick={saveProfile} disabled={saving}>
                 {saving ? "Saving…" : "Save changes"}
               </button>
