@@ -16,6 +16,115 @@ export function safeNext(raw) {
   return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
 }
 
+// ---- password recovery (email OTP) ----------------------------------------
+// The recovery flow is one page that walks through stages. Which stage the user
+// is on must survive a refresh, so it lives in sessionStorage (not localStorage:
+// the recovery is a short-lived, per-tab thing) next to the small amount of
+// state that describes it.
+
+/** Password policy. Shared by Register and the recovery flow so they cannot drift. */
+export const PASSWORD_MIN = 8;
+
+/** Length of the recovery code Supabase mails out ({{ .Token }} -> 6 digits). */
+export const OTP_LENGTH = 6;
+
+/** Seconds the "Resend code" button stays disabled after a send. */
+export const RESEND_COOLDOWN_SECONDS = 60;
+
+const RECOVERY_KEY = "gw:recovery";
+const RECOVERY_EVENT = "gw-recovery-changed";
+
+// A recovery session is live in this tab. Module-level (not hook state) so a
+// page that mounts AFTER the PASSWORD_RECOVERY event still knows a recovery
+// session exists — the link path navigates to the recovery page on that event.
+let _recoveryActive = false;
+
+/**
+ * True while the app must stay on the recovery page: either a recovery
+ * session is live, or the user already verified a code and still has to set
+ * a new password. The second case survives a refresh, because the auth
+ * client restores the session with SIGNED_IN, not PASSWORD_RECOVERY.
+ */
+export function recoveryFlowActive() {
+  if (_recoveryActive) return true;
+  return readRecoveryState()?.stage === "password";
+}
+
+/** Tell the rest of the app that the recovery flow changed. */
+export function notifyRecoveryChanged() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(RECOVERY_EVENT));
+}
+
+/**
+ * End the recovery flow: drop the live-session marker, the persisted stage
+ * and the OTP the page was holding. Used when the password is set, when the
+ * user walks away, and when a recovery session turns out to be expired.
+ */
+export function endRecoveryFlow() {
+  _recoveryActive = false;
+  clearRecoveryState();
+  notifyRecoveryChanged();
+}
+
+/** Persisted recovery state: { email, stage, userId?, cooldownUntil? }. */
+export function readRecoveryState() {
+  try {
+    const raw = sessionStorage.getItem(RECOVERY_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeRecoveryState(state) {
+  try {
+    sessionStorage.setItem(RECOVERY_KEY, JSON.stringify(state));
+  } catch {
+    /* private mode / storage disabled: the flow still works in-memory */
+  }
+}
+
+export function clearRecoveryState() {
+  try {
+    sessionStorage.removeItem(RECOVERY_KEY);
+  } catch {
+    /* nothing to clean up */
+  }
+}
+
+/** "j•••@student.edu" — recognisable, not a full address on screen. */
+export function maskEmail(email) {
+  const s = String(email || "").trim();
+  const at = s.indexOf("@");
+  if (at <= 0) return s ? "•••" : "";
+  const name = s.slice(0, at);
+  const domain = s.slice(at + 1);
+  return `${name.slice(0, 1)}${"•".repeat(Math.max(name.length - 1, 1))}@${domain}`;
+}
+
+/** Digits only, capped at `max` — what the user typed or pasted into the code box. */
+export function sanitizeOtp(raw, max = OTP_LENGTH) {
+  return String(raw || "").replace(/\D/g, "").slice(0, max);
+}
+
+/** Whole seconds left on a cooldown (0 once it is over). */
+export function cooldownSeconds(now, until) {
+  const left = Math.ceil((until - now) / 1000);
+  return left > 0 ? left : 0;
+}
+
+/**
+ * The id of the user on the live session, or null. Reads the session straight
+ * from the client instead of React state, so it is not affected by render
+ * batching: the recovery flow needs to know RIGHT NOW whether a recovery
+ * session still exists.
+ */
+export async function liveSessionUserId() {
+  if (!supabaseConfigured) return null;
+  const { data } = await supabase.auth.getSession();
+  return data?.session?.user?.id ?? null;
+}
+
 // ---- shared auth gate -----------------------------------------------------
 // One place to ask "is a signed-in user required for this action?" so every
 // protected action (favorite, review, ...) routes through the same prompt
@@ -85,6 +194,16 @@ export function useAuth() {
     setAuthUser(user);
   }, [user]);
 
+  // The recovery flag has to survive a refresh: after the code is verified the
+  // auth client restores the session with SIGNED_IN, not PASSWORD_RECOVERY, so
+  // the event alone cannot be the source of truth. The persisted stage is.
+  useEffect(() => {
+    const sync = () => setRecovery(recoveryFlowActive());
+    sync();
+    window.addEventListener(RECOVERY_EVENT, sync);
+    return () => window.removeEventListener(RECOVERY_EVENT, sync);
+  }, []);
+
   useEffect(() => {
     if (!supabaseConfigured) {
       // No auth provider wired: stay signed out, treat auth as ready.
@@ -102,7 +221,19 @@ export function useAuth() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
-      if (_event === "PASSWORD_RECOVERY") setRecovery(true);
+      if (_event === "PASSWORD_RECOVERY") {
+        // A recovery session is live in this tab. It must not be mistaken for
+        // an ordinary sign-in: the user still has to choose a new password.
+        _recoveryActive = true;
+        setRecovery(true);
+      } else if (_event === "SIGNED_OUT") {
+        _recoveryActive = false;
+        setRecovery(recoveryFlowActive());
+      } else if (_event === "SIGNED_IN" && !_recoveryActive) {
+        // An ordinary sign-in ends any recovery state: a stale recovery flag
+        // would keep yanking the user back to the password form.
+        setRecovery(recoveryFlowActive());
+      }
       setUser(session?.user ?? null);
       setReady(true);
     });
@@ -183,31 +314,68 @@ export function useAuth() {
     return { error: friendlyAuthError(error), needsConfirm: Boolean(data?.user && !data?.session) };
   }, []);
 
-  // Password recovery: email a reset link, then set the new password after the
-  // user follows it (the recovery session fires PASSWORD_RECOVERY).
-  const resetPassword = useCallback(async (email) => {
+  // Password recovery, step 1: ask Supabase to email a recovery code.
+  // The user never leaves this tab — the code arrives in the same email the
+  // old reset link used to arrive in, and is entered on the next stage.
+  const requestRecoveryCode = useCallback(async (email) => {
     if (!supabaseConfigured) return notConfigured();
-    // The redirect target must NOT carry a hash fragment. Supabase appends its
-    // token to this URL, and with "#/login" in place the token lands inside the
-    // fragment where detectSessionInUrl never reads it, so the recovery session
-    // was never established. A hash-router SPA still lands on #/login afterwards.
-    const { error } = await supabase.auth.resetPasswordForEmail(String(email || "").trim(), {
+    const clean = String(email || "").trim();
+    if (!clean) return { error: { message: "Enter your email address." } };
+    // The redirect target is only used if someone still follows an emailed
+    // link. It must NOT carry a hash fragment: Supabase appends its token to
+    // this URL, and with "#/login" in place the token lands inside the
+    // fragment where detectSessionInUrl never reads it. A hash-router SPA
+    // still lands on #/reset-password afterwards.
+    const { error } = await supabase.auth.resetPasswordForEmail(clean, {
       redirectTo: window.location.origin + "/",
     });
+    // Supabase answers 200 for unknown addresses too (no user enumeration),
+    // so a missing error is the only success signal we get.
     return { error: friendlyAuthError(error) };
   }, []);
 
+  // Password recovery, step 2: exchange the emailed code for a recovery
+  // session. type "recovery" is what makes this a password reset rather
+  // than a passwordless sign-in.
+  const verifyRecoveryCode = useCallback(async (email, token) => {
+    if (!supabaseConfigured) return notConfigured();
+    const clean = String(email || "").trim();
+    const code = String(token || "").trim();
+    if (!clean) return { error: { message: "Enter your email address." } };
+    if (!code) return { error: { message: "Enter the 6-digit code from your email." } };
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: clean,
+      token: code,
+      type: "recovery",
+    });
+    if (error) return { error: friendlyAuthError(error) };
+    // verifyOtp with type "recovery" fires PASSWORD_RECOVERY and stores a
+    // session; mark the tab as being in a recovery so no other part of the
+    // app redirects the user away from the password form.
+    _recoveryActive = true;
+    return { error: null, user: data?.user ?? null };
+  }, []);
+
+  // Password recovery, step 3: set the new password on the recovery session.
   const setNewPassword = useCallback(async (password) => {
     if (!supabaseConfigured) return notConfigured();
-    if (!password || password.length < 8) return { error: { message: "Password must be at least 8 characters." } };
+    if (!password || password.length < PASSWORD_MIN) {
+      return { error: { message: `Password must be at least ${PASSWORD_MIN} characters.` } };
+    }
     const { error } = await supabase.auth.updateUser({ password });
-    return { error: friendlyAuthError(error) };
+    if (error) return { error: friendlyAuthError(error) };
+    // The password is set: the recovery session has done its job.
+    endRecoveryFlow();
+    return { error: null };
   }, []);
 
   const signOut = useCallback(async () => {
     if (supabaseConfigured) await supabase.auth.signOut();
     setUser(null);
+    // A sign-out ends any recovery session with it.
+    _recoveryActive = false;
+    setRecovery(recoveryFlowActive());
   }, []);
 
-  return { user, ready, admin, adminChecked, recovery, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut, resetPassword, setNewPassword };
+  return { user, ready, admin, adminChecked, recovery, configured: supabaseConfigured, signIn, signInWithGoogle, signUp, signOut, requestRecoveryCode, verifyRecoveryCode, setNewPassword };
 }
