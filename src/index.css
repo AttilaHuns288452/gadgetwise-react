@@ -152,6 +152,9 @@
 /* card media: a gentle zoom on hover, the product stays the visual anchor */
 .card-media { overflow: hidden; }
 .card-media img { transition: transform 320ms var(--ease-out, ease); }
+/* photos settle in over their fixed-size frame; no layout shift */
+.card img, .img-loaded { transition: opacity 320ms var(--ease-out, ease), transform 320ms var(--ease-out, ease); }
+.img-loaded { animation: fade-in 320ms var(--ease-out, ease) backwards; }
 .hover-lift:hover .card-media img { transform: scale(1.09); }
 .hover-lift:active .card-media img { transform: scale(1.03); }
 

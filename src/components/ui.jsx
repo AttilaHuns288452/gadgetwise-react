@@ -29,7 +29,11 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
         src={gadget.image || ph}
         alt={`${gadget.brand} ${gadget.model}`}
         loading={eager ? "eager" : "lazy"}
-        onLoad={(e) => setAr(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+        onLoad={(e) => {
+          setAr(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight);
+          // fade the photo in over its fixed frame instead of popping it in
+          e.currentTarget.classList.add("img-loaded");
+        }}
         onError={(e) => {
           if (e.currentTarget.src !== ph) e.currentTarget.src = ph;
         }}
@@ -442,20 +446,42 @@ export function Modal({ title, sub, children, actions, onClose }) {
 /* Honest "still loading" card. The catalog is fetched live per category, so
    there is a real gap between first paint and results: say so instead of
    letting pages show a false empty state ("no gadgets match"). */
-export function CatalogLoadingCard({ bare = false }) {
-  const card = (
-      <div className="card max-w-xl p-8 text-center mx-auto">
-        <h2 className="text-2xl">Loading products…</h2>
-        <p className="mt-3 text-ink2">
-          Fetching live marketplace listings. This takes a few seconds the first time;
-          results are cached afterwards.
-        </p>
-        <div className="mx-auto mt-5 h-2 w-40 overflow-hidden rounded-full bg-surface2" aria-hidden="true">
-          <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+/** Skeleton shaped like GadgetCard so the layout does not jump on load. */
+export function SkeletonCard({ i }) {
+  const bar = (w, h = "h-3") => <div className={`${h} ${w} animate-pulse rounded-md bg-surface2`} aria-hidden="true" />;
+  return (
+    <article style={i == null ? undefined : stag(i)} className="card flex flex-col overflow-hidden" aria-hidden="true">
+      <div className="aspect-[4/3] w-full animate-pulse bg-surface2" />
+      <div className="flex flex-1 flex-col gap-2.5 border-t border-line p-4">
+        {bar("w-16 h-2.5")}
+        <div className="space-y-1.5">{bar("w-full")}{bar("w-2/3")}</div>
+        {bar("w-24 h-2.5")}
+        <div className="w-16 rounded-sm border border-line px-3 py-2">{bar("w-10 h-4")}</div>
+        <div className="mt-auto space-y-2 pt-2">
+          {bar("w-full h-2.5")}{bar("w-full h-2.5")}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            {bar("w-24 h-5")}{bar("w-12 h-5")}
+          </div>
         </div>
       </div>
+    </article>
   );
-  return bare ? card : <section className="section">{card}</section>;
+}
+
+/** Skeleton grid for the real product grid, so loading never shows a blank page. */
+export function SkeletonGrid({ count = 6, bare = false }) {
+  const grid = (
+    <div className="stagger grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading products">
+      {Array.from({ length: count }, (_, i) => <SkeletonCard key={i} i={i} />)}
+    </div>
+  );
+  return bare ? grid : <section className="section">{grid}</section>;
+}
+
+export function CatalogLoadingCard({ bare = false }) {
+  // card-shaped skeletons instead of one text panel: the real cards land in the
+  // same place they will occupy, so nothing jumps when data arrives
+  return <SkeletonGrid bare={bare} />;
 }
 
 /* Honest stale-snapshot notice: real marketplace rows fetched earlier, shown
