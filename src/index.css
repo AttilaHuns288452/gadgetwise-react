@@ -150,12 +150,12 @@
 /* card media: a gentle zoom on hover, the product stays the visual anchor */
 .card-media { overflow: hidden; }
 .card-media img { transition: transform 320ms var(--ease-out, ease); }
-.hover-lift:hover .card-media img { transform: scale(1.05); }
-.hover-lift:active .card-media img { transform: scale(1.02); }
+.hover-lift:hover .card-media img { transform: scale(1.09); }
+.hover-lift:active .card-media img { transform: scale(1.03); }
 
 /* product grids: an entrance that cascades like piano keys — each card takes
    its own beat instead of everything landing together after the 6th child */
-.stagger > * { animation: fade-up 460ms var(--ease-out, ease) both; }
+.stagger > * { animation: fade-up 620ms var(--ease-out, ease) both; }
 .stagger > *:nth-child(2)  { animation-delay: 55ms; }
 .stagger > *:nth-child(3)  { animation-delay: 110ms; }
 .stagger > *:nth-child(4)  { animation-delay: 165ms; }
@@ -188,8 +188,8 @@
    navigation and the entrance actually replays (a persistent element only
    ever animated once). Transform + opacity only; short enough to never delay
    reading or interaction. */
-@keyframes route-enter { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-.route-enter { animation: route-enter 360ms var(--ease-out, ease) both; }
+@keyframes route-enter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+.route-enter { animation: route-enter 520ms var(--ease-out, ease) both; }
 
 /* first paint: the chrome settles in once, never on rerenders */
 @keyframes chrome-in { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
@@ -203,7 +203,10 @@
   --dur: 250ms;
   --dur-slow: 450ms;
 }
-@keyframes fade-up { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+/* Travel + duration are sized so the motion is comparable to the page-appear
+   event itself: a 26px/450ms rise under a 172-unit page-appear delta was
+   visually swallowed (~7% of the change), which is why it read as "no motion". */
+@keyframes fade-up { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 
@@ -217,8 +220,11 @@
 
 /* card / tile lift on hover */
 .hover-lift { transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
-.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(15, 23, 34, 0.10); }
-.hover-lift:active { transform: translateY(-1px); }
+/* interaction motion runs while the user is actually watching, so it carries
+   more of the "the site feels alive" load than entrance choreography does */
+.hover-lift { will-change: transform; }
+.hover-lift:hover { transform: translateY(-6px); box-shadow: 0 22px 44px rgba(15, 23, 34, 0.16); }
+.hover-lift:active { transform: translateY(-2px) scale(0.99); }
 
 /* button press feedback + smoother color transitions */
 .btn, .btn-primary, .btn-ghost, .btn-amber, .btn-hero, .btn-hero-ghost {
