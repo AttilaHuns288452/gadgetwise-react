@@ -57,7 +57,10 @@ async function categoryPlan() {
       if (existing) {
         if (r.name) existing.name = r.name;
         if (query) existing.query = query;
-      } else if (query && r.name) {
+      } else if (r.name) {
+        // a category is visible even without a query: the query only decides
+        // whether the marketplace fills it. Dropping query-less rows hid
+        // admin-created categories entirely (and the form promises otherwise).
         byId.set(slug, { id: slug, name: r.name, query });
       }
     }
