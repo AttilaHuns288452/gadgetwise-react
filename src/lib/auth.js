@@ -137,7 +137,9 @@ export function useAuth() {
 
   const signIn = useCallback(async (email, password) => {
     if (!supabaseConfigured) return notConfigured();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // users paste emails with trailing whitespace; trim here so every caller
+    // and every flow (sign-in, reset, sign-up) behaves the same
+    const { error } = await supabase.auth.signInWithPassword({ email: String(email || "").trim(), password });
     return { error };
   }, []);
 
@@ -175,7 +177,7 @@ export function useAuth() {
     // token to this URL, and with "#/login" in place the token lands inside the
     // fragment where detectSessionInUrl never reads it, so the recovery session
     // was never established. A hash-router SPA still lands on #/login afterwards.
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(String(email || "").trim(), {
       redirectTo: window.location.origin + "/",
     });
     if (error && /rate limit|over_email_send/i.test(error.message || "")) {

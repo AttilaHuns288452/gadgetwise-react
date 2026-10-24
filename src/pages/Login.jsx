@@ -62,12 +62,12 @@ function Login() {
         <form onSubmit={savePassword} className="space-y-5">
           <div>
             <label className={fieldLabelCls} htmlFor="new-pw">New password</label>
-            <input id="new-pw" type="password" required minLength={8} value={password}
+            <input id="new-pw" type="password" required minLength={8} autoComplete="new-password" value={password}
               onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={fieldInputCls} />
           </div>
           <div>
             <label className={fieldLabelCls} htmlFor="new-pw-confirm">Confirm new password</label>
-            <input id="new-pw-confirm" type="password" required minLength={8} value={confirm}
+            <input id="new-pw-confirm" type="password" required minLength={8} autoComplete="new-password" value={confirm}
               onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the new password" className={fieldInputCls} />
           </div>
           {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
@@ -94,7 +94,7 @@ function Login() {
         <form onSubmit={sendReset} className="space-y-5">
           <div>
             <label className={fieldLabelCls} htmlFor="reset-email">Email</label>
-            <input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            <input id="reset-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="you@student.edu" className={fieldInputCls} />
           </div>
           {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>}
@@ -110,7 +110,7 @@ function Login() {
         <form onSubmit={submit} className="space-y-5">
           <div>
             <label className={fieldLabelCls} htmlFor="login-email">Email</label>
-            <input id="login-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            <input id="login-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="you@student.edu" className={fieldInputCls} />
           </div>
           <div>
@@ -119,7 +119,7 @@ function Login() {
               <button type="button" onClick={() => { setMode("forgot"); setError(""); }}
                 className="text-xs font-semibold text-primary hover:text-primary-dark">Forgot password?</button>
             </div>
-            <input id="login-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+            <input id="login-password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" className={fieldInputCls} />
           </div>
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">

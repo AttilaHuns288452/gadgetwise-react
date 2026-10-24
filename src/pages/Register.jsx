@@ -11,6 +11,7 @@ function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,8 +26,9 @@ function Register() {
     e.preventDefault();
     setError(""); setNotice("");
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (password !== confirm) { setError("The two passwords do not match."); return; }
     setBusy(true);
-    const { error: err, needsConfirm } = await signUp(name, email, password);
+    const { error: err, needsConfirm } = await signUp(name, email.trim(), password);
     setBusy(false);
     if (err) { setError(err.message || "Could not create your account. Try again."); return; }
     if (needsConfirm) { setNotice("Check your email to confirm your account, then sign in."); return; }
@@ -42,19 +44,24 @@ function Register() {
       <form onSubmit={submit} className="space-y-5">
         <div>
           <label className={fieldLabelCls} htmlFor="reg-name">Name</label>
-          <input id="reg-name" type="text" required value={name} onChange={(e) => setName(e.target.value)}
+          <input id="reg-name" type="text" required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)}
             placeholder="Your name" className={fieldInputCls} />
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-email">Email</label>
-          <input id="reg-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+          <input id="reg-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
             placeholder="you@student.edu" className={fieldInputCls} />
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password">Password</label>
-          <input id="reg-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
+          <input id="reg-password" type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters" className={fieldInputCls} />
           <p className="mt-1.5 text-xs text-ink2">At least 8 characters. Name, email, and password are required.</p>
+        </div>
+        <div>
+          <label className={fieldLabelCls} htmlFor="reg-password-confirm">Confirm password</label>
+          <input id="reg-password-confirm" type="password" required minLength={8} autoComplete="new-password" value={confirm}
+            onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the password" className={fieldInputCls} />
         </div>
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
           {busy ? "Creating account…" : "Create account"}
