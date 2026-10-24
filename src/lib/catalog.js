@@ -40,6 +40,30 @@ const CATEGORY_QUERIES = [
  * slug + query adds a category with products. Rows merge over the defaults so
  * one admin edit never deletes the rest of the catalog.
  */
+/**
+ * Merge admin category rows over the built-in defaults. Pure so the rules are
+ * testable: rows without a query still exist as categories (the query only
+ * decides whether the marketplace fills them), and a row never deletes the
+ * defaults it does not mention.
+ */
+export function mergeCategoryPlan(base, rows) {
+  const byId = new Map(base.map((c) => [c.id, { ...c }]));
+  for (const r of rows || []) {
+    const slug = String(r.slug || "").trim();
+    if (!slug) continue;
+    const query = String(r.query || "").trim();
+    const existing = byId.get(slug);
+    if (existing) {
+      if (r.name) existing.name = r.name;
+      if (query) existing.query = query;
+    } else if (r.name) {
+      byId.set(slug, { id: slug, name: r.name, query });
+    }
+  }
+  const list = [...byId.values()];
+  return { list, queries: list.filter((c) => c.query).map((c) => [c.id, c.query]) };
+}
+
 async function categoryPlan() {
   const base = CATEGORY_QUERIES.map(([id, query]) => ({
     id,
@@ -48,27 +72,11 @@ async function categoryPlan() {
   }));
   try {
     const rows = (await loadCategories()).rows || [];
-    const byId = new Map(base.map((c) => [c.id, c]));
-    for (const r of rows) {
-      const slug = String(r.slug || "").trim();
-      if (!slug) continue;
-      const query = String(r.query || "").trim();
-      const existing = byId.get(slug);
-      if (existing) {
-        if (r.name) existing.name = r.name;
-        if (query) existing.query = query;
-      } else if (r.name) {
-        // a category is visible even without a query: the query only decides
-        // whether the marketplace fills it. Dropping query-less rows hid
-        // admin-created categories entirely (and the form promises otherwise).
-        byId.set(slug, { id: slug, name: r.name, query });
-      }
-    }
-    const list = [...byId.values()];
+    const { list, queries } = mergeCategoryPlan(base, rows);
     // every page reads GW.categories (Home tiles, filters, quiz cases), so the
     // admin list has to land there to actually influence the public site
     GW.categories = list.map((c) => ({ id: c.id, name: c.name }));
-    return list.filter((c) => c.query).map((c) => [c.id, c.query]);
+    return queries;
   } catch {
     return CATEGORY_QUERIES;
   }
@@ -138,6 +146,11 @@ export function catalogStats(gadgets = GW.gadgets) {
 export async function loadCatalog() {
   GW.gadgets = []; // fixture must not linger in the live data path
 
+  // Admin categories shape the category list itself, so this must run on every
+  // load: a fresh client cache used to skip it entirely and self-added
+  // categories stayed invisible for up to the whole cache lifetime.
+  const queries = await categoryPlan();
+
   let stale = null;
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -156,7 +169,6 @@ export async function loadCatalog() {
   }
 
   let products = [];
-  const queries = await categoryPlan(); // admin categories shape the fetch
   try {
     const settled = await Promise.allSettled(
       queries.map(([cat, q]) => fetchCategory(cat, q)),
