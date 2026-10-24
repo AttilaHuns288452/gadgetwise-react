@@ -13,6 +13,7 @@ const ComparisonHistory = lazy(() => import("./pages/ComparisonHistory.jsx"));
 const Profile = lazy(() => import("./pages/Profile.jsx"));
 const Login = lazy(() => import("./pages/Login.jsx"));
 const Register = lazy(() => import("./pages/Register.jsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.jsx"));
 const ReviewHistory = lazy(() => import("./pages/ReviewHistory.jsx"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile.jsx"));
 import Home from "./pages/Home.jsx";
@@ -20,6 +21,7 @@ import { useAuth } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
 import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal } from "./components/ui.jsx";
+import { createPortal } from "react-dom";
 
 const NAV = [
   ["/", "Home"],
@@ -164,9 +166,14 @@ export default function App() {
   // /admin is excluded too: the admin console must always render (its route
   // guard redirects non-admins, and its moderation/users panels work without the
   // marketplace). Only product-discovery routes are gated on the catalog.
-  const needsCatalog = ![ "/", "/login", "/register", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare", "/gadgets" ].includes(pathname)
+  const needsCatalog = ![ "/", "/login", "/register", "/reset-password", "/profile", "/wishlist", "/review-history", "/compare-history", "/admin", "/recommend", "/compare", "/gadgets" ].includes(pathname)
     && !pathname.startsWith("/u/");
-  const { user, ready, admin: isAdminUser, adminChecked, signOut } = useAuth();
+  const { user, ready, admin: isAdminUser, adminChecked, signOut, recovery } = useAuth();
+  // A recovery session is not a normal signed-in session: the user still has to
+  // choose a new password. While one is live, the account-only routes must not
+  // look like a normal signed-in visit, and the recovery page must not be
+  // blocked by the catalog guard.
+  const inRecovery = recovery || pathname === "/reset-password";
   // the account avatar in the nav: one profile read per signed-in user
   const [navAvatar, setNavAvatar] = useState(null);
   const navUserId = user?.id || null;
@@ -357,14 +364,42 @@ export default function App() {
             </div>
           </form>
         </div>
-        {compare.size > 0 && (
-          <div className="border-t border-line bg-primary-wash">
-            <div className="mx-auto flex max-w-none items-center gap-3 px-6 lg:px-12 2xl:px-16 py-2 text-base">
-              <span className="mono font-semibold text-primary-dark">{compare.size}/4</span>
-              <span className="text-ink2">in compare</span>
-              <Link to="/compare" className="font-semibold text-primary hover:underline">Open compare →</Link>
-            </div>
-          </div>
+        {/* Prototype-style compare tray: named chips with × remove, Compare now.
+            Hidden on /compare itself (you are already there) — portaled to the
+            body so a fixed bar never inherits header/animation containing
+            blocks. */}
+        {compare.size > 0 && pathname !== "/compare" && createPortal(
+          (() => {
+            const items = [...compare].map((id) => GW.getGadget(id)).filter(Boolean);
+            const disabled = items.length < 2;
+            return (
+              <div className="compare-tray" role="region" aria-label="Compare tray">
+                <div className="tray-inner">
+                  <span className="tray-label">COMPARE ({items.length}/4)</span>
+                  <span className="tray-items">
+                    {items.map((g) => (
+                      <span key={g.id} className="tray-item">
+                        <span className="min-w-0 truncate">{GW.displayName(g)}</span>
+                        <button
+                          type="button"
+                          onClick={() => onCompare(g.id)}
+                          aria-label={`Remove ${GW.displayName(g)} from compare`}
+                        >×</button>
+                      </span>
+                    ))}
+                  </span>
+                  {disabled && <span className="tray-hint">Add at least 2 gadgets to compare</span>}
+                  <Link
+                    className={"tray-cta" + (disabled ? " is-disabled" : "")}
+                    to="/compare"
+                    aria-disabled={disabled}
+                    tabIndex={disabled ? -1 : 0}
+                  >Compare now →</Link>
+                </div>
+              </div>
+            );
+          })(),
+          document.body
         )}
       </header>
       )}
@@ -375,6 +410,12 @@ export default function App() {
           <CatalogErrorCard />
         ) : (
         <Suspense fallback={null}>
+        {/* A live recovery session owns the whole app: the user must be able
+            to set a new password, so no other route (and no automatic
+            redirect) can take them away from the recovery page. */}
+        {inRecovery ? (
+          <ResetPassword />
+        ) : (
         <Routes>
           <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} catalogLoading={catalogLoading} />} />
           <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} catalogError={catalogError} />} />
@@ -386,6 +427,7 @@ export default function App() {
           <Route path="/profile" element={<Profile compare={compare} onCompare={onCompare} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/review-history" element={<ReviewHistory />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
           <Route
@@ -401,6 +443,7 @@ export default function App() {
             }
           />
         </Routes>
+        )}
         </Suspense>
         )}
       </main>

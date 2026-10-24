@@ -40,7 +40,8 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const [q, setQ] = useState(spQ);
   const [sort, setSort] = useState("featured");
   const [minPrice, setMinPrice] = useState("0");
-  const [maxPrice, setMaxPrice] = useState("100000");
+  // ?max= (from the home budget CTA) pre-sets the price ceiling
+  const [maxPrice, setMaxPrice] = useState(() => searchParams.get("max") || "100000");
   const [feats, setFeats] = useState(() => new Set());
   const [brands, setBrands] = useState(() => new Set());
   // ponytail: phones get a collapsed filter panel; from lg up the sidebar is
@@ -374,42 +375,6 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                 </div>
               )}
             </>
-          )}
-
-          {/* Compare tray */}
-          {compare.size > 0 && (
-            <div className="card mt-8 flex flex-wrap items-center gap-3 p-4">
-              <span className="mono font-semibold text-primary-dark">{compare.size}/4</span>
-              <span className="text-ink2">in compare</span>
-              {[...compare].map((id) => {
-                const g = GW.gadgets.find((x) => x.id === id);
-                return g ? (
-                  <span key={id} className="chip chip-neutral gap-1.5">
-                    {GW.displayName(g)}
-                    <button
-                      type="button"
-                      onClick={() => onCompare(id)}
-                      aria-label={`Remove ${GW.displayName(g)} from compare`}
-                      className="text-ink3 hover:text-ink"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ) : null;
-              })}
-              <div className="ml-auto flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => [...compare].forEach((id) => onCompare(id))}
-                  className="btn btn-ghost px-3 py-2 text-sm"
-                >
-                  Clear
-                </button>
-                <Link to="/compare" className="btn btn-primary px-3 py-2 text-sm">
-                  Open compare →
-                </Link>
-              </div>
-            </div>
           )}
         </div>
       </div>

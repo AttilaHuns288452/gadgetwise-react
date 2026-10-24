@@ -238,7 +238,7 @@ function BudgetPicker() {
               <span>{money(toPrice(SLIDER))}</span>
             </div>
           </div>
-          <Link to="/gadgets" className={btnPrimaryCls + ' mt-5 inline-flex'}>See every gadget at this budget</Link>
+          <Link to={`/gadgets?max=${budget}`} className={btnPrimaryCls + ' mt-5 inline-flex'}>See every gadget at this budget</Link>
         </div>
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink3">Highest rated that fit</p>
