@@ -141,7 +141,7 @@
 /* one scale at every width — the old desktop 1.25x bump made headings huge while hardcoded px text stayed tiny */
 
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.toast-in { animation: toast-in .25s var(--ease-out, ease) both; }
+.toast-in { animation: toast-in .25s var(--ease-out, ease) backwards; }
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 .toast-out { animation: toast-out 180ms var(--ease-out, ease) both; }
 
@@ -159,7 +159,7 @@
    set `--i` to its position. One rule serves every route instead of
    per-page animation classes with hand-written delays. */
 .anim-in {
-  animation: fade-up var(--dur-in, 620ms) var(--ease-out, ease) both;
+  animation: fade-up var(--dur-in, 620ms) var(--ease-out, ease) backwards;
   animation-delay: calc(var(--i, 0) * var(--stagger, 110ms));
 }
 
@@ -213,7 +213,10 @@
 
 /* product grids: an entrance that cascades like piano keys — each card takes
    its own beat instead of everything landing together after the 6th child */
-.stagger > * { animation: fade-up 620ms var(--ease-out, ease) both; }
+/* `backwards` (not `both`): an animation fill state outranks normal
+   declarations, so `both` pinned transform to the end value forever and
+   silently killed every hover-lift on these cards. */
+.stagger > * { animation: fade-up 620ms var(--ease-out, ease) backwards; }
 .stagger > *:nth-child(2)  { animation-delay: 55ms; }
 .stagger > *:nth-child(3)  { animation-delay: 110ms; }
 .stagger > *:nth-child(4)  { animation-delay: 165ms; }
@@ -237,7 +240,7 @@
 .pareto-dot {
   transform-box: fill-box;
   transform-origin: center;
-  animation: pop-in 240ms var(--ease-out, ease) both;
+  animation: pop-in 240ms var(--ease-out, ease) backwards;
   transition: transform 160ms var(--ease-out, ease), opacity 160ms var(--ease-out, ease);
 }
 .pareto-g:hover .pareto-dot { transform: scale(1.4); }
@@ -250,11 +253,11 @@
    (child on screen = parent x child), which turns a clean stagger into one
    muddy combined fade that reads as "popping". */
 @keyframes route-enter { from { transform: translateY(30px); } to { transform: none; } }
-.route-enter { animation: route-enter 520ms var(--ease-out, ease) both; }
+.route-enter { animation: route-enter 520ms var(--ease-out, ease) backwards; }
 
 /* first paint: the chrome settles in once, never on rerenders */
 @keyframes chrome-in { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
-.site-header { animation: chrome-in 420ms var(--ease-out, ease) both; }
+.site-header { animation: chrome-in 420ms var(--ease-out, ease) backwards; }
 
 /* ---- Motion system: restrained, transform/opacity only, one easing family ---- */
 :root {
@@ -271,13 +274,17 @@
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 
-.anim-fade-up { animation: fade-up var(--dur-slow) var(--ease-out) both; }
-.anim-fade-in { animation: fade-in var(--dur-slow) var(--ease-out) both; }
-.anim-scale-in { animation: scale-in var(--dur) var(--ease-out) both; }
+.anim-fade-up { animation: fade-up var(--dur-slow) var(--ease-out) backwards; }
+.anim-fade-in { animation: fade-in var(--dur-slow) var(--ease-out) backwards; }
+.anim-scale-in { animation: scale-in var(--dur) var(--ease-out) backwards; }
 
 /* scroll reveal — a tiny hook toggles .is-visible */
-.reveal { opacity: 0; transform: translateY(16px); transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
-.reveal.is-visible { opacity: 1; transform: none; }
+/* Progressive enhancement: the hidden state is applied only once the reveal
+   system is initialised (html.reveal-ready). If JS never runs, content is
+   readable instead of stuck at opacity 0. */
+.reveal { transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
+html.reveal-ready .reveal { opacity: 0; transform: translateY(16px); }
+html.reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
 
 /* card / tile lift on hover */
 .hover-lift { transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }

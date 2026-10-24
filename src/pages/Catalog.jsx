@@ -285,10 +285,15 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
             </div>
           ) : (
             <>
-              {/* keyed on the deliberate controls (category, sort, filters) so a
-                  real result change replays the entrance; the search box is
+              {/* keyed on the deliberate controls so a real result change
+                  replays the entrance. Selections are keyed by IDENTITY, not
+                  count (swapping one feature for another used to keep the key
+                  identical and silently skip the replay); the search box is
                   excluded so typing does not re-animate on every keystroke */}
-              <div key={`${cat}|${sort}|${feats.size}|${brands.size}|${minPrice}|${maxPrice}`} className="stagger mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                key={`${cat}|${sort}|${[...feats].sort().join(",")}|${[...brands].sort().join(",")}|${minPrice}|${maxPrice}`}
+                className="stagger mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              >
                 {results.map((g) => (
                   <GadgetCard key={g.id} g={g} compare={compare} onCompare={onCompare} />
                 ))}

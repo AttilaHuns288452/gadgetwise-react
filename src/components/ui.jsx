@@ -609,49 +609,57 @@ export function Logo({ size = 20, tone = "dark", showWordmark = true, className 
 
 /**
  * Scroll reveal. Observes every `.reveal:not(.is-visible)` element, including
- * ones that mount later (catalog sections appear only after loading finishes),
- * which the old mount-time-only query missed and left stuck at opacity 0.
- * A MutationObserver picks up late additions; the same IntersectionObserver
- * handles them, so there is one observer of each kind regardless of re-renders.
+ * ones that mount later (catalog sections appear only after loading finishes).
+ * Reveals are driven by live scroll position, so late-mounted content is
+ * handled and nothing can be revealed before the reader actually reaches it.
  */
 export function useReveal() {
   useEffect(() => {
+    // mark the system ready so the hidden state is applied at all
+    document.documentElement.classList.add("reveal-ready");
+
     if (!("IntersectionObserver" in window)) {
+      // no observer support: never leave content hidden
       document.querySelectorAll(".reveal").forEach((e) => e.classList.add("is-visible"));
       return;
     }
-    const io = new IntersectionObserver((entries) => {
-      for (const en of entries) {
-        if (en.isIntersecting) {
-          en.target.classList.add("is-visible");
-          io.unobserve(en.target);
-        }
-      }
-    }, { threshold: 0.08, rootMargin: "0px 0px -5% 0px" });
 
-    const scan = () => {
-      for (const el of document.querySelectorAll(".reveal:not(.is-visible)")) io.observe(el);
+    // Position-truthful reveals. An IntersectionObserver reports its INITIAL
+    // intersection state when it starts observing, and at mount the page is
+    // still short (catalog sections arrive later) — so a section could be
+    // revealed while briefly "in view", then pushed thousands of pixels down
+    // and never animate when actually scrolled to. Checking live positions on
+    // scroll + a slow tick is correct by construction and also picks up
+    // content mounted later, so no MutationObserver is needed.
+    const sweep = () => {
+      // During initial load the page is still short (catalog sections arrive
+      // later), so a section can sit inside the viewport and then be pushed
+      // thousands of pixels down. Revealing it at that moment meant it never
+      // animated when scrolled to — so anything the layout growth moved clearly
+      // off-screen is re-armed while the reader has not scrolled yet.
+      for (const e of document.querySelectorAll(".reveal")) {
+        const r = e.getBoundingClientRect();
+        const inView = r.top < window.innerHeight * 0.92 && r.bottom > 0;
+        if (inView) e.classList.add("is-visible");
+        else if (window.scrollY === 0 && r.top > window.innerHeight + 120) e.classList.remove("is-visible");
+      }
     };
-    scan();
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; sweep(); });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    const t = setInterval(sweep, 1000);
+    sweep();
 
-    // sections rendered after loading (or on a route change) must animate too
-    const mo = new MutationObserver((muts) => {
-      for (const m of muts) {
-        for (const node of m.addedNodes) {
-          if (node.nodeType !== 1) continue;
-          if (node.matches?.(".reveal:not(.is-visible)")) io.observe(node);
-          node.querySelectorAll?.(".reveal:not(.is-visible)").forEach((e) => io.observe(e));
-        }
-      }
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-
-    // failsafe: nothing may stay invisible because an observer missed it
-    const t = setTimeout(() => {
-      document.querySelectorAll(".reveal").forEach((e) => e.classList.add("is-visible"));
-    }, 2500);
-
-    return () => { clearTimeout(t); mo.disconnect(); io.disconnect(); };
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      clearInterval(t);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 }
 
