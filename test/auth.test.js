@@ -1,6 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { setAuthUser, requireAuth } from "../src/lib/auth.js";
+import { setAuthUser, requireAuth, friendlyAuthError } from "../src/lib/auth.js";
+
+// Provider error strings are developer-facing; users get actionable text.
+test("auth errors never leak raw provider wording", () => {
+  const rate = friendlyAuthError({ message: "email rate limit exceeded", code: 429 });
+  assert.match(rate.message, /wait about a minute/i);
+  assert.doesNotMatch(rate.message, /rate limit exceeded/i);
+  const over = friendlyAuthError({ message: "over_email_send_rate_limit" });
+  assert.match(over.message, /wait about a minute/i);
+  // anything else is passed through unchanged rather than invented
+  assert.equal(friendlyAuthError({ message: "Invalid login credentials" }).message, "Invalid login credentials");
+  assert.equal(friendlyAuthError(null), null);
+});
 
 // The guest auth gate: a signed-out visitor must be blocked from account-gated
 // actions (favorite, review); a signed-in user passes. One guard, every caller.

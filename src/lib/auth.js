@@ -53,6 +53,20 @@ export function useAuthPrompt() {
 }
 // ---------------------------------------------------------------------------
 
+/**
+ * Provider errors are developer-facing strings ("email rate limit exceeded").
+ * Rewrite the ones users can act on, and leave anything else alone rather than
+ * inventing meaning. Every auth call routes its error through this.
+ */
+export const friendlyAuthError = (error) => {
+  if (!error) return error;
+  const m = error.message || "";
+  if (/rate limit|over_email_send/i.test(m)) {
+    return { ...error, message: "Too many emails requested. Wait about a minute, then try again." };
+  }
+  return error;
+};
+
 const notConfigured = () => ({
   error: { message: "Sign-in is unavailable: authentication is not configured." },
 });
@@ -140,7 +154,7 @@ export function useAuth() {
     // users paste emails with trailing whitespace; trim here so every caller
     // and every flow (sign-in, reset, sign-up) behaves the same
     const { error } = await supabase.auth.signInWithPassword({ email: String(email || "").trim(), password });
-    return { error };
+    return { error: friendlyAuthError(error) };
   }, []);
 
   // Google OAuth: redirects to Google, returns to the app origin where the
@@ -166,7 +180,7 @@ export function useAuth() {
         emailRedirectTo: window.location.origin + "/",
       },
     });
-    return { error, needsConfirm: Boolean(data?.user && !data?.session) };
+    return { error: friendlyAuthError(error), needsConfirm: Boolean(data?.user && !data?.session) };
   }, []);
 
   // Password recovery: email a reset link, then set the new password after the
@@ -180,18 +194,14 @@ export function useAuth() {
     const { error } = await supabase.auth.resetPasswordForEmail(String(email || "").trim(), {
       redirectTo: window.location.origin + "/",
     });
-    if (error && /rate limit|over_email_send/i.test(error.message || "")) {
-      // raw provider text ("email rate limit exceeded") is not actionable
-      return { error: { ...error, message: "Too many reset requests. Wait about a minute, then try again." } };
-    }
-    return { error };
+    return { error: friendlyAuthError(error) };
   }, []);
 
   const setNewPassword = useCallback(async (password) => {
     if (!supabaseConfigured) return notConfigured();
     if (!password || password.length < 8) return { error: { message: "Password must be at least 8 characters." } };
     const { error } = await supabase.auth.updateUser({ password });
-    return { error };
+    return { error: friendlyAuthError(error) };
   }, []);
 
   const signOut = useCallback(async () => {
