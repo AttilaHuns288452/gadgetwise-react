@@ -13,7 +13,7 @@ import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout } from "../comp
 import {
   useAuth, maskEmail, sanitizeOtp, cooldownSeconds, liveSessionUserId,
   readRecoveryState, writeRecoveryState, clearRecoveryState, notifyRecoveryChanged, endRecoveryFlow,
-  OTP_LENGTH, RESEND_COOLDOWN_SECONDS, PASSWORD_MIN,
+  OTP_LENGTH, RESEND_COOLDOWN_SECONDS, PASSWORD_MIN, passwordPolicyError,
 } from "../lib/auth.js";
 
 const TITLES = {
@@ -196,10 +196,8 @@ export default function ResetPassword() {
   const savePassword = async (e) => {
     e.preventDefault();
     setError("");
-    if (password.length < PASSWORD_MIN) {
-      setError(`Password must be at least ${PASSWORD_MIN} characters.`);
-      return;
-    }
+    const policy = passwordPolicyError(password);
+    if (policy) { setError(policy); return; }
     if (password !== confirm) { setError("The two passwords do not match."); return; }
     setBusy(true);
     const { error: err } = await setNewPassword(password);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout } from "../components/ui.jsx";
-import { useAuth, safeNext, PASSWORD_MIN } from "../lib/auth.js";
+import { useAuth, safeNext, PASSWORD_MIN, passwordPolicyError } from "../lib/auth.js";
 
 function Register() {
   const navigate = useNavigate();
@@ -25,7 +25,8 @@ function Register() {
   const submit = async (e) => {
     e.preventDefault();
     setError(""); setNotice("");
-    if (password.length < PASSWORD_MIN) { setError(`Password must be at least ${PASSWORD_MIN} characters.`); return; }
+    const policy = passwordPolicyError(password);
+    if (policy) { setError(policy); return; }
     if (password !== confirm) { setError("The two passwords do not match."); return; }
     setBusy(true);
     const { error: err, needsConfirm } = await signUp(name, email.trim(), password);

@@ -2,23 +2,33 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   maskEmail, sanitizeOtp, cooldownSeconds,
-  OTP_LENGTH, PASSWORD_MIN, RESEND_COOLDOWN_SECONDS,
+  OTP_LENGTH, PASSWORD_MIN, RESEND_COOLDOWN_SECONDS, passwordPolicyError,
   readRecoveryState, writeRecoveryState, clearRecoveryState,
   recoveryFlowActive, endRecoveryFlow,
 } from "../src/lib/auth.js";
 
-// The emailed code is 6 digits. Anything else must never reach Supabase.
+// The emailed code is 8 digits (Supabase "Email OTP length" setting).
 test("the recovery code is digits only and capped at the OTP length", () => {
-  assert.equal(OTP_LENGTH, 6);
+  assert.equal(OTP_LENGTH, 8);
   assert.equal(sanitizeOtp("123456"), "123456");
   assert.equal(sanitizeOtp(" 12 34 56 "), "123456");
   assert.equal(sanitizeOtp("12-34-56"), "123456");
-  assert.equal(sanitizeOtp("1234567890"), "123456", "extra digits are dropped");
+  assert.equal(sanitizeOtp("1234567890"), "12345678", "extra digits are dropped");
   assert.equal(sanitizeOtp("12a3b4c5d6"), "123456", "letters are dropped");
   assert.equal(sanitizeOtp(""), "");
   assert.equal(sanitizeOtp(null), "");
   assert.equal(sanitizeOtp(undefined), "");
   assert.equal(sanitizeOtp("123456", 4), "1234", "max length is honoured");
+});
+
+// The app's password rule must mirror Supabase's or users get a late server error.
+test("password policy matches the Supabase requirement", () => {
+  assert.equal(passwordPolicyError("Abcdef1!x"), null, "strong password passes");
+  assert.ok(passwordPolicyError("abcdefgh1!"), "missing uppercase is rejected");
+  assert.ok(passwordPolicyError("ABCDEFGH1!"), "missing lowercase is rejected");
+  assert.ok(passwordPolicyError("Abcdefgh!"), "missing digit is rejected");
+  assert.ok(passwordPolicyError("Abcdefg1"), "missing symbol is rejected");
+  assert.ok(passwordPolicyError("Ab1!"), "too short is rejected");
 });
 
 // The recovery email must not reveal a full address on screen.

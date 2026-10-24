@@ -24,9 +24,19 @@ export function safeNext(raw) {
 
 /** Password policy. Shared by Register and the recovery flow so they cannot drift. */
 export const PASSWORD_MIN = 8;
+// Must mirror Supabase Auth's own policy (Auth -> Sign In / Providers ->
+// Password requirements: lowercase, uppercase, digit and symbol, or the
+// server rejects as weak and users see a confusing late failure).
+export function passwordPolicyError(pw) {
+  if (!pw || pw.length < PASSWORD_MIN) return `Password must be at least ${PASSWORD_MIN} characters.`;
+  if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
+    return "Use at least one lowercase letter, one uppercase letter, one digit, and one symbol.";
+  }
+  return null;
+}
 
-/** Length of the recovery code Supabase mails out ({{ .Token }} -> 6 digits). */
-export const OTP_LENGTH = 6;
+/** Length of the recovery code Supabase mails out (Email OTP length setting). */
+export const OTP_LENGTH = 8;
 
 /** Seconds the "Resend code" button stays disabled after a send. */
 export const RESEND_COOLDOWN_SECONDS = 60;
