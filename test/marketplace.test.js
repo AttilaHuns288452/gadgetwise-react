@@ -60,11 +60,15 @@ test("fetchListing: deep-links resolve via API when registry is cold", async () 
   const realFetch = globalThis.fetch;
   globalThis.fetch = async () => ({
     ok: true,
+    status: 200,
     json: async () => ({ product: { productId: "777", title: "Cold Load", price: 500, rating: 4 } }),
   });
-  const g = await fetchListing("lazada-777");
+  const res = await fetchListing("lazada-777");
   globalThis.fetch = realFetch;
 
+  // GW-18: the lookup returns a structured state, not a bare null.
+  assert.equal(res.status, "found", "fetch-on-miss finds the product");
+  const g = res.gadget;
   assert.ok(g, "fetch-on-miss returns the product");
   assert.equal(g.id, "lazada-777");
   assert.equal(getListing("lazada-777")?.model, "Cold Load", "registered after fetch so it renders");
@@ -77,13 +81,20 @@ test("fetchListing: deep-links resolve via API when registry is cold", async () 
   assert.equal(called, false, "curated ids never hit the API");
 });
 
-test("fetchListing returns null on upstream failure (no fake product)", async () => {
+test("fetchListing returns an error state on upstream failure (no fake product)", async () => {
   const { fetchListing, getListing } = await import("../src/lib/marketplace.js");
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async () => ({ ok: false, json: async () => ({ error: { code: "rate_limited" } }) });
-  const g = await fetchListing("lazada-888");
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 502,
+    json: async () => ({ error: { code: "upstream_unavailable", message: "Product lookup is temporarily unavailable." } }),
+  });
+  const res = await fetchListing("lazada-888");
   globalThis.fetch = realFetch;
-  assert.equal(g, null, "failed fetch must not fabricate a product");
+  // GW-18: a failed lookup is an error, NOT "not found" — the listing may still exist.
+  assert.equal(res.status, "error", "a failed lookup must not read as an absent listing");
+  assert.equal(res.gadget, null, "failed fetch must not fabricate a product");
+  assert.ok(res.error, "the failure carries a message for the retry UI");
   assert.equal(getListing("lazada-888"), null);
 });
 

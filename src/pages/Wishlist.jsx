@@ -5,14 +5,22 @@ import { GadgetCard, useWishlist, btnPrimaryCls } from "../components/ui.jsx";
 function Wishlist() {
   const wish = useWishlist();
   const gadgets = GW.gadgets.filter((g) => wish.has(g.id));
+  // Saved marketplace-search listings may live outside GW.gadgets: say so
+  // instead of silently dropping them from the count.
+  const unresolved = [...wish.ids].filter((id) => !GW.gadgets.some((g) => g.id === id));
 
   return (
     <section className="section">
       <div className="eyebrow">Account</div>
       <h1 className="mt-2">Wishlist</h1>
       <p className="mt-2 text-ink2">
-        Gadgets you saved for later · {gadgets.length} item{gadgets.length === 1 ? "" : "s"}
+        Gadgets you saved for later · {gadgets.length + unresolved.length} item{gadgets.length + unresolved.length === 1 ? "" : "s"}
       </p>
+      {unresolved.length > 0 && (
+        <p className="mt-2 rounded-lg border border-line bg-surface2 px-3.5 py-2.5 text-sm text-ink2">
+          {unresolved.length} saved item{unresolved.length === 1 ? "" : "s"} came from live marketplace search and can&apos;t be shown here yet — they stay in your saved list.
+        </p>
+      )}
 
       {gadgets.length === 0 ? (
         <div className="card mt-8 p-10 text-center">

@@ -138,7 +138,7 @@ export default function ParetoExplorer() {
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Category
           <select value={cat} onChange={(e) => setCat(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
             <option value="all">All</option>
-            {GW.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {GW.categories.filter((c) => GW.gadgets.some((g) => g.category === c.id)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Brand
@@ -215,13 +215,13 @@ export default function ParetoExplorer() {
 
           {/* points: dominated first so frontier draws on top */}
           {pts.filter((p) => !frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)} — ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
               <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={4} fill="#14213a" fillOpacity="0.32" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
             </Link>
           ))}
           {pts.filter((p) => frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)} — ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="#c2872f" fillOpacity="0.16" />
               <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={8} fill="#c2872f" stroke="#fff" strokeWidth="2" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />

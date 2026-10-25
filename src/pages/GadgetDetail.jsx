@@ -42,11 +42,16 @@ function MiniStars({ n }) {
   );
 }
 
-/* Monthly cost of every gadget in a category, cheapest first. */
+/* Monthly cost of every gadget in a category, cheapest first. Listings with an
+   unknown price are skipped: they cannot be compared by cost (GW-19). */
 function CategoryCostList({ catId }) {
   const rows = GW.gadgetsInCategory(catId)
-    .map((x) => ({ x, m: GW.monthlyCost(x) }))
+    .filter((x) => typeof x.price === "number" && Number.isFinite(x.price) && x.price > 0)
+    .map((x) => ({ x, m: x.price / GW.MONTHS_WINDOW }))
     .sort((a, b) => a.m - b.m);
+  if (!rows.length) {
+    return <p className="text-sm text-ink2">No priced gadgets in this category yet.</p>;
+  }
   const max = Math.max(...rows.map((r) => r.m));
   return (
     <>
@@ -142,15 +147,18 @@ function GadgetDetail({ compare, onCompare }) {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
-  const [extra, setExtra] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
-  const [fetched, setFetched] = useState(null);
-  // Marketplace listings live in an in-memory registry; a deep-link or refresh
-  // would 404. Fetch-on-miss so /g/lazada-<id> always resolves.
-  const [loadingListing, setLoadingListing] = useState(isListingId(id));
+  // GW-18: the listing lookup has three honest states — found, not-found (the
+  // listing is really gone) and error (the lookup failed and can be retried).
+  // A failed lookup must never be reported as "not found".
+  // GW-30: every per-product value is stored WITH its id, and only used when
+  // the id still matches. An effect runs after the render, so resetting state
+  // inside one would still show the previous product for a frame.
+  const [loaded, setLoaded] = useState({ id: null, gadget: null, extra: [], reviewsLoaded: false });
+  const [listing, setListing] = useState({ id: null, status: "idle", error: null });
+  const [retryTick, setRetryTick] = useState(0);
   // Real view tracking for admin analytics (fire-and-forget, never blocks UI).
   useEffect(() => {
     trackView(id);
@@ -159,31 +167,72 @@ function GadgetDetail({ compare, onCompare }) {
   useEffect(() => {
     if (!isListingId(id)) return;
     let cancelled = false;
-    setLoadingListing(true);
-    fetchListing(id).then((found) => {
+    setListing({ id, status: "loading", error: null });
+    fetchListing(id).then((res) => {
       if (cancelled) return;
-      setFetched(found);
-      setLoadingListing(false);
+      // guard against a late response for a previous id
+      if (res?.gadget && res.gadget.id !== id) return;
+      if (res?.status === "found") {
+        setLoaded((s) => ({ ...s, id, gadget: res.gadget }));
+        setListing({ id, status: "found", error: null });
+      } else if (res?.status === "not-found") {
+        setLoaded((s) => ({ ...s, id, gadget: null }));
+        setListing({ id, status: "not-found", error: null });
+      } else {
+        setLoaded((s) => ({ ...s, id, gadget: null }));
+        setListing({ id, status: "error", error: res?.error || "The marketplace lookup failed. Please try again." });
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, retryTick]);
   // Load real reviews for this product (public + own; RLS enforces visibility).
   useEffect(() => {
     let cancelled = false;
     loadReviews(id).then((rows) => {
-      if (!cancelled && rows) { setExtra(rows); setReviewsLoaded(true); }
+      // the id is written with the rows: state for another product can never
+      // be read back under this one (GW-30)
+      if (!cancelled && rows) setLoaded((s) => ({ id, extra: rows, reviewsLoaded: true, gadget: s.gadget }));
     });
     return () => {
       cancelled = true;
     };
   }, [id]);
+  // Only the state that belongs to THIS id may render.
+  const fetched = loaded.id === id ? loaded.gadget : null;
+  const extra = loaded.id === id ? loaded.extra : [];
+  const reviewsLoaded = loaded.id === id ? loaded.reviewsLoaded : false;
+  const listingState = listing.id === id ? listing : { status: isListingId(id) ? "loading" : "idle", error: null };
   const g = GW.getGadget(id) || fetched;
-  if (!g && loadingListing) {
+  if (!g && listingState.status === "loading") {
     return (
       <section className="section">
         <h1>Loading…</h1>
+      </section>
+    );
+  }
+  // GW-18: a failed lookup is an error with a retry, not a "not found" claim.
+  if (!g && listingState.status === "error") {
+    return (
+      <section className="section">
+        <h1>Could not load this listing</h1>
+        <p className="mt-3 text-ink2">{listingState.error}</p>
+        <p className="mt-2 text-sm text-ink3">
+          The marketplace may be busy or temporarily unavailable. The listing may still exist.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setRetryTick((n) => n + 1)}
+            className={btnPrimaryCls + " inline-flex"}
+          >
+            Try again
+          </button>
+          <Link to="/gadgets" className={btnOutlineCls + " inline-flex"}>
+            Back to catalog
+          </Link>
+        </div>
       </section>
     );
   }
@@ -201,7 +250,10 @@ function GadgetDetail({ compare, onCompare }) {
     );
   }
 
-  const monthly = GW.monthlyCost(g);
+  // GW-19: an unknown price is unavailable, not ₱0. Every price-derived
+  // number below is suppressed rather than shown as zero.
+  const priceKnown = typeof g.price === "number" && Number.isFinite(g.price) && g.price > 0;
+  const monthly = priceKnown ? g.price / GW.MONTHS_WINDOW : null;
   const name = GW.displayName(g);
   const cat = GW.getCategory(g.category);
   const catName = cat ? cat.name : g.category;
@@ -218,11 +270,15 @@ function GadgetDetail({ compare, onCompare }) {
     .join(" ");
 
   // Ownership cost numbers (same 36-month formula everywhere).
-  const over1 = money(monthly * 12);
-  const over3 = money(g.price);
+  const over1 = monthly == null ? "—" : money(monthly * 12);
+  const over3 = priceKnown ? money(g.price) : "Unavailable";
   const coverPct = wYears == null ? null : Math.round((wYears / (GW.MONTHS_WINDOW / 12)) * 100);
   const costScore = (() => {
-    const ms = GW.gadgetsInCategory(g.category).map(GW.monthlyCost);
+    if (monthly == null) return "—";
+    const ms = GW.gadgetsInCategory(g.category)
+      .map((x) => (typeof x.price === "number" && Number.isFinite(x.price) ? x.price / GW.MONTHS_WINDOW : null))
+      .filter((v) => v != null);
+    if (!ms.length) return "—";
     const lo = Math.min(...ms);
     const hi = Math.max(...ms);
     return hi === lo ? "10.0" : (10 * (1 - (monthly - lo) / (hi - lo))).toFixed(1);
@@ -260,7 +316,7 @@ function GadgetDetail({ compare, onCompare }) {
     );
     // Refresh the list so the author sees their own review immediately.
     loadReviews(g.id).then((rows) => {
-      if (rows) setExtra(rows);
+      if (rows) setLoaded((s) => ({ ...s, id, extra: rows, reviewsLoaded: true }));
     });
   };
 
@@ -341,10 +397,10 @@ function GadgetDetail({ compare, onCompare }) {
             <h1 className="text-3xl sm:text-4xl">{g.model}</h1>
             <div className="sm:text-right">
               <div className="mono text-3xl font-semibold text-primary-dark sm:text-4xl">
-                {money(g.price)}
+                {priceKnown ? money(g.price) : "Price unavailable"}
               </div>
               <div className="mono mt-1 text-sm font-semibold text-ink">
-                PER MONTH ≈ {money(monthly)}/month
+                {monthly == null ? "Cost per month unavailable" : `PER MONTH ≈ ${money(monthly)}/month`}
               </div>
             </div>
           </div>
@@ -365,7 +421,7 @@ function GadgetDetail({ compare, onCompare }) {
             <dl className="mt-3">
               <div className={rowCls}>
                 <dt className="text-ink2">Price</dt>
-                <dd className="mono font-semibold text-ink">{money(g.price)}</dd>
+                <dd className="mono font-semibold text-ink">{priceKnown ? money(g.price) : "Unavailable"}</dd>
               </div>
               <div className={rowCls}>
                 <dt className="text-ink2">Warranty</dt>
@@ -382,7 +438,9 @@ function GadgetDetail({ compare, onCompare }) {
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-ink3">
                 Per Month
               </span>
-              <span className="mono text-lg font-semibold text-ink">{money(monthly)} /month</span>
+              <span className="mono text-lg font-semibold text-ink">
+                {monthly == null ? "Unavailable" : `${money(monthly)} /month`}
+              </span>
             </div>
             <p className="mt-2 text-xs text-ink3">
               Estimate only. Price spread over a fixed 36-month usage window — the same assumption for every gadget, so numbers stay comparable.
@@ -395,10 +453,16 @@ function GadgetDetail({ compare, onCompare }) {
               <div className="rounded-sm border border-dashed border-line-strong bg-surface2 p-4 text-center text-xs break-words sm:text-sm">
                 <div className="text-ink2">Cost per month =</div>
                 <div className="mono mt-1 text-ink">Product Price ÷ 36-month usage window</div>
-                <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36 =</div>
-                <div className="mono mt-1 font-semibold text-primary-dark">
-                  ≈ {money(monthly)} per month
-                </div>
+                {monthly == null ? (
+                  <div className="mono mt-1 text-ink">Price unavailable — this listing has no price</div>
+                ) : (
+                  <>
+                    <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36 =</div>
+                    <div className="mono mt-1 font-semibold text-primary-dark">
+                      ≈ {money(monthly)} per month
+                    </div>
+                  </>
+                )}
               </div>
               <p className="mt-3 text-sm text-ink2">
                 A single transparent formula— the same one used across every gadget, so numbers can be compared fairly. The production system may extend this with electricity, insurance, or repair-cost data.
@@ -619,8 +683,14 @@ function GadgetDetail({ compare, onCompare }) {
               <h2 className="text-xl font-semibold">Cost per month</h2>
               <div className="mt-4 rounded-sm border border-dashed border-line-strong p-4 text-center text-xs break-words sm:text-sm">
                 <div className="text-ink2">Price ÷ 36-month window</div>
-                <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36</div>
-                <div className="mono mt-1 font-semibold text-primary-dark">≈ {money(monthly)} / month</div>
+                {monthly == null ? (
+                  <div className="mono mt-1 text-ink">Price unavailable</div>
+                ) : (
+                  <>
+                    <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36</div>
+                    <div className="mono mt-1 font-semibold text-primary-dark">≈ {money(monthly)} / month</div>
+                  </>
+                )}
               </div>
               <dl className="mt-3">
                 <div className={rowCls}>

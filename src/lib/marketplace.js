@@ -60,7 +60,9 @@ export function toGadget(p) {
     brand,
     model,
     category,
-    price: p.price != null ? p.price : 0,
+    // Unknown price stays null (unavailable), never 0: 0 reads as "free" and
+    // would win every price filter/ranking. Price-dependent views must skip it.
+    price: Number.isFinite(p.price) && p.price > 0 ? p.price : null,
     rating,
     reviewCount: p.reviewCount ?? 0,
     releaseYear: null, // unknown for marketplace listings
@@ -111,6 +113,16 @@ export function registerListings(products = []) {
   return products.map(toGadget);
 }
 
+/**
+ * A price we actually know. Unknown marketplace prices stay null (unavailable)
+ * and must be excluded from price filters, sorts and rankings — 0 would read as
+ * "free" and win every comparison.
+ */
+export function knownPrice(g) {
+  const p = g?.price;
+  return typeof p === "number" && Number.isFinite(p) && p > 0 ? p : null;
+}
+
 /** Look up a registered marketplace gadget by id (e.g. "lazada-15458423476"). */
 export function getListing(id) {
   return REGISTRY.get(id) || null;
@@ -124,20 +136,101 @@ export function isListingId(id) {
 /**
  * Fetch-on-miss: load a marketplace listing by id from the API and register it.
  * The registry is in-memory, so a deep-link or refresh would otherwise 404.
- * Returns the gadget, or null when unavailable (deleted, upstream down, etc).
+ *
+ * Returns a structured state, never a bare null: the caller must be able to
+ * tell "this listing is gone" from "the lookup failed" (GW-18).
+ *   { status: "found", gadget } | { status: "not-found" } | { status: "error", error }
  */
 export async function fetchListing(id) {
-  if (!isListingId(id)) return null;
+  if (!isListingId(id)) return { status: "not-found", gadget: null, error: null };
   const existing = REGISTRY.get(id);
-  if (existing) return existing;
+  if (existing) return { status: "found", gadget: existing, error: null };
   const productId = id.slice("lazada-".length);
+  let r, d;
   try {
-    const r = await fetch(`/api/lazada/product?id=${encodeURIComponent(productId)}&marketplace=ph`);
-    const d = await r.json();
-    const p = d?.product;
-    if (!r.ok || !p) return null;
-    return toGadget(p);
+    r = await fetch(`/api/lazada/product?id=${encodeURIComponent(productId)}&marketplace=ph`);
+    d = await r.json();
   } catch {
-    return null;
+    return { status: "error", gadget: null, error: "Could not reach the marketplace. Please try again." };
   }
+  // 404 is a real absence; every other failure is a failure the user can retry.
+  if (!r.ok) {
+    if (r.status === 404) return { status: "not-found", gadget: null, error: null };
+    return {
+      status: "error",
+      gadget: null,
+      error: d?.error?.message || "The marketplace lookup failed. Please try again.",
+    };
+  }
+  const p = d?.product;
+  if (!p) return { status: "not-found", gadget: null, error: null };
+  return { status: "found", gadget: toGadget(p), error: null };
+}
+
+/**
+ * Fetch one page of live marketplace results. A failure is an ERROR, never an
+ * empty product list (GW-13): an exception used to become {products: []} and
+ * then read as "no live listings found".
+ * Returns { ok, aborted, products, next, error:{code,message}|null }.
+ */
+export async function searchMarketplacePage({ q, page = 1, startKey = "", signal, fetchImpl } = {}) {
+  const doFetch = fetchImpl || globalThis.fetch;
+  const qs = new URLSearchParams({ q, marketplace: "ph", page: String(page) });
+  if (startKey) qs.set("start_key", startKey);
+  let r, d;
+  try {
+    r = await doFetch(`/api/lazada/search?${qs}`, signal ? { signal } : undefined);
+    d = await r.json();
+  } catch (err) {
+    // an aborted request is a cancellation, not a failure
+    if (err?.name === "AbortError") return { ok: false, aborted: true, products: [], next: "", error: null };
+    return {
+      ok: false,
+      aborted: false,
+      products: [],
+      next: "",
+      error: { code: "network_error", message: "Could not reach the marketplace. Please try again." },
+    };
+  }
+  if (!r.ok) {
+    const code = d?.error?.code || "search_failed";
+    return {
+      ok: false,
+      aborted: false,
+      products: [],
+      next: "",
+      error: {
+        code,
+        message:
+          code === "rate_limited"
+            ? "Marketplace is busy right now (rate limit). Please try again in a minute."
+            : d?.error?.message || "Product search is temporarily unavailable. Please try again.",
+      },
+    };
+  }
+  return { ok: true, aborted: false, products: d?.products || [], next: d?.next || "", error: null };
+}
+
+/**
+ * Merge page results: dedupe by productId, keep the first error, and never
+ * turn a failed page into "no results" (GW-13).
+ */
+export function mergeSearchPages(pages = []) {
+  const seen = new Set();
+  const items = [];
+  let error = null;
+  for (const p of pages) {
+    if (!p) continue;
+    if (p.error) {
+      if (!error) error = p.error;
+      continue;
+    }
+    for (const item of p.products || []) {
+      if (item?.productId && !seen.has(item.productId)) {
+        seen.add(item.productId);
+        items.push(item);
+      }
+    }
+  }
+  return { items, error };
 }

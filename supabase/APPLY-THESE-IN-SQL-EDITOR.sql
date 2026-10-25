@@ -49,7 +49,7 @@ set search_path = public
 as $$
 begin
   if not public.is_admin () then
-    new.status := old.status; // non-admin edits cannot flip moderation state
+    new.status := old.status; -- non-admin edits cannot flip moderation state
   end if;
   return new;
 end;

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
+import { parsePriceRange, priceSortValue, withinPriceRange } from "../lib/catalog.js";
 import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, StaleCatalogNote, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
 import LiveSearch from "../components/LiveSearch.jsx";
 
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
 const FEATURES = {
   long: (g) => /([8-9]\d*|\d{2,})\s*(h|hr|hour)/i.test(g.specs.Battery || ""),
-  budget: (g) => g.price < 15000,
+  // A listing with an UNKNOWN price cannot be claimed to be "under ₱15,000" —
+  // null < 15000 is true, which would be a lie (GW-19).
+  budget: (g) => withinPriceRange(g.price, null, 15000),
   durable: (g) => typeof g.scored.durability === "number" && g.scored.durability >= 7,
 };
 const FEATURE_LABELS = [
@@ -17,7 +20,7 @@ const FEATURE_LABELS = [
 ];
 // filters follow the same category list the catalog fetches (admin-editable)
 const CATS = [["", "All"]];
-const catOptions = () => [...CATS, ...GW.categories.map((c) => [c.id, c.name])];
+const catOptions = () => [...CATS, ...GW.categories.filter((c) => GW.gadgets.some((g) => g.category === c.id)).map((c) => [c.id, c.name])];
 const SORTS = [
   ["featured", "Featured"],
   ["price-asc", "Price: low to high"],
@@ -40,8 +43,9 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const [q, setQ] = useState(spQ);
   const [sort, setSort] = useState("featured");
   const [minPrice, setMinPrice] = useState("0");
-  // ?max= (from the home budget CTA) pre-sets the price ceiling
-  const [maxPrice, setMaxPrice] = useState(() => searchParams.get("max") || "100000");
+  // ?max= (from the home budget CTA) pre-sets the price ceiling. An EMPTY
+  // input means "no ceiling" and is a different thing from a number (GW-02).
+  const [maxPrice, setMaxPrice] = useState(() => searchParams.get("max") || "");
   const [feats, setFeats] = useState(() => new Set());
   const [brands, setBrands] = useState(() => new Set());
   // ponytail: phones get a collapsed filter panel; from lg up the sidebar is
@@ -63,7 +67,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const clearAll = () => {
     setQ("");
     setMinPrice("0");
-    setMaxPrice("100000");
+    setMaxPrice("");
     setFeats(new Set());
     setBrands(new Set());
     setCat("");
@@ -72,10 +76,14 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const scope = cat ? GW.gadgetsInCategory(cat) : GW.gadgets;
   const brandList = [...new Set(scope.map((g) => g.brand))].filter((b) => b && b !== "Unknown").sort();
 
-  const min = minPrice === "" ? null : +minPrice;
-  const max = maxPrice === "" ? null : +maxPrice;
+  // GW-02: every finite, non-negative ceiling is applied. An empty input means
+  // "no ceiling" and is NOT the same as a number — the old code skipped any
+  // max >= 100000, so a ₱120,000 ceiling was silently ignored.
+  const range = parsePriceRange(minPrice, maxPrice);
+  const { min, max } = range;
   const results = (() => {
     let list = scope.slice();
+    if (range.error) return list; // invalid range: show the error, do not filter
     if (q) {
       const s = q.toLowerCase();
       list = list.filter((g) =>
@@ -83,14 +91,17 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
       );
     }
     if (brands.size) list = list.filter((g) => brands.has(g.brand));
-    if (min != null && min > 0) list = list.filter((g) => g.price >= min);
-    if (max != null && max < 100000) list = list.filter((g) => g.price <= max);
+    // GW-19: a listing with an unknown price cannot satisfy a price bound.
+    // A floor of 0 is no floor (same as before), so an untouched filter panel
+    // does not hide price-unknown listings.
+    if (min != null && min > 0) list = list.filter((g) => withinPriceRange(g.price, min, null));
+    if (max != null) list = list.filter((g) => withinPriceRange(g.price, null, max));
     for (const [key, fn] of Object.entries(FEATURES)) if (feats.has(key)) list = list.filter(fn);
     switch (sort) {
-      case "price-asc": list.sort((a, b) => a.price - b.price); break;
-      case "price-desc": list.sort((a, b) => b.price - a.price); break;
+      case "price-asc": list.sort((a, b) => priceSortValue(a) - priceSortValue(b)); break;
+      case "price-desc": list.sort((a, b) => priceSortValue(b) - priceSortValue(a)); break;
       case "rating": list.sort((a, b) => b.rating - a.rating); break;
-      case "monthly": list.sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b)); break;
+      case "monthly": list.sort((a, b) => priceSortValue(a) - priceSortValue(b)); break;
       default: list.sort((a, b) => b.rating * Math.log(b.reviewCount + 2) - a.rating * Math.log(a.reviewCount + 2));
     }
     return list;
@@ -113,7 +124,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
     feats.size +
     brands.size +
     (minPrice && minPrice !== "0" ? 1 : 0) +
-    (maxPrice && maxPrice !== "100000" ? 1 : 0);
+    (maxPrice ? 1 : 0);
 
   return (
     <section className="section py-8 lg:py-12">
@@ -194,6 +205,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                     min="0"
                     placeholder="Min"
                     aria-label="Minimum price"
+                    aria-invalid={range.error ? "true" : undefined}
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
@@ -204,11 +216,19 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                     min="0"
                     placeholder="Max"
                     aria-label="Maximum price"
+                    aria-invalid={range.error ? "true" : undefined}
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
                   />
                 </div>
+                {/* GW-02: an invalid range is stated, not silently ignored. */}
+                {range.error && (
+                  <p role="alert" className="mt-2 text-sm text-[#b3372e]">
+                    {range.error}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-ink3">Leave a box empty for no limit.</p>
               </div>
 
               <div className={groupCls}>

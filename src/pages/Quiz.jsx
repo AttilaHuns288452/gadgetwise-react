@@ -4,9 +4,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../lib/auth.js";
 import { Link, useNavigate } from "react-router-dom";
-import { GW, money, FACTOR_META, recommend } from "../lib.js";
+import { GW, money, FACTOR_META, recommend, customBudget } from "../lib.js";
 import { Img } from "../components/ui.jsx";
-import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
+import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls, stag } from "../components/ui.jsx";
 import { saveRecommendation } from "../lib/store.js";
 
 const CATS = [
@@ -27,20 +27,11 @@ const CUSTOM_CHIPS = [
 
 const LEVELS = [["none", "—"], ["low", "Low"], ["medium", "Med"], ["high", "High"]];
 
-const SCORE_BARS = [
-  ["performance", "Performance"], ["battery", "Battery"], ["durability", "Durability"], ["portability", "Portability"],
-  ["display", "Display"], ["camera", "Camera"], ["storage", "Storage"], ["repairability", "Repairability"],
-];
-
 const FIXED_CHIPS = ["Budget fit · 20 pts fixed", "Academic fit · 25 pts fixed", "Community · 5 pts fixed"];
-const ADJ_CHIPS = Object.entries(FACTOR_META)
-  .filter(([, m]) => m.raw > 0)
-  .map(([k, m]) => `${m.label} · ${m.raw} pts`);
 
 const TITLES = ["What are you looking for?", "Budget", "Academic use", "Priorities", "Results"];
 
 const catName = (id) => (CATS.find((c) => c.id === id) || {}).name || "";
-const bandFor = (n) => GW.budgetBands.find((b) => n >= b.min && n < b.max) || GW.budgetBands[0];
 
 const optionCls = (on) =>
   `rounded-2xl border p-5 text-left transition-colors ${
@@ -77,16 +68,47 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
         return next;
       }));
 
-  const band = custom ? bandFor(Number(amount) || 0) : GW.budgetBands.find((b) => b.id === bandId) || null;
-  const useCase = GW.useCases.find((u) => u.id === useId) || null;
+  // GW-08: without the App props this component keeps its own compare set, so
+  // the compare tray and the /compare route disagree. That is a wiring bug
+  // that must never be silent: warn loudly in dev instead of diverging quietly.
+  // The App-side wiring is owned by App.jsx, not here.
+  useEffect(() => {
+    if (import.meta.env?.DEV && (!compareProp || !onCompareProp)) {
+      console.warn(
+        "[Quiz] compare/onCompare props are missing — the compare tray will not see these picks. " +
+          "Pass compare={compare} onCompare={onCompare} from App.jsx.",
+      );
+    }
+  }, [compareProp, onCompareProp]);
 
+  const band = custom
+    ? customBudget(amount)
+    : GW.budgetBands.find((b) => b.id === bandId) || null;
+  const useCase = GW.useCases.find((u) => u.id === useId) || null;
+  // A budget is required in both paths: a bracket must be picked, and a custom
+  // amount must be a real number. Without one there is nothing to rank.
+  const amountValid = band != null;
+
+  // GW-09: the results memo must depend on the CATALOG, not just the answers.
+  // The catalog loads asynchronously into GW.gadgets, so a memo keyed only on
+  // the answers would compute once against an empty catalog and never
+  // recompute when the products arrive.
+  const catalogSize = GW.gadgets.length;
   const engine = useMemo(() => {
     if (!cat || !band || !useCase) return null;
     return recommend({ category: cat, budget: band, useCase, priorities: prio });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cat, band && band.id, useId, prio]);
+  }, [cat, band && band.id, band && band.max, useId, prio, catalogSize]);
   const results = engine ? engine.results.slice(0, 5) : [];
   const summary = cat && band && useCase ? `${catName(cat)} · ${band.label} · ${useCase.label}` : "";
+  const summaryBudgetMax = band ? band.max : 0;
+  // GW-07: the adjustable chips must show the weights the ENGINE actually used
+  // for this run (priorities applied), not the module-level defaults.
+  const adjChips = engine
+    ? Object.entries(engine.weights)
+        .filter(([, w]) => w > 0.01)
+        .map(([k, w]) => `${(FACTOR_META[k] || { label: k }).label} · ${w.toFixed(1)} pts`)
+    : [];
 
   useEffect(() => {
     if (step === 5 && engine && results.length) {
@@ -234,14 +256,20 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                     ))}
                   </div>
                   <div className="mt-3 text-sm text-ink2">
-                    Range <span className="mono font-semibold text-ink">{band.label}</span>
+                    {band ? (
+                      <>
+                        Exact ceiling{" "}
+                        <span className="mono font-semibold text-ink">{money(band.max)}</span> — products above it are not ranked.
+                      </>
+                    ) : (
+                      <span className="font-semibold text-[#B3372E]">
+                        Enter a budget above ₱0. A custom budget must be a real number.
+                      </span>
+                    )}
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setBandId(band.id);
-                      setCustom(false);
-                    }}
+                    onClick={() => setCustom(false)}
                     className="mt-4 text-sm font-semibold text-primary hover:underline"
                   >
                     Pick a bracket instead
@@ -252,7 +280,12 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                 <button type="button" className={btnOutlineCls} onClick={() => setStep(1)}>
                   Back
                 </button>
-                <button type="button" className={btnPrimaryCls} onClick={() => setStep(3)}>
+                <button
+                  type="button"
+                  disabled={!amountValid}
+                  onClick={() => setStep(3)}
+                  className={`${btnPrimaryCls} disabled:opacity-40`}
+                >
                   Continue
                 </button>
               </div>
@@ -343,15 +376,59 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
 
               <div className="mt-5 rounded-2xl border border-line px-5 py-4">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">Scoring weights</div>
-                <div className="mt-1 text-sm text-ink2">Adjustable 50 pts after your priorities</div>
+                <div className="mt-1 text-sm text-ink2">
+                  Adjustable 50 pts after your priorities
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {[...FIXED_CHIPS, ...ADJ_CHIPS].map((c) => (
+                  {/* GW-07: the real engine weights for THIS run, not the
+                      module-level defaults — the chips used to ignore the
+                      user's priorities entirely. */}
+                  {[...FIXED_CHIPS, ...adjChips].map((c) => (
                     <span key={c} className="chip">
                       {c}
                     </span>
                   ))}
                 </div>
               </div>
+
+              {engine && results.length === 0 && (
+                <div className="mt-6 rounded-2xl border border-line px-5 py-6">
+                  {engine.hiddenCount > 0 ? (
+                    <>
+                      <h3 className="text-lg font-bold">No products fit this budget</h3>
+                      <p className="mt-1.5 text-sm text-ink2">
+                        {engine.hiddenCount} {engine.hiddenCount === 1 ? "product is" : "products are"} above your{" "}
+                        {money(summaryBudgetMax)} ceiling (plus a{" "}
+                        {Math.round((engine.stretchLimit / summaryBudgetMax - 1) * 100)}% stretch) and are not ranked.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <button type="button" className={btnPrimaryCls} onClick={() => setStep(2)}>
+                          Raise the budget
+                        </button>
+                        <button type="button" className={btnOutlineCls} onClick={() => setStep(1)}>
+                          Change answers
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-bold">Nothing to rank yet</h3>
+                      <p className="mt-1.5 text-sm text-ink2">
+                        The catalog has no {catName(cat).toLowerCase()} products to compare right now. Check back later, or
+                        browse the full catalog.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <Link to="/gadgets" className={btnPrimaryCls}>
+                          Browse the catalog
+                        </Link>
+                        <button type="button" className={btnOutlineCls} onClick={() => setStep(1)}>
+                          Change answers
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="stagger mt-6 grid gap-5">
                 {results.map((r, i) => {
@@ -374,7 +451,16 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         </div>
                         <div className="text-right">
                           <span className="mono text-3xl font-extrabold">{r.score}</span>{" "}
-                          <span className="mono text-sm text-ink2">/ 100</span>
+                          <span className="mono text-sm text-ink2">
+                            / {r.breakdown.supported >= 100 ? 100 : Math.round(r.breakdown.supported)}
+                          </span>
+                          {/* GW-05: a score resting on partial evidence says so,
+                              instead of implying a full 100-point measurement. */}
+                          {r.breakdown.coverage < 1 && (
+                            <div className="mt-1 text-xs text-ink2">
+                              Partial — {Math.round(r.breakdown.coverage * 100)}% of the points have data
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -428,11 +514,37 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <summary className="cursor-pointer text-sm font-semibold text-primary hover:underline">
                           Show score breakdown
                         </summary>
+                        {/* GW-07: the breakdown shows the factors that actually
+                            produced the score (earned/max points), not the raw
+                            catalog spec bars, which are a different thing. */}
                         <div className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                          {SCORE_BARS.map(([k, label]) => (
-                            <Bar key={k} v={g.scored[k] ?? 0} label={label} unavailable={g.scored[k] == null} />
+                          {r.breakdown.factors.map((f) => (
+                            <div key={f.key}>
+                              {/* earned / max points — the contribution this
+                                  factor made to the score (GW-07) */}
+                              <Bar v={f.earned} max={f.max} label={f.label} />
+                              {f.note && <p className="mt-0.5 text-xs text-ink2">{f.note}</p>}
+                            </div>
                           ))}
                         </div>
+                        {r.breakdown.unknown.length > 0 && (
+                          <div className="mt-4 rounded-xl bg-surface2 px-4 py-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">
+                              Not scored — no data
+                            </div>
+                            <ul className="mt-2 grid gap-1">
+                              {r.breakdown.unknown.map((u) => (
+                                <li key={u.key} className="text-sm text-ink2">
+                                  — {u.label} ({u.max} pts): {u.note}
+                                </li>
+                              ))}
+                            </ul>
+                            <p className="mt-2 text-xs text-ink2">
+                              These points are excluded from the score, not counted as zero. The score above is out of{" "}
+                              {Math.round(r.breakdown.supported)}.
+                            </p>
+                          </div>
+                        )}
                       </details>
 
                       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">

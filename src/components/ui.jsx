@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Component } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { money, ownIndex, GW } from "../lib.js";
@@ -323,7 +323,7 @@ export function GadgetCard({ g, compare, onCompare, i }) {
         </dl>
         <div className="mt-auto">
           <div>
-            <span className="mono text-xl font-bold text-ink">{money(g.price)}</span>
+            <span className="mono text-xl font-bold text-ink">{g.price != null ? money(g.price) : "Price unavailable"}</span>
           </div>
           <div className="mt-0.5 text-xs uppercase tracking-wide text-ink3">≈ {money(monthly)}/month</div>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
@@ -475,6 +475,29 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirm", cancel
       {error && <p role="alert" className="rounded-lg border border-[#F5C2C0] bg-[#FDF3F2] px-3.5 py-2.5 text-sm text-[#B42318]">{error}</p>}
     </Modal>
   );
+}
+
+/* Route-level render-error boundary: one broken page must not white-screen the
+   whole app (no nav, no way out). */
+export class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error) { console.error("Route render error:", error); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="section mx-auto max-w-[640px] text-center">
+          <h1 className="text-2xl font-bold text-ink">Something went wrong on this page</h1>
+          <p className="mt-2 text-ink2">The rest of the site still works. Try again, or go back home.</p>
+          <div className="mt-5 flex justify-center gap-2">
+            <button type="button" className={btnPrimaryCls} onClick={() => { this.setState({ error: null }); window.location.reload(); }}>Try again</button>
+            <a href="#/" className={btnOutlineCls}>Go home</a>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 /* Honest "still loading" card. The catalog is fetched live per category, so

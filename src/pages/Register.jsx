@@ -6,7 +6,12 @@ import { useAuth, safeNext, PASSWORD_MIN, passwordPolicyError } from "../lib/aut
 function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = safeNext(searchParams.get("next"));
+  const rawNext = searchParams.get("next");
+  const next = safeNext(rawNext);
+  // Carry the return path through to the sibling form. safeNext() returns the
+  // raw value only when it is a valid same-app path, so an invalid ?next=
+  // is dropped instead of being forwarded.
+  const carryNext = rawNext && safeNext(rawNext) === rawNext ? rawNext : null;
   const { signUp, signInWithGoogle, configured } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,7 +45,12 @@ function Register() {
     <AuthLayout
       title="Create your account"
       subtitle="Free for students. Your data stays yours."
-      footer={<>Already have an account? <Link to="/login" className="font-semibold text-primary hover:text-primary-dark">Log in</Link></>}
+      footer={<>
+        Already have an account?{" "}
+        <Link to={carryNext ? `/login?next=${encodeURIComponent(carryNext)}` : "/login"} className="font-semibold text-primary hover:text-primary-dark">
+          Log in
+        </Link>
+      </>}
     >
       <form onSubmit={submit} className="space-y-5">
         <div>
@@ -57,7 +67,15 @@ function Register() {
           <label className={fieldLabelCls} htmlFor="reg-password">Password</label>
           <PasswordField id="reg-password" minLength={PASSWORD_MIN} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
             placeholder={`At least ${PASSWORD_MIN} characters`} />
-          <p className="mt-1.5 text-xs text-ink2">At least {PASSWORD_MIN} characters. Name, email, and password are required.</p>
+          {/* The full policy, up front: the form also requires a lowercase
+              letter, an uppercase letter, a digit and a symbol. */}
+          <ul className="mt-1.5 space-y-0.5 text-xs text-ink2">
+            <li>At least {PASSWORD_MIN} characters</li>
+            <li>One lowercase letter (a–z)</li>
+            <li>One uppercase letter (A–Z)</li>
+            <li>One number (0–9)</li>
+            <li>One symbol (for example ! @ # $)</li>
+          </ul>
         </div>
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password-confirm">Confirm password</label>

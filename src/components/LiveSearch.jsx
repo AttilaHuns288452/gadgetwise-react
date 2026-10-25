@@ -1,104 +1,119 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { money } from "../lib.js";
 import { Stars } from "./ui.jsx";
-import { registerListings } from "../lib/marketplace.js";
+import { registerListings, searchMarketplacePage } from "../lib/marketplace.js";
 
 /**
  * Live Lazada marketplace results. Separate from the curated catalog on
  * purpose: scraper data is real but unvetted, so it never mixes into the
  * recommendation/compare catalog. Links go straight to the Lazada listing.
+ *
+ * GW-11: a keystroke no longer starts a 6-page fetch loop. The query is
+ * debounced, the request is abortable, and extra pages load only when the
+ * user asks for them.
+ * GW-13: a failed fetch is an ERROR, never an empty result list.
  */
-/**
- * Merge staggered search responses: dedupe by productId and surface whether
- * the upstream rate-limited us (so we can say "busy" instead of "no results").
- */
-function merge(results) {
-  const seen = new Set();
-  const items = [];
-  let rateLimited = false;
-  let error = null;
-  for (const d of results) {
-    if (d?.error?.code === "rate_limited") rateLimited = true;
-    else if (d?.error && !error) error = d.error.message || null;
-    for (const p of d.products || []) {
-      if (p.productId && !seen.has(p.productId)) {
-        seen.add(p.productId);
-        items.push(p);
-      }
-    }
-  }
-  return { items, rateLimited, error };
-}
+const DEBOUNCE_MS = 350;
+
+const IDLE = { status: "idle", items: [], error: null, errorCode: null, next: "", page: 0, loadedQuery: "" };
 
 export default function LiveSearch({ query }) {
-  const [state, setState] = useState({ status: "idle", items: [], error: null });
+  const [state, setState] = useState(IDLE);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // the query the user last asked for; the debounce timer reads it
+  const wantRef = useRef("");
+  const abortRef = useRef(null);
+  // mirror of the rendered items so a "load more" can append without reading
+  // a stale state snapshot
+  const itemsRef = useRef([]);
+
+  const run = async (q, { page = 1, cursor = "" } = {}) => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    const append = page > 1;
+    // GW-13: a new query clears the previous query's results instead of
+    // showing them under the new search term.
+    if (!append) itemsRef.current = [];
+    setState((s) => ({
+      ...s,
+      status: append ? s.status : "loading",
+      items: append ? s.items : [],
+      error: null,
+      errorCode: null,
+    }));
+    const res = await searchMarketplacePage({
+      q,
+      page,
+      startKey: cursor,
+      signal: ctrl.signal,
+    });
+    // re-check cancellation after every await: a stale response must never
+    // overwrite the results of a newer query
+    if (ctrl.signal.aborted || res.aborted) return;
+    if (!res.ok) {
+      setState((s) => ({
+        ...s,
+        status: "error",
+        items: append ? s.items : [],
+        error: res.error?.message || "Product search is temporarily unavailable. Please try again.",
+        errorCode: res.error?.code || "search_failed",
+      }));
+      return;
+    }
+    const items = append ? mergeItems(itemsRef.current, res.products) : res.products;
+    if (items.length) registerListings(items);
+    itemsRef.current = items;
+    setState({ status: "ready", items, error: null, errorCode: null, next: res.next || "", page, loadedQuery: q });
+  };
 
   useEffect(() => {
     const q = (query || "").trim();
+    wantRef.current = q;
     if (q.length < 2) {
-      setState({ status: "idle", items: [], error: null });
+      abortRef.current?.abort();
+      itemsRef.current = [];
+      setState(IDLE);
       return;
     }
-    let cancelled = false;
-    setState((s) => ({ ...s, status: "loading" }));
-
-    // Walk real pages with the cursor. The upstream has thousands of results per
-    // query (count: 3247 for "laptop"); `page` + `start_key` together advance it.
-    // ponytail: paced (not parallel) to stay under the upstream rate limit, and
-    // capped at 6 pages so one search can't exhaust the monthly quota.
-    const MAX_PAGES = 6;
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-    (async () => {
-      const results = [];
-      let cursor = "";
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        if (cancelled) return;
-        if (page > 1) {
-          if (!cursor) break; // no more pages
-          await sleep(500); // gentle pacing: avoid burst 429s
-        }
-        const qs = new URLSearchParams({ q, marketplace: "ph", page: String(page) });
-        if (cursor) qs.set("start_key", cursor);
-        try {
-          const r = await fetch(`/api/lazada/search?${qs}`);
-          const d = await r.json();
-          results.push(r.ok ? d : { error: d?.error, products: [] });
-          cursor = r.ok ? (d.next || "") : "";
-        } catch {
-          results.push({ products: [] });
-          cursor = "";
-        }
-        // Show results as they arrive instead of waiting for every page.
-        const merged = merge(results);
-        if (!cancelled) {
-          if (merged.items.length) {
-            registerListings(merged.items);
-            setState({ status: "ready", items: merged.items, error: null });
-          } else {
-            const e = merged.rateLimited
-              ? "Marketplace is busy right now (rate limit). Please try again in a minute."
-              : merged.error || "No live listings found.";
-            setState({ status: "error", items: [], error: e });
-          }
-        }
-      }
-    })();
-
+    // GW-11: debounce so one query does not start a fetch loop per keystroke.
+    const t = setTimeout(() => {
+      if (wantRef.current !== q) return; // a newer query won the race
+      run(q);
+    }, DEBOUNCE_MS);
     return () => {
-      cancelled = true;
+      clearTimeout(t);
+      abortRef.current?.abort(); // cancel the in-flight request for the old query
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const q = (query || "").trim();
   if (q.length < 2) return null;
 
+  const loadMore = async () => {
+    if (!state.next || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      await run(state.loadedQuery, { page: state.page + 1, cursor: state.next });
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   return (
     <section className="mt-8" aria-label="Live marketplace results">
-      <div className="flex items-baseline gap-2">
+      <div className="flex flex-wrap items-baseline gap-2">
         <h2 className="text-2xl">Live marketplace results</h2>
         <span className="text-sm text-ink3">real-time from Lazada · opens GadgetWise detail</span>
       </div>
+
+      {/* GW-12: this is an independent marketplace search. It does not apply the
+          catalog filters above, and it says how many listings IT returned. */}
+      <p className="mt-1 text-sm text-ink2">
+        Independent marketplace search — the catalog filters above do not apply here.
+        {state.status === "ready" && ` ${state.items.length} live listing${state.items.length === 1 ? "" : "s"} found.`}
+      </p>
 
       {state.status === "loading" && (
         <div className="mt-3 text-sm text-ink2 [overflow-wrap:anywhere]">Searching Lazada for “{q}”…</div>
@@ -106,7 +121,15 @@ export default function LiveSearch({ query }) {
 
       {state.status === "error" && (
         <div className="mt-3 rounded-lg border border-[#E5E7EB] bg-white p-4 text-sm text-ink2">
-          {state.error}
+          <p className="[overflow-wrap:anywhere]">{state.error}</p>
+          {/* GW-10: an explicit retry, not just a message. */}
+          <button
+            type="button"
+            onClick={() => run(state.loadedQuery || q)}
+            className="mt-3 rounded-sm border border-[#C7C7CC] bg-white px-3 py-1.5 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB]"
+          >
+            Retry search
+          </button>
         </div>
       )}
 
@@ -159,6 +182,30 @@ export default function LiveSearch({ query }) {
           ))}
         </div>
       )}
+
+      {/* GW-11: more pages load on demand, never automatically. */}
+      {state.status === "ready" && state.next && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="mt-4 rounded-sm border border-[#C7C7CC] bg-white px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-60"
+        >
+          {loadingMore ? "Loading more…" : "Load more listings"}
+        </button>
+      )}
     </section>
   );
+}
+
+/** Append a page to the current list, deduped by productId. */
+function mergeItems(current = [], incoming = []) {
+  const seen = new Set(current.map((p) => p.productId));
+  const out = current.slice();
+  for (const p of incoming || []) {
+    if (p?.productId && seen.has(p.productId)) continue;
+    if (p?.productId) seen.add(p.productId);
+    out.push(p);
+  }
+  return out;
 }

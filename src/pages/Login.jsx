@@ -6,7 +6,12 @@ import { useAuth, safeNext } from "../lib/auth.js";
 function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = safeNext(searchParams.get("next"));
+  const rawNext = searchParams.get("next");
+  const next = safeNext(rawNext);
+  // Carry the return path through to the sibling form. safeNext() returns the
+  // raw value only when it is a valid same-app path, so an invalid ?next=
+  // is dropped instead of being forwarded.
+  const carryNext = rawNext && safeNext(rawNext) === rawNext ? rawNext : null;
   const { signIn, signInWithGoogle, configured } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +40,12 @@ function Login() {
     <AuthLayout
       title="Welcome back"
       subtitle="Your wishlist missed you."
-      footer={<>New here? <Link to="/register" className="font-semibold text-primary hover:text-primary-dark">Create an account</Link></>}
+      footer={<>
+        New here?{" "}
+        <Link to={carryNext ? `/register?next=${encodeURIComponent(carryNext)}` : "/register"} className="font-semibold text-primary hover:text-primary-dark">
+          Create an account
+        </Link>
+      </>}
     >
       {linkError && (
         <p role="alert" className="mb-4 rounded-lg bg-[#FFF8E6] px-4 py-2.5 text-sm font-medium text-[#6B4E12]">{linkError}</p>

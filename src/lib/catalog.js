@@ -16,7 +16,7 @@ import { loadProducts, loadCategories } from "./store.js";
 
 // Bump after catalog-data integrity changes so an old browser never revives
 // stale or placeholder-heavy marketplace results.
-const CACHE_KEY = "gw.catalog.v3";
+const CACHE_PREFIX = "gw.catalog.v4.";
 // ponytail: 7-day cache + 1 page/category. The API is a 50-req/month BASIC plan,
 // so we fetch rarely and lean on the cache; stale data beats an empty catalog.
 const TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -76,24 +76,58 @@ async function categoryPlan() {
     // every page reads GW.categories (Home tiles, filters, quiz cases), so the
     // admin list has to land there to actually influence the public site
     GW.categories = list.map((c) => ({ id: c.id, name: c.name }));
-    return queries;
+    return { list, queries };
   } catch {
-    return CATEGORY_QUERIES;
+    return { list: base, queries: CATEGORY_QUERIES };
   }
 }
 
+/**
+ * Stable short hash of the category plan. It is part of the cache key, so an
+ * admin category edit (rename, new query, new category) invalidates the
+ * product cache instead of serving 7-day-old products for a plan that no
+ * longer exists (GW-16).
+ */
+export function planHash(list = []) {
+  const s = list
+    .map((c) => `${c.id}|${c.name || ""}|${c.query || ""}`)
+    .sort()
+    .join(";");
+  // FNV-1a (32-bit) — a cache key only needs to be stable and collision-light.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
 async function fetchCategory(catId, query) {
-  const out = { items: [], stale: false, staleFrom: null };
+  // ok/error are tracked per category: a failed category must be visible, not
+  // silently dropped (GW-15).
+  const out = { items: [], stale: false, staleFrom: null, ok: true, error: null };
   for (let page = 1; page <= PAGES_PER_CATEGORY; page++) {
     const qs = new URLSearchParams({ q: query, marketplace: "ph", page: String(page) });
-    let r;
+    let r, d;
     try {
       r = await fetch(`/api/lazada/search?${qs}`);
     } catch {
+      out.ok = false;
+      out.error = "network error";
       continue; // network blip on one page: keep the rest
     }
-    if (!r.ok) continue; // e.g. 429 on one page: keep the rest
-    const d = await r.json();
+    if (!r.ok) {
+      out.ok = false;
+      out.error = `upstream ${r.status}`;
+      continue; // e.g. 429 on one page: keep the rest
+    }
+    try {
+      d = await r.json();
+    } catch {
+      out.ok = false;
+      out.error = "bad response";
+      continue;
+    }
     for (const p of d.products || []) out.items.push({ ...p, _cat: catId });
     // the handler serves a real snapshot when the provider is unavailable and
     // marks it stale — surface that so cached rows are never sold as live
@@ -109,101 +143,233 @@ function toCatalogGadget(p) {
 }
 
 /**
+ * Parse a price range from the filter inputs.
+ *
+ * An EMPTY input means "no bound" — that is a different thing from a numeric
+ * value, and conflating them is what made a ceiling of ₱120,000 get ignored
+ * (the old code treated 100000 as "no ceiling" and skipped anything else).
+ * Returns { min, max, error }: min/max are null when unbounded.
+ */
+export function parsePriceRange(minRaw, maxRaw) {
+  const parse = (raw, label) => {
+    const s = String(raw ?? "").trim();
+    if (s === "") return { value: null, error: null };
+    const n = Number(s);
+    if (!Number.isFinite(n)) return { value: null, error: `${label} must be a number.` };
+    if (n < 0) return { value: null, error: `${label} cannot be negative.` };
+    return { value: n, error: null };
+  };
+  const lo = parse(minRaw, "Minimum price");
+  if (lo.error) return { min: null, max: null, error: lo.error };
+  const hi = parse(maxRaw, "Maximum price");
+  if (hi.error) return { min: null, max: null, error: hi.error };
+  if (lo.value != null && hi.value != null && lo.value > hi.value) {
+    return { min: null, max: null, error: "Minimum price cannot be higher than the maximum price." };
+  }
+  return { min: lo.value, max: hi.value, error: null };
+}
+
+/**
+ * Does a product satisfy a price range? A product with an UNKNOWN price
+ * (null) cannot satisfy a price bound — it is not evidence that it is in
+ * range, so it is excluded rather than counted as ₱0 (GW-19).
+ */
+export function withinPriceRange(price, min, max) {
+  if (typeof price !== "number" || !Number.isFinite(price)) return false;
+  if (min != null && price < min) return false;
+  if (max != null && price > max) return false;
+  return true;
+}
+
+/** Sort key for price sorts: unknown prices go last, never first as ₱0. */
+export function priceSortValue(g) {
+  const p = g?.price;
+  return typeof p === "number" && Number.isFinite(p) ? p : Number.POSITIVE_INFINITY;
+}
+
+/**
  * Real catalog statistics derived from the live product list. Every number is
  * counted from actual loaded listings — nothing is invented. Used by the admin
  * console in place of the old fabricated analytics.
  */
 export function catalogStats(gadgets = GW.gadgets) {
   const byCat = {};
-  let priceSum = 0;
+  // Only listings with a KNOWN price count toward the average: an unknown
+  // price must not drag it toward zero (GW-19).
+  const prices = [];
   let withRating = 0;
   let ratingSum = 0;
   for (const g of gadgets) {
     byCat[g.category] = (byCat[g.category] || 0) + 1;
-    priceSum += g.price || 0;
+    if (typeof g.price === "number" && Number.isFinite(g.price) && g.price > 0) prices.push(g.price);
     if (g.rating > 0) {
       withRating += 1;
       ratingSum += g.rating;
     }
   }
+  const priceSum = prices.reduce((n, p) => n + p, 0);
   return {
     total: gadgets.length,
     categories: Object.entries(byCat)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count),
-    avgPrice: gadgets.length ? Math.round(priceSum / gadgets.length) : 0,
+    avgPrice: prices.length ? Math.round(priceSum / prices.length) : 0,
+    pricedCount: prices.length,
     withRating,
     avgRating: withRating ? Math.round((ratingSum / withRating) * 10) / 10 : 0,
   };
 }
 
 /**
- * Load the real catalog into GW.gadgets. Clears the fixture first so it never
- * sits in the production data path. Resolves { ok, count, cached } on success;
- * throws when the upstream returns nothing at all (caller shows an honest error,
- * never the fictional fixture).
+ * Merge per-category fetch results into one product list.
+ *
+ * A failed category is never silently dropped: its error is reported in
+ * `failedCategories` and the rows it had last time (the caller's `fallback`)
+ * are kept, so one flaky category cannot empty the catalog (GW-15).
+ * Pure, so the rules are testable.
  */
-export async function loadCatalog() {
-  GW.gadgets = []; // fixture must not linger in the live data path
-
-  // Admin categories shape the category list itself, so this must run on every
-  // load: a fresh client cache used to skip it entirely and self-added
-  // categories stayed invisible for up to the whole cache lifetime.
-  const queries = await categoryPlan();
-
-  let stale = null;
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
-      const { fetchedAt, products } = JSON.parse(raw);
-      if (Array.isArray(products) && products.length) {
-        if (Date.now() - fetchedAt < TTL) {
-          GW.gadgets = products.map(toCatalogGadget);
-          return { ok: true, count: GW.gadgets.length, cached: true };
-        }
-        stale = products; // keep as a fallback if the refetch comes back empty
-      }
-    }
-  } catch {
-    /* corrupt cache -> refetch */
-  }
-
-  let products = [];
-  try {
-    const settled = await Promise.allSettled(
-      queries.map(([cat, q]) => fetchCategory(cat, q)),
-    );
-    const seen = new Set();
-    for (const r of settled) {
-      if (r.status !== "fulfilled") continue;
-      for (const p of r.value.items) {
+export function mergeCategoryResults(results = []) {
+  const seen = new Set();
+  const products = [];
+  const failedCategories = [];
+  let stale = false;
+  let staleFrom = null;
+  for (const r of results) {
+    if (!r.ok) {
+      failedCategories.push({ id: r.id ?? null, error: r.error || "unknown error" });
+      for (const p of r.fallback || []) {
         if (!p.productId || seen.has(p.productId)) continue;
         seen.add(p.productId);
         products.push(p);
       }
-      if (r.value.stale) { GW.catalogStale = true; GW.catalogStaleFrom = r.value.staleFrom || GW.catalogStaleFrom; }
+      continue;
+    }
+    for (const p of r.items || []) {
+      if (!p.productId || seen.has(p.productId)) continue;
+      seen.add(p.productId);
+      products.push(p);
+    }
+    if (r.stale) {
+      stale = true;
+      staleFrom = r.staleFrom || staleFrom;
+    }
+  }
+  return { products, failedCategories, stale, staleFrom };
+}
+
+/**
+ * Load the real catalog into GW.gadgets. Clears the fixture first so it never
+ * sits in the production data path. Resolves { ok, count, cached, stale,
+ * fetchedAt, failedCategories } on success; throws when the upstream returns
+ * nothing at all (caller shows an honest error, never the fictional fixture).
+ */
+export async function loadCatalog() {
+  GW.gadgets = []; // fixture must not linger in the live data path
+  GW.catalogStale = false;
+  GW.catalogStaleFrom = null;
+
+  // Admin categories shape the category list itself, so this must run on every
+  // load: a fresh client cache used to skip it entirely and self-added
+  // categories stayed invisible for up to the whole cache lifetime.
+  const { list, queries } = await categoryPlan();
+  // GW-16: the plan hash is part of the cache key, so a category edit
+  // (rename / new query / new category) invalidates the product cache.
+  const CACHE_KEY = CACHE_PREFIX + planHash(list);
+
+  // Per-category cache: { fetchedAt, stale, categories: { id: { fetchedAt,
+  // rows, stale } } }. Each category carries its own timestamp, so a category
+  // that failed is retried on the next load instead of being cached for 7 days.
+  let cache = null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") cache = parsed;
     }
   } catch {
-    /* network/upstream failure: fall through to the stale cache */
+    /* corrupt cache -> refetch */
+  }
+  const cachedCats = (cache && cache.categories) || {};
+
+  const now = Date.now();
+  const results = [];
+  const nextCats = { ...cachedCats }; // failed categories keep their old entry
+  const toFetch = [];
+
+  for (const [cat, q] of queries) {
+    const c = cachedCats[cat];
+    if (c && Array.isArray(c.rows) && c.rows.length && now - c.fetchedAt < TTL) {
+      // still fresh: no upstream call, no quota spent
+      results.push({ id: cat, ok: true, items: c.rows, stale: Boolean(c.stale), fetchedAt: c.fetchedAt });
+      continue;
+    }
+    toFetch.push([cat, q]);
   }
 
-  if (!products.length) {
-    // Live API exhausted or down: serve the last good catalog instead of an
-    // empty page. Stale-but-real beats fabricated or blank.
-    if (stale && stale.length) {
-      GW.gadgets = stale.map(toCatalogGadget);
-      return { ok: true, count: GW.gadgets.length, cached: true, stale: true };
+  if (toFetch.length) {
+    const settled = await Promise.allSettled(toFetch.map(([cat, q]) => fetchCategory(cat, q)));
+    for (let i = 0; i < settled.length; i++) {
+      const [cat] = toFetch[i];
+      const prev = cachedCats[cat];
+      const r = settled[i];
+      if (r.status !== "fulfilled") {
+        results.push({ id: cat, ok: false, error: "fetch failed", fallback: prev?.rows || [], fetchedAt: prev?.fetchedAt || null });
+        continue;
+      }
+      const { items, ok, error, stale, staleFrom } = r.value;
+      if (!ok) {
+        // GW-15: keep the older rows for this category, report the failure,
+        // and do NOT refresh its timestamp — it is retried on the next load.
+        results.push({ id: cat, ok: false, error, fallback: prev?.rows || [], fetchedAt: prev?.fetchedAt || null });
+        continue;
+      }
+      results.push({ id: cat, ok: true, items, stale, staleFrom, fetchedAt: now });
+      nextCats[cat] = { fetchedAt: now, rows: items, stale: Boolean(stale), staleFrom: staleFrom || null };
     }
+  }
+
+  const merged = mergeCategoryResults(results);
+  const failedCategories = merged.failedCategories;
+  // stale = upstream served an old snapshot OR we are serving expired rows
+  const servingExpired = results.some((r) => !r.ok && (r.fallback || []).length);
+  const stale = Boolean(merged.stale || servingExpired);
+  // GW-14: "as of" is the OLDEST served row — the whole set is only as fresh as
+  // its stalest member. A live fetch is now; a cached category is its own
+  // timestamp.
+  const stamps = results.map((r) => r.fetchedAt).filter((t) => typeof t === "number");
+  const fetchedAt = stamps.length ? Math.min(...stamps) : null;
+  // cached = nothing was fetched from the upstream in this load
+  const cached = toFetch.length === 0;
+
+  if (!merged.products.length) {
+    // Live API exhausted or down and nothing cached: an honest failure, never
+    // fabricated or blank rows.
     throw new Error("No products returned from the marketplace");
   }
 
+  GW.gadgets = merged.products.map(toCatalogGadget);
+  if (stale) {
+    GW.catalogStale = true;
+    GW.catalogStaleFrom = merged.staleFrom || null;
+  }
+  // GW-14: the freshness of the served data (and the stale flag) is persisted
+  // and returned so the UI can say when this was last updated.
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), products }));
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ fetchedAt, stale, categories: nextCats }),
+    );
   } catch {
     /* quota: still usable for this session */
   }
-  GW.gadgets = products.map(toCatalogGadget);
-  return { ok: true, count: GW.gadgets.length, cached: false };
+  return {
+    ok: true,
+    count: GW.gadgets.length,
+    cached,
+    stale,
+    fetchedAt,
+    failedCategories,
+  };
 }
 
 

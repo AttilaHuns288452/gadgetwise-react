@@ -20,7 +20,7 @@ import Home from "./pages/Home.jsx";
 import { useAuth, recoveryFlowActive } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
-import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal, ConfirmDialog } from "./components/ui.jsx";
+import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal, ConfirmDialog, ErrorBoundary, useToast } from "./components/ui.jsx";
 import { createPortal } from "react-dom";
 
 const NAV = [
@@ -125,7 +125,14 @@ export default function App() {
   // per-page hook: without it non-home routes run entrance animations at mount
   // time, where half of them play off-screen and never get seen
   useReveal();
-  const [compare, setCompare] = useState(new Set());
+  // The tray survives a refresh: same key the Compare page treats as its
+  // saved selection, so both surfaces share one source of truth.
+  const [compare, setCompare] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("gw_compare_selection") || "[]")); } catch { return new Set(); }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("gw_compare_selection", JSON.stringify([...compare])); } catch { /* storage full/blocked: the tray still works in-memory */ }
+  }, [compare]);
   // Real catalog load. Every product page reads the GW.gadgets global, so we
   // fill it before the routes render and force one re-render when it's ready.
   const [, setCatalogReady] = useState(false);
@@ -180,6 +187,7 @@ export default function App() {
   // Sign-out is consequential: confirm first, await the real result, and only
   // then leave. A failed logout must NOT look like a successful one.
   const [confirmOut, setConfirmOut] = useState(false);
+  const { toast, node: toastNode } = useToast();
   const [outBusy, setOutBusy] = useState(false);
   const [outError, setOutError] = useState(null);
   const doSignOut = async () => {
@@ -237,6 +245,15 @@ export default function App() {
       else next.add(id);
       return next;
     });
+  // ponytail: the cap check is done on current state for a toast; the updater
+  // still guards against double-click staleness.
+  const onCompareWithFeedback = (id) => {
+    if (!compare.has(id) && compare.size >= 4) {
+      toast("Compare holds 4 gadgets — remove one to add another.", "alert");
+      return;
+    }
+    onCompare(id);
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -406,6 +423,7 @@ export default function App() {
             </div>
           </form>
         </div>
+        {toastNode}
         {/* Prototype-style compare tray: named chips with × remove, Compare now.
             Hidden on /compare itself (you are already there) — portaled to the
             body so a fixed bar never inherits header/animation containing
@@ -451,7 +469,8 @@ export default function App() {
         {catalogError && needsCatalog ? (
           <CatalogErrorCard />
         ) : (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="section text-center text-ink2">Loading…</div>}>
+          <ErrorBoundary key={pathname}>
         {/* A live recovery session owns the whole app: the user must be able
             to set a new password, so no other route (and no automatic
             redirect) can take them away from the recovery page. */}
@@ -459,14 +478,14 @@ export default function App() {
           <ResetPassword />
         ) : (
         <Routes>
-          <Route path="/" element={<Home compare={compare} onCompare={onCompare} catalogError={catalogError} catalogLoading={catalogLoading} />} />
-          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompare} catalogLoading={catalogLoading} catalogError={catalogError} catalogEmpty={catalogEmpty} />} />
-          <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompare} />} />
-          <Route path="/compare" element={<Compare compare={compare} onCompare={onCompare} />} />
+          <Route path="/" element={<Home compare={compare} onCompare={onCompareWithFeedback} catalogError={catalogError} catalogLoading={catalogLoading} />} />
+          <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompareWithFeedback} catalogLoading={catalogLoading} catalogError={catalogError} catalogEmpty={catalogEmpty} />} />
+          <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompareWithFeedback} />} />
+          <Route path="/compare" element={<Compare compare={compare} onCompare={onCompareWithFeedback} />} />
           <Route path="/recommend" element={<Quiz />} />
-          <Route path="/wishlist" element={<Wishlist compare={compare} onCompare={onCompare} />} />
-          <Route path="/compare-history" element={<ComparisonHistory compare={compare} onCompare={onCompare} />} />
-          <Route path="/profile" element={<Profile compare={compare} onCompare={onCompare} />} />
+          <Route path="/wishlist" element={<Wishlist compare={compare} onCompare={onCompareWithFeedback} />} />
+          <Route path="/compare-history" element={<ComparisonHistory compare={compare} onCompare={onCompareWithFeedback} />} />
+          <Route path="/profile" element={<Profile compare={compare} onCompare={onCompareWithFeedback} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -486,6 +505,7 @@ export default function App() {
           />
         </Routes>
         )}
+          </ErrorBoundary>
         </Suspense>
         )}
       </main>

@@ -1,5 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+
+// Browser storage fixture: the persistence helpers read sessionStorage, which
+// plain Node does not provide (the helpers silently return null without it).
+if (!globalThis.sessionStorage) {
+  const store = new Map();
+  globalThis.sessionStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+    clear: () => store.clear(),
+  };
+}
 import {
   maskEmail, sanitizeOtp, cooldownSeconds,
   OTP_LENGTH, PASSWORD_MIN, RESEND_COOLDOWN_SECONDS, passwordPolicyError,

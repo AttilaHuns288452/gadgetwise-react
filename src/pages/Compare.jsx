@@ -11,9 +11,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { GW, money, ownIndex } from "../lib.js";
 import { Img, useWishlist, useToast, btnPrimaryCls } from "../components/ui.jsx";
 import { readCompareHistory } from "./ComparisonHistory.jsx";
+import { resolveSelection } from "../lib/compare-selection.js";
 
 const THRESHOLD = 0.08;
 const HISTORY_KEY = "gw_compare_history";
+const SELECT_KEY = "gw_compare_selection";
 const NA = "Not available";
 
 /* Category-relevant spec rows. Shown only when the comparison stays inside
@@ -30,6 +32,40 @@ const SPEC_ROWS = {
 const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const score = (v) => (v == null ? NA : `${v.toFixed(1)}/10`);
 
+/* ---------- ratings ----------
+   Marketplace ratings are optional. A listing with rating 0 (or null) is
+   UNRATED, not "rated 0.0": it never wins a rating comparison and it never
+   shows a fake star score. */
+const hasRating = (g) => num(g?.rating) != null && g.rating > 0;
+const ratingText = (g) => (hasRating(g) ? `${g.rating.toFixed(1)}★ (${g.reviewCount})` : "Not available");
+
+/* ---------- selection ----------
+   The comparison selection is authoritative in this page: a ?ids= link seeds
+   it, the compare tray fills it when there is no link, and the last selection
+   is remembered so a refresh does not empty the table. The resolution rule
+   lives in lib/compare-selection.js so it stays unit-testable. */
+function normalizeIds(raw) {
+  return [...new Set(String(raw || "").split(",").map((s) => s.trim()).filter(Boolean))].slice(0, 4);
+}
+
+function readSavedIds() {
+  try {
+    const raw = localStorage.getItem(SELECT_KEY);
+    if (!raw) return [];
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? normalizeIds(v.join(",")) : [];
+  } catch {
+    return [];
+  }
+}
+function writeSavedIds(ids) {
+  try {
+    localStorage.setItem(SELECT_KEY, JSON.stringify(ids));
+  } catch {
+    /* private mode / quota: the selection just does not survive a refresh */
+  }
+}
+
 /* ---------- row model ----------
    better: "low" | "high" | null  (null = informational row) */
 function rowsFor(gadgets) {
@@ -41,8 +77,8 @@ function rowsFor(gadgets) {
   add("Price", "low", "Lower price", (g) => (g.price > 0 ? g.price : null), (g) =>
     g.price > 0 ? money(g.price) : NA);
   // Plain strings keep the row model pure (no JSX) so it stays unit-testable.
-  add("Rating", "high", "Higher rating", (g) => (g.rating > 0 ? g.rating : null), (g) =>
-    g.rating > 0 ? `${g.rating.toFixed(2)} ★ (${g.reviewCount})` : NA);
+  add("Rating", "high", "Higher rating", (g) => (hasRating(g) ? g.rating : null), (g) =>
+    hasRating(g) ? `${g.rating.toFixed(2)} ★ (${g.reviewCount})` : NA);
   add("Cost per month", "low", "Cheaper per month", (g) => (g.price > 0 ? num(GW.monthlyCost(g)) : null),
     (g) => (g.price > 0 ? `≈ ${money(GW.monthlyCost(g))}/month` : NA));
   add("Warranty", "high", "Longer warranty", (g) => num(g.value?.warrantyYears), (g) => {
@@ -113,19 +149,47 @@ const ghostBtnCls =
   "inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary hover:text-primary";
 
 export default function Compare({ compare = new Set(), onCompare = () => {} }) {
-  const [searchParams] = useSearchParams();
-  const [hidden, setHidden] = useState(new Set());
+  const [searchParams, setSearchParams] = useSearchParams();
   const [history, setHistory] = useState(readCompareHistory);
   const wish = useWishlist();
   const { toast, node: toastNode } = useToast();
 
-  // A shared / history link restores exactly that selection (the prototype's
-  // ?ids= contract); otherwise the compare tray drives the table.
-  const seedIds = (searchParams.get("ids") || "")
-    .split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4);
-  const ids = [...new Set(seedIds.length ? seedIds : [...compare])].filter((id) => !hidden.has(id));
-  const list = GW.gadgetsByIds(ids);
+  // The selection is authoritative here. A ?ids= link owns it; otherwise the
+  // compare tray drives it; otherwise the last selection this browser made
+  // survives a refresh (the tray itself is in-memory and dies on reload).
+  const linkIds = normalizeIds(searchParams.get("ids"));
+  const hasLinkParam = searchParams.has("ids");
+  const trayIds = [...compare];
+  const [picked, setPicked] = useState(() =>
+    resolveSelection({ hasLinkParam, linkIds, trayIds, savedIds: readSavedIds() })
+  );
+  const linkKey = linkIds.join(",");
+  const trayKey = trayIds.join(",");
+
+  useEffect(() => {
+    if (hasLinkParam) {
+      setPicked((p) => (p.join(",") === linkKey ? p : linkIds));
+      return;
+    }
+    if (trayKey) setPicked((p) => (p.join(",") === trayKey ? p : trayIds));
+  }, [hasLinkParam, linkKey, trayKey]);
+
+  // Remember the selection so a refresh (or a return visit) does not empty
+  // the table. An empty selection is written too, so a cleared comparison
+  // does not come back on the next visit.
+  useEffect(() => {
+    writeSavedIds(picked);
+  }, [picked]);
+
+  // One column per selected id. An id this browser cannot resolve stays
+  // visible as a clear "could not load" slot instead of silently vanishing.
+  const slots = picked.map((id) => ({ id, g: GW.getGadget(id) }));
+  const list = slots.filter((s) => s.g).map((s) => s.g);
   const listKey = list.map((g) => g.id).join(",");
+  // slot index -> index in the resolved list (-1 when the slot is unresolved),
+  // so the row model's winner indices stay aligned with the columns.
+  const slotListIdx = slots.map((s) => (s.g ? list.indexOf(s.g) : -1));
+  const missing = slots.filter((s) => !s.g);
 
   // Record the comparison once it is real (prototype: recorded on render).
   useEffect(() => {
@@ -136,10 +200,19 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
   }, [listKey]);
 
   const remove = (id) => {
-    // Tray-driven item: drop it from the shared compare set. A ?ids= item
-    // lives only in the URL, so hide it locally instead.
+    // Drop it from the authoritative selection. A ?ids= comparison lives in
+    // the URL, so the link itself has to change — otherwise the id comes back
+    // on the next click or refresh. Both are set from the SAME list, so the
+    // URL and the selection can never disagree.
+    const next = picked.filter((x) => x !== id);
+    setPicked(next);
+    if (hasLinkParam) {
+      const params = new URLSearchParams(searchParams);
+      params.set("ids", next.join(","));
+      setSearchParams(params, { replace: true });
+    }
+    // Tray-driven item: drop it from the shared compare set too.
     if (compare.has(id)) onCompare(id);
-    else setHidden((h) => new Set(h).add(id));
   };
 
   const rows = rowsFor(list);
@@ -152,13 +225,13 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
         tells you what actually matters.
       </p>
 
-      {list.length < 2 ? (
+      {picked.length < 2 ? (
         <div className="card mt-8 p-10 text-center">
           <p className="text-lg font-semibold text-ink">
-            {list.length === 1 ? "Add one more gadget" : "No gadgets selected yet"}
+            {picked.length === 1 ? "Add one more gadget" : "No gadgets selected yet"}
           </p>
           <p className="mt-2 text-ink2">
-            {list.length === 1
+            {picked.length === 1
               ? "Pick at least one more gadget from the catalog to compare side by side."
               : "Browse the catalog and use the Compare checkbox on product cards to select 2–4 gadgets."}
           </p>
@@ -168,6 +241,12 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
         </div>
       ) : (
         <>
+          {missing.length > 0 && (
+            <p role="status" className="mt-6 rounded-lg bg-[#FFF8E6] px-4 py-2.5 text-sm font-medium text-[#6B4E12]">
+              {missing.length} of {picked.length} selected listings could not be loaded — the rest of the comparison is
+              still live.
+            </p>
+          )}
           <div className="card mt-8 overflow-x-auto">
             <table className="w-full min-w-[680px] border-collapse text-sm">
               <thead>
@@ -175,40 +254,61 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                   <th className="sticky left-0 z-10 w-[150px] bg-surface px-5 pb-4 text-left align-bottom text-xs font-semibold text-ink2">
                     Compare {list.length} gadgets
                   </th>
-                  {list.map((g) => (
-                    <th key={g.id} className="min-w-[190px] px-5 pb-4 text-left align-bottom font-normal">
-                      <Img gadget={g} className="rounded-lg" frame="4 / 3" />
-                      <div className="mt-3 text-xs font-normal text-ink2">
-                        {g.brand && g.brand !== "Unknown" && !g.model.startsWith(g.brand) ? g.brand : ""}
-                      </div>
-                      <Link to={`/g/${g.id}`} className="mt-0.5 block text-base font-bold text-primary hover:underline">
-                        {g.model}
-                      </Link>
-                      <div className="mt-1 text-xs font-normal text-ink2">
-                        {GW.getCategory(g.category).name} · {g.rating.toFixed(1)}★ ({g.reviewCount})
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={async () => {
-                          const wasSaved = wish.has(g.id);
-                          const res = await wish.toggle(g.id);
-                          if (res && res.gated) return; // auth prompt shown; nothing changed
-                          if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
-                          else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
-                        }} className={ghostBtnCls}>
-                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M8 13.5S2 10 2 5.9C2 3.7 3.7 2.5 5.3 2.5c1 0 2 .5 2.7 1.4.7-.9 1.7-1.4 2.7-1.4 1.6 0 3.3 1.2 3.3 3.4 0 4.1-6 7.6-6 7.6Z" />
-                          </svg>
-                          {wish.has(g.id) ? "Saved" : "Wishlist"}
-                        </button>
-                        <button type="button" onClick={() => remove(g.id)} className={ghostBtnCls}>
-                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M4 4l8 8M12 4l-8 8" />
-                          </svg>
-                          Remove
-                        </button>
-                      </div>
-                    </th>
-                  ))}
+                  {slots.map((slot) =>
+                    slot.g ? (
+                      <th key={slot.id} className="min-w-[190px] px-5 pb-4 text-left align-bottom font-normal">
+                        <Img gadget={slot.g} className="rounded-lg" frame="4 / 3" />
+                        <div className="mt-3 text-xs font-normal text-ink2">
+                          {slot.g.brand && slot.g.brand !== "Unknown" && !slot.g.model.startsWith(slot.g.brand) ? slot.g.brand : ""}
+                        </div>
+                        <Link to={`/g/${slot.g.id}`} className="mt-0.5 block text-base font-bold text-primary hover:underline">
+                          {slot.g.model}
+                        </Link>
+                        <div className="mt-1 text-xs font-normal text-ink2">
+                          {GW.getCategory(slot.g.category).name} · {ratingText(slot.g)}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={async () => {
+                            const wasSaved = wish.has(slot.g.id);
+                            const res = await wish.toggle(slot.g.id);
+                            if (res && res.gated) return; // auth prompt shown; nothing changed
+                            if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
+                            else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
+                          }} className={ghostBtnCls}>
+                            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M8 13.5S2 10 2 5.9C2 3.7 3.7 2.5 5.3 2.5c1 0 2 .5 2.7 1.4.7-.9 1.7-1.4 2.7-1.4 1.6 0 3.3 1.2 3.3 3.4 0 4.1-6 7.6-6 7.6Z" />
+                            </svg>
+                            {wish.has(slot.g.id) ? "Saved" : "Wishlist"}
+                          </button>
+                          <button type="button" onClick={() => remove(slot.id)} className={ghostBtnCls}>
+                            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M4 4l8 8M12 4l-8 8" />
+                            </svg>
+                            Remove
+                          </button>
+                        </div>
+                      </th>
+                    ) : (
+                      // The id is in the selection but this browser cannot resolve
+                      // it (delisted listing, stale link). Say so instead of
+                      // dropping the column without a word.
+                      <th key={slot.id} className="min-w-[190px] px-5 pb-4 text-left align-bottom font-normal">
+                        <p className="text-sm font-semibold text-ink">Could not load</p>
+                        <p className="mt-1 break-all text-xs font-normal text-ink3">{slot.id}</p>
+                        <p className="mt-1 text-xs font-normal text-ink2">
+                          This listing is no longer in the catalog. It may have been removed by the seller.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => remove(slot.id)} className={ghostBtnCls}>
+                            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M4 4l8 8M12 4l-8 8" />
+                            </svg>
+                            Remove
+                          </button>
+                        </div>
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -219,12 +319,20 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                       <th scope="row" className="sticky left-0 z-10 bg-surface px-5 py-4 text-left text-sm font-semibold text-ink">
                         {row.label}
                       </th>
-                      {list.map((g, gi) => {
-                        const win = best.includes(gi);
-                        const shown = row.val(g);
+                      {slots.map((slot, gi) => {
+                        if (!slot.g) {
+                          // unresolved id: an empty cell, never a fake value
+                          return (
+                            <td key={slot.id} className="px-5 py-4 align-middle">
+                              <span className="mono text-ink3">{NA}</span>
+                            </td>
+                          );
+                        }
+                        const win = slotListIdx[gi] >= 0 && best.includes(slotListIdx[gi]);
+                        const shown = row.val(slot.g);
                         return (
                           <td
-                            key={g.id}
+                            key={slot.id}
                             className={`px-5 py-4 align-middle ${win ? "border-l-[3px] border-primary bg-primary-soft" : ""}`}
                           >
                             <span className={`mono ${win ? "font-bold text-primary-dark" : shown === NA ? "text-ink3" : "text-ink"}`}>
@@ -267,18 +375,39 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
 
           {/* At a glance */}
           {(() => {
-            const lowestPrice = [...list].sort((a, b) => a.price - b.price)[0];
-            const cheapest = [...list].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b))[0];
-            const highestRated = [...list].sort((a, b) => b.rating - a.rating)[0];
+            if (!list.length) return null;
+            // A listing with no known price is not "cheapest" — its price is
+            // unknown, so it never wins a price comparison.
+            const priced = list.filter((g) => typeof g.price === "number" && g.price > 0);
+            const lowestPrice = [...priced].sort((a, b) => a.price - b.price)[0] || null;
+            const cheapest = [...priced].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b))[0] || null;
+            // A product with no marketplace rating is not "rated 0.0" — it is
+            // unrated, so it never wins a rating comparison.
+            const rated = list.filter(hasRating).sort((a, b) => b.rating - a.rating);
+            const highestRated = rated[0] || null;
             // Spread-aware verdict: near-ties on the Performance to Cost score read differently
-            const ranked = [...list].sort((a, b) => ownIndex(b) - ownIndex(a));
-            const spread = ownIndex(ranked[0]) - ownIndex(ranked[ranked.length - 1]);
+            // A listing with unknown inputs can score NaN; treat it as unknown
+            // (no score) so it never claims to be a winner.
+            const scored = list.map((g) => ({ g, s: ownIndex(g) })).filter((x) => Number.isFinite(x.s));
+            const ranked = scored.sort((a, b) => b.s - a.s).map((x) => x.g);
+            const topScore = ranked.length ? ownIndex(ranked[0]) : null;
+            const spread = ranked.length > 1 ? topScore - ownIndex(ranked[ranked.length - 1]) : 0;
+            // The Performance to Cost index is a VALUE score (battery + rating +
+            // price vs category + warranty), so its winner is a value winner —
+            // it is not the highest rated product.
             const line =
-              spread <= 4
-                ? `These are very close (Performance to Cost ${ownIndex(ranked[0])} vs ${ownIndex(ranked[ranked.length - 1])}). ` +
-                  `${GW.displayName(cheapest)} still costs the least per month (≈ ${money(GW.monthlyCost(cheapest))}/mo), ` +
+              !ranked.length
+                ? "No listing here has enough known data to score. Prices and ratings from the marketplace are what this comparison can use."
+                : spread <= 4
+                ? `These are very close (Performance to Cost ${topScore} vs ${ownIndex(ranked[ranked.length - 1])}). ` +
+                  (cheapest
+                    ? `${GW.displayName(cheapest)} still costs the least per month (≈ ${money(GW.monthlyCost(cheapest))}/mo), `
+                    : "No listing here has a known price yet, so the monthly costs cannot be compared. ") +
                   `so the trade-offs above should decide it, not the totals.`
-                : `Students rate ${GW.displayName(ranked[0])} highest (${ranked[0].rating.toFixed(1)}★). ` +
+                : `${GW.displayName(ranked[0])} has the best Performance to Cost score (${topScore}/100). ` +
+                  (highestRated
+                    ? `Marketplace ratings put ${GW.displayName(highestRated)} highest (${highestRated.rating.toFixed(1)}★ from ${highestRated.reviewCount} marketplace reviews). `
+                    : "None of these listings has a marketplace rating yet. ") +
                   `All monthly costs use the same fixed 36-month window, so the comparison stays apples-to-apples.`;
             const check = (
               <svg viewBox="0 0 16 16" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -293,19 +422,37 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                     <li className="flex items-start gap-2">
                       {check}
                       <span>
-                        Lowest price: <strong>{GW.displayName(lowestPrice)}</strong> at {money(lowestPrice.price)}
+                        {lowestPrice ? (
+                          <>
+                            Lowest price: <strong>{GW.displayName(lowestPrice)}</strong> at {money(lowestPrice.price)}
+                          </>
+                        ) : (
+                          <>Lowest price: <strong>Not available</strong> — no listing here has a known price</>
+                        )}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       {check}
                       <span>
-                        Cheapest long-term: <strong>{GW.displayName(cheapest)}</strong> at ≈ {money(GW.monthlyCost(cheapest))}/month
+                        {cheapest ? (
+                          <>
+                            Cheapest long-term: <strong>{GW.displayName(cheapest)}</strong> at ≈ {money(GW.monthlyCost(cheapest))}/month
+                          </>
+                        ) : (
+                          <>Cheapest long-term: <strong>Not available</strong> — no listing here has a known price</>
+                        )}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       {check}
                       <span>
-                        Highest rated: <strong>{GW.displayName(highestRated)}</strong> at {highestRated.rating.toFixed(1)}★
+                        {highestRated ? (
+                          <>
+                            Highest marketplace rating: <strong>{GW.displayName(highestRated)}</strong> at {highestRated.rating.toFixed(1)}★
+                          </>
+                        ) : (
+                          <>Highest marketplace rating: <strong>Not available</strong> — no listing here has a rating yet</>
+                        )}
                       </span>
                     </li>
                   </ul>
@@ -313,7 +460,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                 </div>
                 <p className="mt-4 text-sm text-ink2">
                   Highlighted cells mark a difference of at least 8% — near-ties stay unmarked. Monthly cost uses a fixed
-                  36-month window.
+                  36-month window. Ratings and review counts come from the marketplace, not from GadgetWise users.
                 </p>
               </>
             );
