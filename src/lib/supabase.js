@@ -1,8 +1,5 @@
-/**
- * Supabase client. Single init point; reads VITE_-prefixed env vars that are
- * safe to ship in the browser bundle. The service_role key is NOT here — it
- * only ever lives in serverless functions.
- */
+// Supabase client. Browser-safe VITE_ env only; the service_role key lives in
+// serverless functions.
 import { createClient } from "@supabase/supabase-js";
 
 // optional chaining: import.meta.env is undefined in node/test context.

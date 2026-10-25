@@ -1,12 +1,5 @@
-/**
- * Auth state for the app. Real Supabase auth only — there is NO demo or
- * localStorage fallback identity. If Supabase is not configured, authentication
- * is simply unavailable and sign-in attempts fail safely (never a fabricated
- * "logged in" state from an arbitrary email/password).
- *
- * Session restoration: reads the persisted Supabase session once on mount and
- * tracks onAuthStateChange, so a refresh does not flash the logged-out screen.
- */
+// Real Supabase auth only — no demo or localStorage fallback identity. The
+// persisted session is restored on mount so a refresh doesn't flash signed-out.
 import { useEffect, useState, useCallback } from "react";
 import { supabase, supabaseConfigured } from "./supabase.js";
 
@@ -16,17 +9,13 @@ export function safeNext(raw) {
   return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
 }
 
-// ---- password recovery (email OTP) ----------------------------------------
-// The recovery flow is one page that walks through stages. Which stage the user
-// is on must survive a refresh, so it lives in sessionStorage (not localStorage:
-// the recovery is a short-lived, per-tab thing) next to the small amount of
-// state that describes it.
+// password recovery: one page that walks through stages; the current stage
+// survives a refresh in sessionStorage (per-tab, so not localStorage)
 
 /** Password policy. Shared by Register and the recovery flow so they cannot drift. */
 export const PASSWORD_MIN = 8;
-// Must mirror Supabase Auth's own policy (Auth -> Sign In / Providers ->
-// Password requirements: lowercase, uppercase, digit and symbol, or the
-// server rejects as weak and users see a confusing late failure).
+// matches Supabase's own password rule (lower + upper + digit + symbol) so the
+// server never rejects what the form accepted
 export function passwordPolicyError(pw) {
   if (!pw || pw.length < PASSWORD_MIN) return `Password must be at least ${PASSWORD_MIN} characters.`;
   if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
@@ -49,12 +38,9 @@ const RECOVERY_EVENT = "gw-recovery-changed";
 // session exists — the link path navigates to the recovery page on that event.
 let _recoveryActive = false;
 
-/**
- * True while the app must stay on the recovery page: either a recovery
- * session is live, or the user already verified a code and still has to set
- * a new password. The second case survives a refresh, because the auth
- * client restores the session with SIGNED_IN, not PASSWORD_RECOVERY.
- */
+// stay on the recovery page while a recovery session is live OR the password
+// is still pending (that case survives a refresh: the client restores the
+// session as SIGNED_IN)
 export function recoveryFlowActive() {
   if (_recoveryActive) return true;
   return readRecoveryState()?.stage === "password";
@@ -65,11 +51,7 @@ export function notifyRecoveryChanged() {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(RECOVERY_EVENT));
 }
 
-/**
- * End the recovery flow: drop the live-session marker, the persisted stage
- * and the OTP the page was holding. Used when the password is set, when the
- * user walks away, and when a recovery session turns out to be expired.
- */
+// end the recovery flow: drop the marker, the stage and any held OTP
 export function endRecoveryFlow() {
   _recoveryActive = false;
   clearRecoveryState();
@@ -123,12 +105,8 @@ export function cooldownSeconds(now, until) {
   return left > 0 ? left : 0;
 }
 
-/**
- * The id of the user on the live session, or null. Reads the session straight
- * from the client instead of React state, so it is not affected by render
- * batching: the recovery flow needs to know RIGHT NOW whether a recovery
- * session still exists.
- */
+// user id straight from the session rather than React state — the recovery
+// flow needs to know right now whether a recovery session still exists
 export async function liveSessionUserId() {
   if (!supabaseConfigured) return null;
   const { data } = await supabase.auth.getSession();
@@ -172,11 +150,8 @@ export function useAuthPrompt() {
 }
 // ---------------------------------------------------------------------------
 
-/**
- * Provider errors are developer-facing strings ("email rate limit exceeded").
- * Rewrite the ones users can act on, and leave anything else alone rather than
- * inventing meaning. Every auth call routes its error through this.
- */
+// rewrite the provider errors a user can act on, leave the rest alone. every
+// auth call routes its error through here
 export const friendlyAuthError = (error) => {
   if (!error) return error;
   const m = error.message || "";

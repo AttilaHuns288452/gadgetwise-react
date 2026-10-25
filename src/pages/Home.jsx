@@ -198,11 +198,7 @@ function Stats() {
   );
 }
 
-/**
- * Budget preview. Every number here is read from the live catalog at render
- * time, so this is a real filter over real listings — not a staged demo. The
- * links go to the same product pages the rest of the app uses.
- */
+// budget preview over the live catalog — a real filter, not a staged demo
 function BudgetPicker() {
   const prices = GW.gadgets.map((g) => g.price).filter((p) => Number.isFinite(p) && p > 0);
   const lo = prices.length ? Math.max(1, Math.min(...prices)) : 0;

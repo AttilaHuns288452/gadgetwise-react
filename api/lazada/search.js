@@ -1,10 +1,5 @@
-/**
- * GET /api/lazada/search?q=<query>&marketplace=ph&page=1
- *
- * Serverless proxy for the TMAPI Lazada search API. The API key lives in the
- * OMKAR_LAZADA_API_KEY env var (kept name-compatible) and never reaches the
- * browser. Returns normalized product data plus an explicit freshness marker.
- */
+// GET /api/lazada/search — TMAPI search proxy; the key stays server-side.
+// Returns normalized products plus an explicit freshness marker.
 import { createClient } from "@supabase/supabase-js";
 import { getLazadaKeys } from "../../lib/settings-crypto.js";
 

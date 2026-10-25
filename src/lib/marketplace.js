@@ -1,16 +1,6 @@
-/**
- * Real Lazada listings mapped into the app's gadget shape so clicking a live
- * product opens OUR detail page (/#/g/:id) instead of jumping to Lazada.
- *
- * Real fields (image, name, brand, price, rating, reviewCount, source link)
- * come straight from the marketplace. Everything the catalog engine needs but
- * the marketplace does not send (battery hours, warranty, curated sub-scores) is
- * set to an explicit neutral value and flagged `marketplace: true`, so the UI
- * can label it a live listing and never pass neutral values off as curated
- * GadgetWise ratings. Cost-per-month and the Performance-to-Cost index are the
- * existing deterministic formulas over these values — nothing is invented to
- * make a listing look better.
- */
+// Real Lazada listings mapped into the gadget shape so they open OUR detail
+// page. Fields the marketplace doesn't send stay neutral and are flagged
+// marketplace: true — nothing invented to make a listing look better.
 
 import GW from "../data.js";
 
@@ -113,11 +103,7 @@ export function registerListings(products = []) {
   return products.map(toGadget);
 }
 
-/**
- * A price we actually know. Unknown marketplace prices stay null (unavailable)
- * and must be excluded from price filters, sorts and rankings — 0 would read as
- * "free" and win every comparison.
- */
+// unknown price stays null (0 would read as "free" and win everything)
 export function knownPrice(g) {
   const p = g?.price;
   return typeof p === "number" && Number.isFinite(p) && p > 0 ? p : null;
@@ -133,14 +119,8 @@ export function isListingId(id) {
   return typeof id === "string" && id.startsWith("lazada-");
 }
 
-/**
- * Fetch-on-miss: load a marketplace listing by id from the API and register it.
- * The registry is in-memory, so a deep-link or refresh would otherwise 404.
- *
- * Returns a structured state, never a bare null: the caller must be able to
- * tell "this listing is gone" from "the lookup failed".
- *   { status: "found", gadget } | { status: "not-found" } | { status: "error", error }
- */
+// fetch-on-miss by id (the registry is in-memory, so a deep link would 404).
+// returns found | not-found | error — a failed lookup is never "gone"
 export async function fetchListing(id) {
   if (!isListingId(id)) return { status: "not-found", gadget: null, error: null };
   const existing = REGISTRY.get(id);
@@ -167,12 +147,8 @@ export async function fetchListing(id) {
   return { status: "found", gadget: toGadget(p), error: null };
 }
 
-/**
- * Fetch one page of live marketplace results. A failure is an ERROR, never an
- * empty product list: an exception used to become {products: []} and
- * then read as "no live listings found".
- * Returns { ok, aborted, products, next, error:{code,message}|null }.
- */
+// one page of live results. a failed fetch is an error, never an empty list
+// (that used to read as "no live listings found")
 export async function searchMarketplacePage({ q, page = 1, startKey = "", signal, fetchImpl } = {}) {
   const doFetch = fetchImpl || globalThis.fetch;
   const qs = new URLSearchParams({ q, marketplace: "ph", page: String(page) });

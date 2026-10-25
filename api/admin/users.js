@@ -1,18 +1,5 @@
-/**
- * GET /api/admin/users
- *
- * Serverless admin endpoint: lists real registered users from Supabase Auth.
- *
- * Security model (every privileged op authenticates + authorizes server-side):
- *   1. The caller sends their own Supabase access token (Authorization: Bearer).
- *   2. We resolve that token to a real user via the anon client (RLS + JWT).
- *   3. We check that user is in `admin_users` (is_admin(), security-definer).
- *   4. Only then do we use the service-role key (server-only) to list users.
- *
- * A forged client flag, localStorage value, or query param can never satisfy
- * step 2-3: the identity comes from the verified JWT and the DB mapping. The
- * service-role key never reaches the browser.
- */
+// GET /api/admin/users. Admin-only: the caller's verified JWT is resolved to a
+// user and checked against admin_users before the service-role key is used.
 import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {

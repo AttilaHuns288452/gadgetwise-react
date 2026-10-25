@@ -1,14 +1,6 @@
-/**
- * Real catalog loader. The single seam every product page reads: it fills
- * `GW.gadgets` with REAL Lazada listings (via /api/lazada/search + toGadget),
- * so Catalog, Home, Compare, Quiz, Wishlist, Profile all show live products
- * without rewriting each page. The fictional fixture lives in data.js and is
- * used ONLY by tests (check.js / marketplace.test.js never import this file).
- *
- * Missing-data honesty: toGadget maps unknown specs to null and the scoring
- * engine (lib.js) excludes them + renormalizes — so a real product is never
- * scored on invented battery/warranty/sub-scores.
- */
+// The one seam every product page reads: fills GW.gadgets with real Lazada
+// listings. Unknown specs map to null and the scorer skips them, so a product
+// is never scored on invented data.
 
 import GW from "../data.js";
 import { toGadget } from "./marketplace.js";
@@ -33,19 +25,10 @@ const CATEGORY_QUERIES = [
   ["smartwatches", "smartwatch"],
 ];
 
-/**
- * Category source of truth. The admin-managed `categories` table overrides the
- * built-in defaults by slug: renaming changes the public label, editing the
- * query changes what the marketplace fetch fills the category with, and a new
- * slug + query adds a category with products. Rows merge over the defaults so
- * one admin edit never deletes the rest of the catalog.
- */
-/**
- * Merge admin category rows over the built-in defaults. Pure so the rules are
- * testable: rows without a query still exist as categories (the query only
- * decides whether the marketplace fills them), and a row never deletes the
- * defaults it does not mention.
- */
+// admin-managed categories override the built-ins by slug; rows merge over the
+// defaults so one admin edit never deletes the rest
+// merge admin rows over the defaults — pure, and a row with no query still
+// counts as a category
 export function mergeCategoryPlan(base, rows) {
   const byId = new Map(base.map((c) => [c.id, { ...c }]));
   for (const r of rows || []) {
@@ -82,12 +65,8 @@ async function categoryPlan() {
   }
 }
 
-/**
- * Stable short hash of the category plan. It is part of the cache key, so an
- * admin category edit (rename, new query, new category) invalidates the
- * product cache instead of serving 7-day-old products for a plan that no
- * longer exists.
- */
+// short stable hash of the category plan, part of the cache key so an admin
+// edit doesn't serve stale products
 export function planHash(list = []) {
   const s = list
     .map((c) => `${c.id}|${c.name || ""}|${c.query || ""}`)
@@ -142,14 +121,8 @@ function toCatalogGadget(p) {
   return g;
 }
 
-/**
- * Parse a price range from the filter inputs.
- *
- * An EMPTY input means "no bound" — that is a different thing from a numeric
- * value, and conflating them is what made a ceiling of ₱120,000 get ignored
- * (the old code treated 100000 as "no ceiling" and skipped anything else).
- * Returns { min, max, error }: min/max are null when unbounded.
- */
+// price-range parsing: an empty input means "no bound" (that's what made a
+// ₱120,000 ceiling get ignored); min/max are null when unbounded
 export function parsePriceRange(minRaw, maxRaw) {
   const parse = (raw, label) => {
     const s = String(raw ?? "").trim();
@@ -169,11 +142,7 @@ export function parsePriceRange(minRaw, maxRaw) {
   return { min: lo.value, max: hi.value, error: null };
 }
 
-/**
- * Does a product satisfy a price range? A product with an UNKNOWN price
- * (null) cannot satisfy a price bound — it is not evidence that it is in
- * range, so it is excluded rather than counted as ₱0.
- */
+// unknown price can't satisfy a bound — excluded, not counted as ₱0
 export function withinPriceRange(price, min, max) {
   if (typeof price !== "number" || !Number.isFinite(price)) return false;
   if (min != null && price < min) return false;
@@ -187,11 +156,7 @@ export function priceSortValue(g) {
   return typeof p === "number" && Number.isFinite(p) ? p : Number.POSITIVE_INFINITY;
 }
 
-/**
- * Real catalog statistics derived from the live product list. Every number is
- * counted from actual loaded listings — nothing is invented. Used by the admin
- * console in place of the old fabricated analytics.
- */
+// stats counted from the real loaded listings
 export function catalogStats(gadgets = GW.gadgets) {
   const byCat = {};
   // Only listings with a KNOWN price count toward the average: an unknown
@@ -220,14 +185,8 @@ export function catalogStats(gadgets = GW.gadgets) {
   };
 }
 
-/**
- * Merge per-category fetch results into one product list.
- *
- * A failed category is never silently dropped: its error is reported in
- * `failedCategories` and the rows it had last time (the caller's `fallback`)
- * are kept, so one flaky category cannot empty the catalog.
- * Pure, so the rules are testable.
- */
+// merge per-category results; a failed category keeps its old rows and is
+// reported in failedCategories instead of silently emptying the catalog
 export function mergeCategoryResults(results = []) {
   const seen = new Set();
   const products = [];
@@ -257,12 +216,8 @@ export function mergeCategoryResults(results = []) {
   return { products, failedCategories, stale, staleFrom };
 }
 
-/**
- * Load the real catalog into GW.gadgets. Clears the fixture first so it never
- * sits in the production data path. Resolves { ok, count, cached, stale,
- * fetchedAt, failedCategories } on success; throws when the upstream returns
- * nothing at all (caller shows an honest error, never the fictional fixture).
- */
+// load the real catalog into GW.gadgets. resolves {ok,count,cached,stale,
+// fetchedAt,failedCategories}; throws when upstream returns nothing at all
 export async function loadCatalog() {
   GW.gadgets = []; // fixture must not linger in the live data path
   GW.catalogStale = false;

@@ -1,12 +1,6 @@
-/**
- * Password recovery, same tab, one page: email -> check inbox -> enter the
- * 8-digit code -> set a new password -> done -> sign in.
- *
- * The code is verified by Supabase (verifyOtp, type "recovery"). Nothing here
- * decides whether a code is valid, and no code is ever stored: the flow only
- * remembers WHICH stage the user is on, so a refresh does not throw them back
- * to the start.
- */
+// Password recovery in one tab: email -> 8-digit code -> new password. Supabase
+// verifies the code; the page only remembers which stage you're on so a
+// refresh doesn't restart the flow.
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls } from "../components/ui.jsx";

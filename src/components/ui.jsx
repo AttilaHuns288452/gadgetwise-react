@@ -369,11 +369,7 @@ export function GadgetCard({ g, compare, onCompare, i }) {
 // Shared button base. transform + shadow transitions are here, not per-button:
 // this constant is the ancestor of every CTA in the app, so colour-only
 // transitions here made the whole product feel flat on hover.
-/**
- * Stagger index for a direct child of a `.stagger` container. One place to cap
- * the wave: items past the cap enter together rather than queuing behind
- * hundreds of predecessors.
- */
+// stagger index for a .stagger child, capped so a huge grid doesn't queue
 export const stag = (i) => ({ "--i": Math.min(Number(i) || 0, 12), "--stagger": "80ms" });
 
 export const btnCls = "rounded-lg px-7 py-2.5 text-base font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(15,23,34,0.14)] active:translate-y-0 active:scale-[0.98] active:duration-75";
@@ -383,11 +379,7 @@ export const btnDangerCls = btnCls + " bg-[#B3372E] text-white hover:bg-[#93291F
 export const fieldLabelCls = "block text-sm font-bold text-[#111827]";
 export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-base text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
 
-/**
- * Password input with an accessible show/hide toggle. Hidden by default, and
- * the button is a real toggle (aria-pressed) so screen readers announce state.
- * One component for every auth field instead of five copies of the same markup.
- */
+// password field with a real show/hide toggle, shared by every auth form
 export function PasswordField({ id, value, onChange, autoComplete, minLength, placeholder, required = true }) {
   const [show, setShow] = useState(false);
   return (
@@ -699,20 +691,9 @@ export function Logo({ size = 20, tone = "dark", showWordmark = true, className 
 }
 
 
-/**
- * Scroll reveal + entrance wave. Drives two things from live scroll position:
- *
- * - `.reveal` sections fade in when the reader reaches them (including ones
- *   that mount later: catalog sections appear only after loading finishes).
- * - `.stagger` children start their piano-key entrance when THEY enter the
- *   viewport, indexed per visible batch (`.is-live` + a `--j` wave index), so a
- *   grid cascades on arrival and again row by row while scrolling — instead of
- *   playing every card's animation off-screen where nobody ever sees it.
- *
- * Late-mounted content is picked up by a MutationObserver, so a grid that lands
- * seconds after first paint starts its wave on the next frame, not on the next
- * scroll or tick.
- */
+// Scroll reveal + entrance waves: .reveal sections fade in on approach, and
+// .stagger children cascade per visible batch (again row by row on scroll).
+// Late-mounted grids are caught by a MutationObserver.
 export function useReveal() {
   useEffect(() => {
     // mark the system ready so the hidden/paused states are applied at all
@@ -786,11 +767,7 @@ export function useReveal() {
 }
 
 
-/**
- * Auth screen shell: a brand panel (navy, the app's value props) beside the
- * form. One layout for Login + Register so they stay visually identical.
- * On mobile the brand panel hides and the form stands alone.
- */
+// auth page shell: brand panel beside the form (panel hides on mobile)
 export function AuthLayout({ title, subtitle, children, footer }) {
   return (
     <section className="section">

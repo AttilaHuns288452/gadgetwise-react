@@ -3,14 +3,9 @@ import { money } from "../lib.js";
 import { Stars } from "./ui.jsx";
 import { registerListings, searchMarketplacePage } from "../lib/marketplace.js";
 
-/**
- * Live Lazada marketplace results. Kept separate from the curated catalog on
- * purpose: scraper data is real but unvetted, so it never mixes into the
- * recommendation/compare catalog. Links go straight to the Lazada listing.
- *
- * Searches are debounced and abortable, extra pages load only on demand,
- * and a failed fetch shows up as an error, never as "no listings".
- */
+// Live Lazada results, kept apart from the curated catalog (scraper data is
+// real but unvetted). Searches are debounced and abortable, and a failed fetch
+// shows up as an error, never as "no listings".
 const DEBOUNCE_MS = 350;
 
 const IDLE = { status: "idle", items: [], error: null, errorCode: null, next: "", page: 0, loadedQuery: "" };

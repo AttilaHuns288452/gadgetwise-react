@@ -1,9 +1,5 @@
-/**
- * Single persistence seam. Signed-in users read/write Supabase (RLS-backed);
- * guests stay on localStorage so the prototype works offline. Every write for a
- * signed-in user is mirrored to the database and returns the real result — no
- * fake success.
- */
+// The one persistence seam: signed-in users go to Supabase (RLS-backed),
+// guests to localStorage. Writes return the real result — no fake success.
 import { supabase, supabaseConfigured } from "./supabase.js";
 
 const live = (userId) => Boolean(supabaseConfigured && userId);
@@ -356,7 +352,7 @@ export async function saveSiteSetting(key, value) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-/* ---- Admin catalog management (real DB persistence, admin-only writes) ---- */
+// admin catalog management
 
 export async function loadCategories() {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured", rows: [] };

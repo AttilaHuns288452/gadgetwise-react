@@ -1,16 +1,7 @@
-/**
- * Pareto multi-objective non-dominance.
- *
- * A product is Pareto-optimal (on the frontier) when no OTHER eligible product
- * beats it on every selected objective while being at least as good on all of
- * them. Objectives are explicit: each declares a direction (min|max) and a
- * value getter that returns null when the product lacks that data (so it is
- * excluded from that comparison rather than treated as 0 or neutral).
- *
- * Normalization is NOT required to test dominance — raw validated values are
- * compared in their own direction. Equal values never dominate each other
- * (strict improvement on ≥1 objective is required).
- */
+// Pareto non-dominance: a product is on the frontier when no other eligible
+// product beats it on every objective. Equal values never dominate. Each
+// objective declares a direction and a getter returning null when the data is
+// missing, so it's excluded instead of treated as 0.
 
 // Objectives genuinely defined by our marketplace data. A missing value is
 // null → the product is ineligible for any comparison using that objective.
@@ -51,11 +42,8 @@ export function dominates(aVals, bVals, objs) {
   return strictly;
 }
 
-/**
- * Generalized N-objective Pareto frontier over a filtered list.
- * Returns { frontier, dominated, excluded, points, objectives }.
- * `excluded` = products missing ≥1 selected objective value (unfair to compare).
- */
+// N-objective frontier: {frontier, dominated, excluded, points, objectives};
+// excluded = products missing one of the selected values
 export function paretoFrontier(items, objKeys) {
   const objs = objKeys.map((k) => OBJECTIVES[k]).filter(Boolean);
   const eligible = [];

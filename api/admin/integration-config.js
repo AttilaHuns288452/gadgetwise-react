@@ -1,15 +1,6 @@
-/**
- * GET/POST /api/admin/integration-config
- *
- * Admin-only API-credential management. GET reports which integration secrets
- * are configured (masked fingerprint + source, never the value). POST saves a
- * new credential: encrypted with AES-256-GCM (master key server-side only) and
- * stored in app_settings. The Lazada functions read this at runtime, so a new
- * key takes effect without editing the deployment env.
- *
- * Auth: the caller's verified JWT + the DB is_admin() mapping (same model as
- * /api/admin/users). Secrets never leave the server.
- */
+// GET/POST /api/admin/integration-config. Admin-only credential management:
+// GET returns masked fingerprints, POST stores the key encrypted. The Lazada
+// functions read it at runtime, so a new key applies without a redeploy.
 import { createClient } from "@supabase/supabase-js";
 import { encryptSecret, decryptSecret, getLazadaKey } from "../../lib/settings-crypto.js";
 

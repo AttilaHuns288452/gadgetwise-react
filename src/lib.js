@@ -319,11 +319,9 @@ function strengthsWeaknesses(gadget, opts) {
   return { strengths: [...new Set(s)], weaknesses: [...new Set(w)].slice(0, 3) };
 }
 
-/* Stretch rule: gadgets far above the budget ceiling are excluded from
-   ranking entirely. "Budget discipline" priority sets the tolerance:
-   high -> 5%, medium -> 15%, none/low -> 35% over the ceiling.
-   `budget` is {min, max, label}. A custom budget may carry `exact: true`, in
-   which case `max` is the user's number and nothing is snapped to a bracket: the exact ceiling is what ranks and what the budget notes quote. */
+// stretch rule: gadgets far above the budget ceiling drop out of ranking
+// entirely. Tolerance follows the budget-discipline priority (high 5%, medium
+// 15%, else 35% over). A custom budget is exact — no bracket snapping.
 export function recommend(input) {
   const { budget, useCase, priorities } = input;
   const { weights, notes } = rebalance(priorities);

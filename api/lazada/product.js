@@ -1,9 +1,4 @@
-/**
- * GET /api/lazada/product?id=<item_id>&marketplace=ph
- *
- * Serverless proxy for the TMAPI Lazada item-detail API. The API key stays
- * server-side in OMKAR_LAZADA_API_KEY and is never sent to the browser.
- */
+// GET /api/lazada/product — TMAPI item-detail proxy; the key stays server-side
 import { getLazadaKeys } from "../../lib/settings-crypto.js";
 import {
   isValidProductId,

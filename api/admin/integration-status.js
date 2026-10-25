@@ -1,15 +1,5 @@
-/**
- * GET /api/admin/integration-status
- *
- * Admin-only, honest integration status for the product-data provider.
- *
- * Security: the caller's identity comes from their verified JWT and the DB
- * is_admin() mapping (same model as /api/admin/users). Secrets are NEVER
- * returned — only whether a key is configured plus a tiny masked fingerprint.
- * The connection test is a real, minimal provider request (not a hardcoded
- * success), so the result reflects the actual server-side configuration and
- * quota state.
- */
+// GET /api/admin/integration-status. Admin-only provider status: the connection
+// test is a real request, never a hardcoded success, and no secret is returned.
 import { createClient } from "@supabase/supabase-js";
 import { getLazadaKeys } from "../../lib/settings-crypto.js";
 

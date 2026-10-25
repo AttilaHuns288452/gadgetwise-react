@@ -1,10 +1,5 @@
-/**
- * GadgetWise data schema and deterministic helpers. This module holds ONLY
- * production shape: categories, quiz config, and the getter/cost functions.
- * Product records come from the real marketplace loader (lib/catalog.js) at
- * runtime. The fictional prototype dataset lives in test/fixture.js and is
- * imported only by automated tests — it never ships in the production bundle.
- */
+// Data schema and deterministic helpers only. Products come from the real
+// loader (lib/catalog.js) at runtime; the fictional fixture is test-only.
 const GW = {};
 
 GW.categories = [
@@ -105,12 +100,8 @@ GW.categoryMedianMonthly = function (catId) {
 
    Canonical name builder: moderation rows and the UI both route through this. */
 
-/**
- * Marketplace listing titles carry seller noise: full-width parentheses,
- * "( new ! )" promo stamps, doubled brand prefixes. This is presentation
- * cleanup only — the stored model string is never modified, and anything that
- * is not obviously a promo stamp is kept verbatim.
- */
+// listing titles carry seller noise (promo stamps, doubled brands); display
+// cleanup only — the stored model string is never touched
 const PROMO_TAG = /\(\s*(new|hot|sale|promo|free|best|original|authentic|ready|stock|top|wow|limited|best\s*seller)[^)]*\)/gi;
 GW.cleanTitle = (s) => {
   const cleaned = String(s || "")

@@ -12,12 +12,8 @@ function MiniStars({ n }) {
   );
 }
 
-/**
- * Public reviewer profile. Shows only public information: the reviewer's chosen
- * display name and their approved reviews. Never email, auth metadata, wishlist,
- * comparison history, or other private account data (that lives on /profile for
- * the owner only).
- */
+// public reviewer profile: chosen display name + approved reviews only, never
+// email, wishlist or other private account data
 export default function PublicProfile() {
   const { userId } = useParams();
   const [profile, setProfile] = useState(null);
