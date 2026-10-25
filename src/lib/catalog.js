@@ -86,7 +86,7 @@ async function categoryPlan() {
  * Stable short hash of the category plan. It is part of the cache key, so an
  * admin category edit (rename, new query, new category) invalidates the
  * product cache instead of serving 7-day-old products for a plan that no
- * longer exists (GW-16).
+ * longer exists.
  */
 export function planHash(list = []) {
   const s = list
@@ -104,7 +104,7 @@ export function planHash(list = []) {
 
 async function fetchCategory(catId, query) {
   // ok/error are tracked per category: a failed category must be visible, not
-  // silently dropped (GW-15).
+  // silently dropped.
   const out = { items: [], stale: false, staleFrom: null, ok: true, error: null };
   for (let page = 1; page <= PAGES_PER_CATEGORY; page++) {
     const qs = new URLSearchParams({ q: query, marketplace: "ph", page: String(page) });
@@ -172,7 +172,7 @@ export function parsePriceRange(minRaw, maxRaw) {
 /**
  * Does a product satisfy a price range? A product with an UNKNOWN price
  * (null) cannot satisfy a price bound — it is not evidence that it is in
- * range, so it is excluded rather than counted as ₱0 (GW-19).
+ * range, so it is excluded rather than counted as ₱0.
  */
 export function withinPriceRange(price, min, max) {
   if (typeof price !== "number" || !Number.isFinite(price)) return false;
@@ -195,7 +195,7 @@ export function priceSortValue(g) {
 export function catalogStats(gadgets = GW.gadgets) {
   const byCat = {};
   // Only listings with a KNOWN price count toward the average: an unknown
-  // price must not drag it toward zero (GW-19).
+  // price must not drag it toward zero.
   const prices = [];
   let withRating = 0;
   let ratingSum = 0;
@@ -225,7 +225,7 @@ export function catalogStats(gadgets = GW.gadgets) {
  *
  * A failed category is never silently dropped: its error is reported in
  * `failedCategories` and the rows it had last time (the caller's `fallback`)
- * are kept, so one flaky category cannot empty the catalog (GW-15).
+ * are kept, so one flaky category cannot empty the catalog.
  * Pure, so the rules are testable.
  */
 export function mergeCategoryResults(results = []) {
@@ -272,7 +272,7 @@ export async function loadCatalog() {
   // load: a fresh client cache used to skip it entirely and self-added
   // categories stayed invisible for up to the whole cache lifetime.
   const { list, queries } = await categoryPlan();
-  // GW-16: the plan hash is part of the cache key, so a category edit
+  // the plan hash is part of the cache key, so a category edit
   // (rename / new query / new category) invalidates the product cache.
   const CACHE_KEY = CACHE_PREFIX + planHash(list);
 
@@ -318,7 +318,7 @@ export async function loadCatalog() {
       }
       const { items, ok, error, stale, staleFrom } = r.value;
       if (!ok) {
-        // GW-15: keep the older rows for this category, report the failure,
+        // keep the older rows for this category, report the failure,
         // and do NOT refresh its timestamp — it is retried on the next load.
         results.push({ id: cat, ok: false, error, fallback: prev?.rows || [], fetchedAt: prev?.fetchedAt || null });
         continue;
@@ -333,7 +333,7 @@ export async function loadCatalog() {
   // stale = upstream served an old snapshot OR we are serving expired rows
   const servingExpired = results.some((r) => !r.ok && (r.fallback || []).length);
   const stale = Boolean(merged.stale || servingExpired);
-  // GW-14: "as of" is the OLDEST served row — the whole set is only as fresh as
+  // "as of" is the OLDEST served row — the whole set is only as fresh as
   // its stalest member. A live fetch is now; a cached category is its own
   // timestamp.
   const stamps = results.map((r) => r.fetchedAt).filter((t) => typeof t === "number");
@@ -352,7 +352,7 @@ export async function loadCatalog() {
     GW.catalogStale = true;
     GW.catalogStaleFrom = merged.staleFrom || null;
   }
-  // GW-14: the freshness of the served data (and the stale flag) is persisted
+  // the freshness of the served data (and the stale flag) is persisted
   // and returned so the UI can say when this was last updated.
   try {
     localStorage.setItem(

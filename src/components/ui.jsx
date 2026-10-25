@@ -669,14 +669,9 @@ export function useToast() {
 }
 
 
-/* ------------------------------------------------------------------ *
- * GadgetWise brand mark (cube + "smart pick" spark) and lockup.
- * One source of truth for every branded surface (header, footer, auth,
- * admin). Tone controls the wordmark contrast for light vs dark chrome.
- * ------------------------------------------------------------------ */
+// The brand mark from gadgetwise-prototype: flat blue tile, white cube,
+// three gold rules. Used everywhere the logo appears.
 export function LogoMark({ size = 20, className = "" }) {
-  // Original GadgetWise mark recovered from gadgetwise-prototype (js/app.js):
-  // flat blue tile, white cube outline, three warm-gold interior rules.
   return (
     <svg viewBox="0 0 28 28" width={size} height={size} className={className} aria-hidden="true">
       <rect x="1.5" y="1.5" width="25" height="25" rx="6" fill="#1D5BA4" />

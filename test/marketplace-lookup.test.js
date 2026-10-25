@@ -31,7 +31,6 @@ function jsonResponse(body, { ok = true, status = 200 } = {}) {
   return { ok, status, json: async () => body };
 }
 
-/* ------------------------------------------------------------------ GW-18 */
 
 test("GW-18: a successful lookup returns the found state with the gadget", async () => {
   const restore = stubFetch(async () =>
@@ -102,7 +101,6 @@ test("GW-18: a non-marketplace id is never fetched and never claims an error", a
   assert.equal(res.error, null);
 });
 
-/* ------------------------------------------------------------------ GW-13 */
 
 test("GW-13: a failed page fetch is an error, not an empty product list", async () => {
   const restore = stubFetch(async () => {
@@ -161,7 +159,6 @@ test("GW-13: a genuinely empty successful page is NOT an error", async () => {
   assert.equal(res.products.length, 0);
 });
 
-/* ------------------------------------------------------------------ GW-11 */
 
 test("GW-11: an aborted request is a cancellation, not an error", async () => {
   const ctrl = new AbortController();
@@ -203,7 +200,6 @@ test("GW-11: the page cursor and start_key ride along for page 2", async () => {
   assert.equal(res.next, "CURSOR2", "the next cursor is returned for on-demand paging");
 });
 
-/* ------------------------------------------------------------- merge rules */
 
 test("merged pages dedupe by productId and keep the first error", () => {
   const merged = mergeSearchPages([

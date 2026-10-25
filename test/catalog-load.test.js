@@ -54,7 +54,6 @@ const fail = (status, code) => ({
   json: async () => ({ error: { code, message: "upstream said no" } }),
 });
 
-/* ------------------------------------------------------------------- GW-14 */
 
 test("GW-14: a fresh load persists the timestamp and the stale flag", async () => {
   globalThis.fetch = async () => ok([{ productId: "1", title: "Phone A", price: 1000 }]);
@@ -86,7 +85,6 @@ test("GW-14: a fully cached load reports the cache's own timestamp and cached:tr
   assert.equal(second.count, first.count);
 });
 
-/* ------------------------------------------------------------------- GW-15 */
 
 test("GW-15: a failed category is reported and its older rows are kept", async () => {
   // first load: everything works
@@ -146,7 +144,6 @@ test("GW-15: a failed category is retried on the next load, not cached for 7 day
     "a failed category never gets a fresh timestamp");
 });
 
-/* ------------------------------------------------------------------- GW-16 */
 
 test("GW-16: a changed category plan uses a different cache key", async () => {
   globalThis.fetch = async () => ok([{ productId: "1", title: "Phone", price: 1000 }]);

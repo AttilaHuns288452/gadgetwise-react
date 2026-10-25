@@ -9,7 +9,7 @@ import LiveSearch from "../components/LiveSearch.jsx";
 const FEATURES = {
   long: (g) => /([8-9]\d*|\d{2,})\s*(h|hr|hour)/i.test(g.specs.Battery || ""),
   // A listing with an UNKNOWN price cannot be claimed to be "under ₱15,000" —
-  // null < 15000 is true, which would be a lie (GW-19).
+  // null < 15000 is true, which would be a lie.
   budget: (g) => withinPriceRange(g.price, null, 15000),
   durable: (g) => typeof g.scored.durability === "number" && g.scored.durability >= 7,
 };
@@ -44,7 +44,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const [sort, setSort] = useState("featured");
   const [minPrice, setMinPrice] = useState("0");
   // ?max= (from the home budget CTA) pre-sets the price ceiling. An EMPTY
-  // input means "no ceiling" and is a different thing from a number (GW-02).
+  // input means "no ceiling" and is a different thing from a number.
   const [maxPrice, setMaxPrice] = useState(() => searchParams.get("max") || "");
   const [feats, setFeats] = useState(() => new Set());
   const [brands, setBrands] = useState(() => new Set());
@@ -76,7 +76,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const scope = cat ? GW.gadgetsInCategory(cat) : GW.gadgets;
   const brandList = [...new Set(scope.map((g) => g.brand))].filter((b) => b && b !== "Unknown").sort();
 
-  // GW-02: every finite, non-negative ceiling is applied. An empty input means
+  // every finite, non-negative ceiling is applied. An empty input means
   // "no ceiling" and is NOT the same as a number — the old code skipped any
   // max >= 100000, so a ₱120,000 ceiling was silently ignored.
   const range = parsePriceRange(minPrice, maxPrice);
@@ -91,7 +91,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
       );
     }
     if (brands.size) list = list.filter((g) => brands.has(g.brand));
-    // GW-19: a listing with an unknown price cannot satisfy a price bound.
+    // a listing with an unknown price cannot satisfy a price bound.
     // A floor of 0 is no floor (same as before), so an untouched filter panel
     // does not hide price-unknown listings.
     if (min != null && min > 0) list = list.filter((g) => withinPriceRange(g.price, min, null));
@@ -222,7 +222,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                     className="w-full min-w-0 rounded-sm border border-line-strong bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
                   />
                 </div>
-                {/* GW-02: an invalid range is stated, not silently ignored. */}
+                {/* an invalid range is stated, not silently ignored. */}
                 {range.error && (
                   <p role="alert" className="mt-2 text-sm text-[#b3372e]">
                     {range.error}

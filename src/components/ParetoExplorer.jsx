@@ -56,8 +56,7 @@ export default function ParetoExplorer() {
   // it. Computed inline (not memoized): GW.gadgets is mutable module state that
   // fills in asynchronously, so a useMemo on the filter values alone would cache
   // an empty list and never see the catalog.
-  // trust-boundary: normalize invalid ranges (negative / reversed) instead of
-  // silently returning a misleading empty set
+  // a reversed or negative range is clamped, never treated as "no results"
   const rawMin = minPrice === "" ? null : Number(minPrice);
   const rawMax = maxPrice === "" ? null : Number(maxPrice);
   const minP = rawMin != null && Number.isFinite(rawMin) ? Math.max(0, rawMin) : null;

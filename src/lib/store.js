@@ -8,7 +8,7 @@ import { supabase, supabaseConfigured } from "./supabase.js";
 
 const live = (userId) => Boolean(supabaseConfigured && userId);
 
-// ---------- wishlist ----------
+// wishlist
 export async function loadWishlist(userId) {
   if (!live(userId)) return null; // caller keeps localStorage
   const { data, error } = await supabase
@@ -43,7 +43,7 @@ export async function syncWishlist(userId, ids) {
   return { ok: true };
 }
 
-// ---------- reviews ----------
+// reviews
 export async function submitReview(userId, { gadget_id, rating, body }) {
   if (!live(userId)) return { ok: true, local: true, pending: true };
   const { error } = await supabase
@@ -180,7 +180,7 @@ export async function deleteReview(id) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-// ---------- comparison history ----------
+// comparison history
 export async function loadComparisons(userId) {
   if (!live(userId)) return null;
   const { data, error } = await supabase
@@ -195,7 +195,7 @@ export async function loadComparisons(userId) {
   }));
 }
 
-// ---------- public reviewer profiles ----------
+// public reviewer profiles
 // A public profile shows only public info: display name + approved reviews.
 // Never email, auth metadata, wishlist, or private account data.
 
@@ -244,7 +244,7 @@ export async function saveComparison(userId, ids, titles) {
   return { ok: true };
 }
 
-// ---------- recommendation history ----------
+// recommendation history
 export async function loadRecommendations(userId) {
   if (!live(userId)) return null;
   const { data, error } = await supabase

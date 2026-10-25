@@ -21,7 +21,6 @@ const live = read("src/components/LiveSearch.jsx");
 const detail = read("src/pages/GadgetDetail.jsx");
 const catalog = read("src/pages/Catalog.jsx");
 
-/* ------------------------------------------------------------------ GW-10 */
 
 test("GW-10: the live search error state offers an explicit retry", () => {
   assert.match(live, /Retry search/, "the error state has a retry button");
@@ -30,7 +29,6 @@ test("GW-10: the live search error state offers an explicit retry", () => {
     "the retry button re-runs the search");
 });
 
-/* ------------------------------------------------------------------ GW-11 */
 
 test("GW-11: the live search debounces the query", () => {
   assert.match(live, /const DEBOUNCE_MS = 350/, "a 350ms debounce is configured");
@@ -53,7 +51,6 @@ test("GW-11: the live search no longer auto-fetches a fixed number of pages", ()
   assert.match(live, /const loadMore = async/, "the load-more handler exists");
 });
 
-/* ------------------------------------------------------------------ GW-12 */
 
 test("GW-12: the live section says it is independent of the catalog filters", () => {
   assert.match(live, /Independent marketplace search/,
@@ -67,7 +64,6 @@ test("GW-12: the live section shows its own result count", () => {
     "the live section reports how many listings it found");
 });
 
-/* ------------------------------------------------------------------ GW-13 */
 
 test("GW-13: a failed live search is an error state, not an empty result list", () => {
   assert.match(live, /status: "error"/, "the error state exists");
@@ -87,7 +83,6 @@ test("GW-13: a new query clears the previous query's results", () => {
     "the rendered list is cleared for a new query too");
 });
 
-/* ------------------------------------------------------------------ GW-30 */
 
 test("GW-30: the detail page keys its per-product state by id", () => {
   assert.match(detail, /const fetched = loaded\.id === id \? loaded\.gadget : null;/,
@@ -108,7 +103,6 @@ test("GW-30: a late response for a previous id cannot overwrite the current one"
   assert.match(detail, /cancelled = true;/, "the cancellation flag is set on cleanup");
 });
 
-/* ------------------------------------------------------------------ GW-18 */
 
 test("GW-18: the detail page renders a retry for a failed lookup, not 'not found'", () => {
   assert.match(detail, /Could not load this listing/, "a failed lookup has its own heading");
@@ -123,7 +117,6 @@ test("GW-18: the detail page renders a retry for a failed lookup, not 'not found
   assert.ok(nfIdx > errIdx, "the not-found copy comes after the error branch, so it is only reached for a real absence");
 });
 
-/* ------------------------------------------------------------------ GW-02 */
 
 test("GW-02: the catalog applies every finite ceiling, not only those under 100000", () => {
   assert.ok(!/max < 100000/.test(catalog), "the 100000 special case is gone");

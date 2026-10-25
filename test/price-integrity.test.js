@@ -20,7 +20,6 @@ import {
 } from "../src/lib/catalog.js";
 import { toGadget, knownPrice } from "../src/lib/marketplace.js";
 
-/* ------------------------------------------------------------------ GW-02 */
 
 test("GW-02: a ceiling of 120000 is a real ceiling, not 'no ceiling'", () => {
   const r = parsePriceRange("0", "120000");
@@ -86,7 +85,6 @@ test("GW-02: a zero floor is no floor, so it does not hide price-unknown listing
     "a zero floor does not filter out listings with an unknown price");
 });
 
-/* ------------------------------------------------------------------ GW-19 */
 
 test("GW-19: an unknown marketplace price stays null, never 0", () => {
   const g = toGadget({ productId: "1", title: "No Price Phone" });

@@ -15,7 +15,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { mergeCategoryResults, planHash, catalogStats } from "../src/lib/catalog.js";
 
-/* ------------------------------------------------------------------ GW-15 */
 
 test("GW-15: a failed category is reported and keeps its older rows", () => {
   const merged = mergeCategoryResults([
@@ -58,7 +57,6 @@ test("GW-15: a stale upstream snapshot marks the merged result stale", () => {
   assert.equal(merged.staleFrom, "2026-01-01T00:00:00Z");
 });
 
-/* ------------------------------------------------------------------ GW-16 */
 
 test("GW-16: the plan hash changes when a category is renamed", () => {
   const before = planHash([{ id: "laptops", name: "Laptops", query: "laptop" }]);
@@ -99,7 +97,6 @@ test("GW-16: the catalog cache key includes the plan hash", () => {
     "the cache key must contain the category plan hash");
 });
 
-/* ------------------------------------------------------------------ GW-14 */
 
 test("GW-14: the persisted cache records the fetchedAt timestamp and the stale flag", () => {
   const src = readFileSync("src/lib/catalog.js", "utf8");
@@ -127,7 +124,6 @@ test("GW-14: the category cache keeps a per-category timestamp so a failed categ
   assert.ok(!failBlock.includes("nextCats[cat] ="), "a failed category keeps its old timestamp");
 });
 
-/* ------------------------------------------------------------------ GW-19 */
 
 test("GW-19: catalogStats counts only priced listings in the average", () => {
   const stats = catalogStats([

@@ -4,14 +4,12 @@ import { Stars } from "./ui.jsx";
 import { registerListings, searchMarketplacePage } from "../lib/marketplace.js";
 
 /**
- * Live Lazada marketplace results. Separate from the curated catalog on
+ * Live Lazada marketplace results. Kept separate from the curated catalog on
  * purpose: scraper data is real but unvetted, so it never mixes into the
  * recommendation/compare catalog. Links go straight to the Lazada listing.
  *
- * GW-11: a keystroke no longer starts a 6-page fetch loop. The query is
- * debounced, the request is abortable, and extra pages load only when the
- * user asks for them.
- * GW-13: a failed fetch is an ERROR, never an empty result list.
+ * Searches are debounced and abortable, extra pages load only on demand,
+ * and a failed fetch shows up as an error, never as "no listings".
  */
 const DEBOUNCE_MS = 350;
 
@@ -32,8 +30,8 @@ export default function LiveSearch({ query }) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const append = page > 1;
-    // GW-13: a new query clears the previous query's results instead of
-    // showing them under the new search term.
+    // a new query clears the old results instead of showing them under the
+    // new search term
     if (!append) itemsRef.current = [];
     setState((s) => ({
       ...s,
@@ -76,7 +74,7 @@ export default function LiveSearch({ query }) {
       setState(IDLE);
       return;
     }
-    // GW-11: debounce so one query does not start a fetch loop per keystroke.
+    // debounce: one fetch per pause in typing, not one per keystroke
     const t = setTimeout(() => {
       if (wantRef.current !== q) return; // a newer query won the race
       run(q);
@@ -108,8 +106,7 @@ export default function LiveSearch({ query }) {
         <span className="text-sm text-ink3">real-time from Lazada · opens GadgetWise detail</span>
       </div>
 
-      {/* GW-12: this is an independent marketplace search. It does not apply the
-          catalog filters above, and it says how many listings IT returned. */}
+      {/* independent of the catalog filters above, with its own count */}
       <p className="mt-1 text-sm text-ink2">
         Independent marketplace search — the catalog filters above do not apply here.
         {state.status === "ready" && ` ${state.items.length} live listing${state.items.length === 1 ? "" : "s"} found.`}
@@ -122,7 +119,6 @@ export default function LiveSearch({ query }) {
       {state.status === "error" && (
         <div className="mt-3 rounded-lg border border-[#E5E7EB] bg-white p-4 text-sm text-ink2">
           <p className="[overflow-wrap:anywhere]">{state.error}</p>
-          {/* GW-10: an explicit retry, not just a message. */}
           <button
             type="button"
             onClick={() => run(state.loadedQuery || q)}
@@ -183,7 +179,6 @@ export default function LiveSearch({ query }) {
         </div>
       )}
 
-      {/* GW-11: more pages load on demand, never automatically. */}
       {state.status === "ready" && state.next && (
         <button
           type="button"

@@ -32,18 +32,12 @@ const SPEC_ROWS = {
 const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const score = (v) => (v == null ? NA : `${v.toFixed(1)}/10`);
 
-/* ---------- ratings ----------
-   Marketplace ratings are optional. A listing with rating 0 (or null) is
-   UNRATED, not "rated 0.0": it never wins a rating comparison and it never
-   shows a fake star score. */
+// A rating of 0 (or none) means unrated — no winner, no fake 0.0 stars.
 const hasRating = (g) => num(g?.rating) != null && g.rating > 0;
 const ratingText = (g) => (hasRating(g) ? `${g.rating.toFixed(1)}★ (${g.reviewCount})` : "Not available");
 
-/* ---------- selection ----------
-   The comparison selection is authoritative in this page: a ?ids= link seeds
-   it, the compare tray fills it when there is no link, and the last selection
-   is remembered so a refresh does not empty the table. The resolution rule
-   lives in lib/compare-selection.js so it stays unit-testable. */
+// A ?ids= link owns the selection, otherwise the tray, otherwise whatever
+// was picked last. The rules live in lib/compare-selection.js.
 function normalizeIds(raw) {
   return [...new Set(String(raw || "").split(",").map((s) => s.trim()).filter(Boolean))].slice(0, 4);
 }
@@ -66,8 +60,7 @@ function writeSavedIds(ids) {
   }
 }
 
-/* ---------- row model ----------
-   better: "low" | "high" | null  (null = informational row) */
+// better: "low" | "high" | null (null = informational row)
 function rowsFor(gadgets) {
   const cats = new Set(gadgets.map((g) => g.category));
   const multiCategory = cats.size > 1;
@@ -125,9 +118,7 @@ function bestIndices(row, list) {
   return values.map((v, i) => (v === edge ? i : -1)).filter((i) => i >= 0);
 }
 
-/* ---------- history ----------
-   Same key + entry shape the Comparison history page reads, so one list
-   serves both pages. */
+// Same key and shape the history page reads, so both pages share one list.
 function recordHistory(gadgets) {
   if (gadgets.length < 2) return null;
   const ids = gadgets.map((g) => g.id);

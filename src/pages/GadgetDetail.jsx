@@ -43,7 +43,7 @@ function MiniStars({ n }) {
 }
 
 /* Monthly cost of every gadget in a category, cheapest first. Listings with an
-   unknown price are skipped: they cannot be compared by cost (GW-19). */
+   unknown price are skipped: they cannot be compared by cost. */
 function CategoryCostList({ catId }) {
   const rows = GW.gadgetsInCategory(catId)
     .filter((x) => typeof x.price === "number" && Number.isFinite(x.price) && x.price > 0)
@@ -150,10 +150,10 @@ function GadgetDetail({ compare, onCompare }) {
   const [submitting, setSubmitting] = useState(false);
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
-  // GW-18: the listing lookup has three honest states — found, not-found (the
+  // the listing lookup has three honest states — found, not-found (the
   // listing is really gone) and error (the lookup failed and can be retried).
   // A failed lookup must never be reported as "not found".
-  // GW-30: every per-product value is stored WITH its id, and only used when
+  // every per-product value is stored WITH its id, and only used when
   // the id still matches. An effect runs after the render, so resetting state
   // inside one would still show the previous product for a frame.
   const [loaded, setLoaded] = useState({ id: null, gadget: null, extra: [], reviewsLoaded: false });
@@ -192,7 +192,7 @@ function GadgetDetail({ compare, onCompare }) {
     let cancelled = false;
     loadReviews(id).then((rows) => {
       // the id is written with the rows: state for another product can never
-      // be read back under this one (GW-30)
+      // be read back under this one
       if (!cancelled && rows) setLoaded((s) => ({ id, extra: rows, reviewsLoaded: true, gadget: s.gadget }));
     });
     return () => {
@@ -212,7 +212,7 @@ function GadgetDetail({ compare, onCompare }) {
       </section>
     );
   }
-  // GW-18: a failed lookup is an error with a retry, not a "not found" claim.
+  // a failed lookup is an error with a retry, not a "not found" claim.
   if (!g && listingState.status === "error") {
     return (
       <section className="section">
@@ -250,7 +250,7 @@ function GadgetDetail({ compare, onCompare }) {
     );
   }
 
-  // GW-19: an unknown price is unavailable, not ₱0. Every price-derived
+  // an unknown price is unavailable, not ₱0. Every price-derived
   // number below is suppressed rather than shown as zero.
   const priceKnown = typeof g.price === "number" && Number.isFinite(g.price) && g.price > 0;
   const monthly = priceKnown ? g.price / GW.MONTHS_WINDOW : null;

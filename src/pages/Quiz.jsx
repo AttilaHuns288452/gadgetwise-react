@@ -68,7 +68,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
         return next;
       }));
 
-  // GW-08: without the App props this component keeps its own compare set, so
+  // without the App props this component keeps its own compare set, so
   // the compare tray and the /compare route disagree. That is a wiring bug
   // that must never be silent: warn loudly in dev instead of diverging quietly.
   // The App-side wiring is owned by App.jsx, not here.
@@ -89,7 +89,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   // amount must be a real number. Without one there is nothing to rank.
   const amountValid = band != null;
 
-  // GW-09: the results memo must depend on the CATALOG, not just the answers.
+  // the results memo must depend on the CATALOG, not just the answers.
   // The catalog loads asynchronously into GW.gadgets, so a memo keyed only on
   // the answers would compute once against an empty catalog and never
   // recompute when the products arrive.
@@ -102,7 +102,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   const results = engine ? engine.results.slice(0, 5) : [];
   const summary = cat && band && useCase ? `${catName(cat)} · ${band.label} · ${useCase.label}` : "";
   const summaryBudgetMax = band ? band.max : 0;
-  // GW-07: the adjustable chips must show the weights the ENGINE actually used
+  // the adjustable chips must show the weights the ENGINE actually used
   // for this run (priorities applied), not the module-level defaults.
   const adjChips = engine
     ? Object.entries(engine.weights)
@@ -380,7 +380,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                   Adjustable 50 pts after your priorities
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {/* GW-07: the real engine weights for THIS run, not the
+                  {/* the real engine weights for THIS run, not the
                       module-level defaults — the chips used to ignore the
                       user's priorities entirely. */}
                   {[...FIXED_CHIPS, ...adjChips].map((c) => (
@@ -454,7 +454,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                           <span className="mono text-sm text-ink2">
                             / {r.breakdown.supported >= 100 ? 100 : Math.round(r.breakdown.supported)}
                           </span>
-                          {/* GW-05: a score resting on partial evidence says so,
+                          {/* a score resting on partial evidence says so,
                               instead of implying a full 100-point measurement. */}
                           {r.breakdown.coverage < 1 && (
                             <div className="mt-1 text-xs text-ink2">
@@ -514,14 +514,14 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <summary className="cursor-pointer text-sm font-semibold text-primary hover:underline">
                           Show score breakdown
                         </summary>
-                        {/* GW-07: the breakdown shows the factors that actually
+                        {/* the breakdown shows the factors that actually
                             produced the score (earned/max points), not the raw
                             catalog spec bars, which are a different thing. */}
                         <div className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                           {r.breakdown.factors.map((f) => (
                             <div key={f.key}>
                               {/* earned / max points — the contribution this
-                                  factor made to the score (GW-07) */}
+                                  factor made to the score */}
                               <Bar v={f.earned} max={f.max} label={f.label} />
                               {f.note && <p className="mt-0.5 text-xs text-ink2">{f.note}</p>}
                             </div>

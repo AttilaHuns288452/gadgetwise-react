@@ -138,7 +138,7 @@ export function isListingId(id) {
  * The registry is in-memory, so a deep-link or refresh would otherwise 404.
  *
  * Returns a structured state, never a bare null: the caller must be able to
- * tell "this listing is gone" from "the lookup failed" (GW-18).
+ * tell "this listing is gone" from "the lookup failed".
  *   { status: "found", gadget } | { status: "not-found" } | { status: "error", error }
  */
 export async function fetchListing(id) {
@@ -169,7 +169,7 @@ export async function fetchListing(id) {
 
 /**
  * Fetch one page of live marketplace results. A failure is an ERROR, never an
- * empty product list (GW-13): an exception used to become {products: []} and
+ * empty product list: an exception used to become {products: []} and
  * then read as "no live listings found".
  * Returns { ok, aborted, products, next, error:{code,message}|null }.
  */
@@ -213,7 +213,7 @@ export async function searchMarketplacePage({ q, page = 1, startKey = "", signal
 
 /**
  * Merge page results: dedupe by productId, keep the first error, and never
- * turn a failed page into "no results" (GW-13).
+ * turn a failed page into "no results".
  */
 export function mergeSearchPages(pages = []) {
   const seen = new Set();

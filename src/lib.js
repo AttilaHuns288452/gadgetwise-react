@@ -96,7 +96,7 @@ function budgetFit(price, min, max) {
 
 // Academic fit: a weighted mean over the use-case criteria that have real
 // evidence. Returns null when NO criterion has evidence — an unmeasured fit is
-// unknown, never a measured zero (GW-05).
+// unknown, never a measured zero.
 function academicFit(gadget, useCase, pool) {
   const crit = useCase.criteria;
   let sum = 0, weight = 0, total = 0;
@@ -127,7 +127,7 @@ function ownershipValue(gadget, pool) {
 
 // Normalization pools are built from the population actually being ranked, so
 // a spec is compared against the gadgets the user is choosing between and not
-// against every category in the catalog (GW-06). Non-finite values never
+// against every category in the catalog. Non-finite values never
 // enter a pool: one NaN would poison min/max for the whole factor.
 function buildPools(list) {
   const pools = {};
@@ -154,7 +154,7 @@ export const FACTOR_META = {
 };
 
 /* A custom budget is an EXACT ceiling, not a bracket: the amount the student
-   typed is what ranks the products (GW-03). An empty, zero, or non-numeric
+   typed is what ranks the products. An empty, zero, or non-numeric
    amount is invalid and returns null — it must never be snapped to a band and
    silently ranked against a budget the student did not choose. */
 export function customBudget(amount) {
@@ -169,7 +169,7 @@ function rebalance(priorities) {
   const notes = [];
   // Deep-clone the shared defaults: the old shallow copy mutated FACTOR_META's
   // nested objects, so one run with Performance=High permanently changed the
-  // default weights for every later run (GW-04). Each run is now independent.
+  // default weights for every later run. Each run is now independent.
   const meta = Object.fromEntries(Object.entries(FACTOR_META).map(([k, m]) => [k, { ...m }]));
   for (const [f, sel] of Object.entries(priorities || {})) {
     if (!meta[f] || sel === "none") continue;
@@ -199,7 +199,7 @@ function rebalance(priorities) {
 // unknown factor is never scored as 0 — a missing measurement is not a bad
 // result — so it is excluded and reported, and the score carries its coverage
 // so the UI can say the score is partial instead of implying it is complete
-// (GW-05). `supported` is how many of the nominal 100 points had evidence.
+//. `supported` is how many of the nominal 100 points had evidence.
 function scoreGadget(gadget, opts, pools) {
   const weights = opts.weights;
   const useCase = opts.useCase;
@@ -323,8 +323,7 @@ function strengthsWeaknesses(gadget, opts) {
    ranking entirely. "Budget discipline" priority sets the tolerance:
    high -> 5%, medium -> 15%, none/low -> 35% over the ceiling.
    `budget` is {min, max, label}. A custom budget may carry `exact: true`, in
-   which case `max` is the user's number and nothing is snapped to a bracket
-   (GW-03): the exact ceiling is what ranks and what the budget notes quote. */
+   which case `max` is the user's number and nothing is snapped to a bracket: the exact ceiling is what ranks and what the budget notes quote. */
 export function recommend(input) {
   const { budget, useCase, priorities } = input;
   const { weights, notes } = rebalance(priorities);
@@ -356,7 +355,7 @@ export function recommend(input) {
     }
   }
 
-  // Pools come from the population actually being ranked (GW-06), so a spec is
+  // Pools come from the population actually being ranked, so a spec is
   // compared against the gadgets the user is choosing between.
   const pools = buildPools(ranked);
 
@@ -377,13 +376,8 @@ export function recommend(input) {
 export { GW };
 
 
-/* ------------------------------------------------------------------ *
- * Metric enrichment (Tier 3: derived from real marketplace fields).
- * Computes legitimate metrics from price / rating / listing fields that
- * Lazada actually returns. Never fabricates a product spec — a value we
- * cannot derive or verify is returned as `unavailable` with a reason.
- * Every metric carries provenance: source | calculated | estimated.
- * ------------------------------------------------------------------ */
+// Metrics derived from real listing fields only — anything we can't verify
+// comes back as unavailable instead of a guessed number.
 export const ENRICH_VERSION = 1;
 
 const coreFields = (g) => ({
