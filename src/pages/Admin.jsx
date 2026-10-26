@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, editReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
+import { loadAllReviews, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -640,25 +640,22 @@ function Integrations({ toast }) {
   );
 }
 
-function Reviews({ rows, setRows, loaded, reload, toast }) {
-  const [edit, setEdit] = useState(null);
-  const [busy, setBusy] = useState(null);
-  // reviews publish on their own; the only gate is the forbidden-words list,
-  // so this page is for editing content, not deciding who gets heard
+function Reviews({ rows, loaded }) {
+  // read-only: reviews belong to their authors, and the only rule enforced
+  // anywhere is the forbidden-words list (applied when the author writes)
   const shown = rows;
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-[30px] font-bold text-[#111827]">Community reviews</h1>
       </div>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Reviews publish automatically. The only rule enforced is the forbidden-words list — this page exists to edit content that crosses it.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Reviews publish automatically. The only rule enforced is the forbidden-words list (see the Forbidden words tab) — this page is a read-only view of what members are saying.</p>
 
       <div className="mt-5 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-[#EAECF0]">
               <th className={headCls}>Gadget · Reviewer</th><th className={headCls}>Rating</th><th className={headCls}>Review</th>
-              <th className={`${headCls} text-right`}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -670,17 +667,12 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
                 </td>
                 <td className={cellCls}>{r.rating}★</td>
                 <td className={`${cellCls} max-w-md`}>
-                  <span className={r.status === "pending" ? "line-clamp-2 text-[#344054]" : "text-[#344054]"}>{r.text}</span>
-                </td>
-                <td className={cellCls}>
-                  <div className="flex justify-end gap-2">
-                    <button className={iconBtn} title="Edit" aria-label={`Edit review of ${r.gadget}`} onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
-                  </div>
+                  <span className="text-[#344054]">{r.text}</span>
                 </td>
               </tr>
             ))}
             {shown.length === 0 && (
-              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={4}>No reviews yet.</td></tr>
+              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={3}>No reviews yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -689,37 +681,9 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
         Showing {shown.length} reviews from the catalog dataset. Reviews appear on public product pages right away.
       </p>
 
-      {edit && (
-        <Modal
-          title="Edit review"
-          sub="Fix profanity, personal information, or formatting. The reviewer name stays."
-          onClose={() => setEdit(null)}
-          actions={<>
-            <button className={btnOutlineCls} onClick={() => setEdit(null)}>Cancel</button>
-            <button className={btnPrimaryCls} onClick={async () => {
-              if (!edit.text.trim()) { toast("Review text cannot be empty", "alert"); return; }
-              const res = await editReview(edit.id, { rating: edit.rating, body: edit.text });
-              if (!res.ok) { toast(`Could not save review: ${res.error}`, "alert"); return; }
-              setRows(rows.map((r) => (r.id === edit.id ? { ...r, text: edit.text, rating: edit.rating } : r)));
-              setEdit(null);
-              toast("Review edited", "edit");
-            }}>Save</button>
-          </>}
-        >
-          <div>
-            <label className={fieldLabelCls} htmlFor="edRating">Rating (1–5)</label>
-            <input id="edRating" type="number" min="1" max="5" className={fieldInputCls} value={edit.rating}
-              onChange={(e) => setEdit({ ...edit, rating: Math.min(5, Math.max(1, Number(e.target.value) || 1)) })} />
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="edText">Review text</label>
-            <textarea id="edText" rows="5" className={fieldInputCls} value={edit.text}
-              onChange={(e) => setEdit({ ...edit, text: e.target.value })} />
-          </div>
-        </Modal>
-      )}
-
-      {/* reviews cannot be deleted by admins (only their authors can) */}
+      {/* reviews belong to their authors: admins can read but never edit,
+          delete or unpublish them. The only rule enforced anywhere is the
+          forbidden-words list, applied when the author writes. */}
     </>
   );
 }
