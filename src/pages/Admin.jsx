@@ -6,7 +6,7 @@ import { Logo } from "../components/ui.jsx";
 import { loadAllReviews, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
-import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
+import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName, focusField } from "../components/ui.jsx";
 
 const ICONS = {
   dashboard: "M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z",
@@ -258,12 +258,12 @@ function Gadgets({ toast }) {
   useEffect(() => { reload(); }, []);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const save = async () => {
-    if (!form?.model?.trim()) { toast("Model name is required", "alert"); return; }
+    if (!form?.model?.trim()) { toast("Model name is required", "alert"); focusField("#adm-model"); return; }
     // trust-boundary validation: reject malformed prices before they reach the DB
     const price = form.price === "" || form.price == null ? null : Number(form.price);
     const orig = form.original_price === "" || form.original_price == null ? null : Number(form.original_price);
-    if (price != null && (!Number.isFinite(price) || price <= 0)) { toast("Price must be a number greater than zero", "alert"); return; }
-    if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { toast("Original price must be a number greater than zero", "alert"); return; }
+    if (price != null && (!Number.isFinite(price) || price <= 0)) { toast("Price must be a number greater than zero", "alert"); focusField("#adm-price"); return; }
+    if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { toast("Original price must be a number greater than zero", "alert"); focusField("#adm-price"); return; }
     const res = await saveProduct(form.id || null, { ...form, price, original_price: orig });
     if (res.ok) { setForm(null); await reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
     else toast(res.error || "Could not save", "alert");
@@ -301,13 +301,13 @@ function Gadgets({ toast }) {
           <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit gadget" : "New gadget"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Brand"><input className={fieldInputCls} value={form.brand || ""} onChange={(e) => set("brand", e.target.value)} placeholder="e.g. Samsung" /></Field>
-            <Field label="Model"><input className={fieldInputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Galaxy A55" /></Field>
+            <Field label="Model"><input id="adm-model" className={fieldInputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Galaxy A55" /></Field>
             <Field label="Category">
               <select className={fieldInputCls} value={form.category || ""} onChange={(e) => set("category", e.target.value)}>
                 {cats.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </Field>
-            <Field label="Price (₱)"><input type="number" className={fieldInputCls} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="0" /></Field>
+            <Field label="Price (₱)"><input id="adm-price" type="number" className={fieldInputCls} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="0" /></Field>
             <Field label="Original price (₱, optional)"><input type="number" className={fieldInputCls} value={form.original_price || ""} onChange={(e) => set("original_price", e.target.value)} /></Field>
             <Field label="Image URL"><input className={fieldInputCls} value={form.image || ""} onChange={(e) => set("image", e.target.value)} placeholder="https://…" /></Field>
             <div className="sm:col-span-2"><Field label="Description"><textarea rows="3" className={fieldInputCls} value={form.description || ""} onChange={(e) => set("description", e.target.value)} /></Field></div>
@@ -401,7 +401,7 @@ function Categories({ toast }) {
   useEffect(() => { reload(); }, []);
   const categoryCounts = GW.gadgets.reduce((map, g) => map.set(g.category, (map.get(g.category) || 0) + 1), new Map());
   const save = async () => {
-    if (!form?.name?.trim()) { toast("Name is required", "alert"); return; }
+    if (!form?.name?.trim()) { toast("Name is required", "alert"); focusField("#adm-cat-name"); return; }
     // the slug is the app's category id: derive it from the name once (creating),
     // never rename it afterwards (products and quiz cases reference it)
     const slug = form.slug || form.name;
@@ -448,7 +448,7 @@ function Categories({ toast }) {
         <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
           <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit category" : "New category"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Name"><input className={fieldInputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
+            <Field label="Name"><input id="adm-cat-name" className={fieldInputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
             <Field label="Sort order"><input type="number" className={fieldInputCls} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></Field>
             <div className="sm:col-span-2">
               <Field label="Marketplace search query">
@@ -1090,7 +1090,7 @@ function ForbiddenWords({ toast }) {
     setSaving(true);
     const res = await saveForbiddenWord(form);
     setSaving(false);
-    if (!res.ok) { toast(res.error, "alert"); return; }
+    if (!res.ok) { toast(res.error, "alert"); focusField("#fw-phrase"); return; }
     setForm(null);
     reload();
     toast(form.id ? "Entry updated" : "Entry added");

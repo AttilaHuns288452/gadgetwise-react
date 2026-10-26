@@ -18,7 +18,7 @@ import {
   btnOutlineCls,
   fieldLabelCls,
   fieldInputCls,
-  HeartIcon, ScaleIcon,
+  HeartIcon, ScaleIcon, focusField,
 } from "../components/ui.jsx";
 
 const fmtDate = (d) =>
@@ -296,7 +296,7 @@ function GadgetDetail({ compare, onCompare }) {
   const submitReview = async () => {
     if (!requireAuth("write a review")) return;
     if (submitting) return; // one click, one review row
-    if (!text.trim()) { toast("Your review cannot be empty", "alert"); return; }
+    if (!text.trim()) { toast("Your review cannot be empty", "alert"); focusField("#rv-text"); return; }
     setSubmitting(true);
     const res = await submitReviewRecord(uid, {
       gadget_id: g.id,

@@ -3,7 +3,7 @@
 // refresh doesn't restart the flow.
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, focusField } from "../components/ui.jsx";
 import {
   useAuth, maskEmail, sanitizeOtp, cooldownSeconds, liveSessionUserId,
   readRecoveryState, writeRecoveryState, clearRecoveryState, notifyRecoveryChanged, endRecoveryFlow,
@@ -137,8 +137,8 @@ export default function ResetPassword() {
     setError("");
     setNotice("");
     const clean = email.trim();
-    if (!clean) { setError("Enter your email address."); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) { setError("Enter a valid email address."); return; }
+    if (!clean) { setError("Enter your email address."); focusField("#reset-email"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) { setError("Enter a valid email address."); focusField("#reset-email"); return; }
     setBusy(true);
     const { error: err } = await requestRecoveryCode(clean);
     setBusy(false);
@@ -169,6 +169,7 @@ export default function ResetPassword() {
     const digits = sanitizeOtp(code);
     if (digits.length !== OTP_LENGTH) {
       setError(`Enter the ${OTP_LENGTH}-digit code from your email.`);
+      focusField("#reset-code");
       return;
     }
     setBusy(true);
@@ -180,6 +181,7 @@ export default function ResetPassword() {
           ? "That code is not valid or has expired. Check it, or request a new one."
           : err.message || "Could not verify the code. Try again."
       );
+      focusField("#reset-code");
       return;
     }
     setCode(""); // the code is spent; never keep it around
@@ -191,8 +193,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
     const policy = passwordPolicyError(password);
-    if (policy) { setError(policy); return; }
-    if (password !== confirm) { setError("The two passwords do not match."); return; }
+    if (policy) { setError(policy); focusField("#new-pw"); return; }
+    if (password !== confirm) { setError("The two passwords do not match."); focusField("#new-pw-confirm"); return; }
     setBusy(true);
     const { error: err } = await setNewPassword(password);
     setBusy(false);

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { loadRecommendations, deleteRecommendation, loadMyProfile, saveMyProfile, uploadAvatar, removeAvatar } from "../lib/store.js";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GW } from "../lib.js";
-import { GadgetCard, useWishlist, useToast, Modal, ConfirmDialog, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls } from "../components/ui.jsx";
+import { GadgetCard, useWishlist, useToast, Modal, ConfirmDialog, btnPrimaryCls, btnOutlineCls, fieldLabelCls, fieldInputCls, focusField } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.js";
 import { readCompareHistory } from "./ComparisonHistory.jsx";
 
@@ -152,8 +152,8 @@ export default function Profile({ compare, onCompare }) {
 
   const saveProfile = async () => {
     const name = (draft.full_name || "").trim();
-    if (!name) { toast("Display name cannot be empty", "alert"); return; }
-    if (name.length > 120) { toast("Display name must be 120 characters or fewer", "alert"); return; }
+    if (!name) { toast("Display name cannot be empty", "alert"); focusField("#pf-name"); return; }
+    if (name.length > 120) { toast("Display name must be 120 characters or fewer", "alert"); focusField("#pf-name"); return; }
     setSaving(true);
     // photo first: upload/removal is its own real operation, and a failure keeps
     // the previous working photo instead of half-saving the profile

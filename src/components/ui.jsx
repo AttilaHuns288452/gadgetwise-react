@@ -631,6 +631,15 @@ const toastIco = {
   info: <><circle cx="8" cy="8" r="6.5" /><path d="M8 7.5v3.5M8 5h.01" /></>,
 };
 
+// put the cursor where the fix goes: validation failures focus their field
+export function focusField(sel) {
+  const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+  if (el && el.focus) {
+    el.focus();
+    if (el.scrollIntoView) el.scrollIntoView({ block: "center" });
+  }
+}
+
 export function useToast() {
   const [items, setItems] = useState([]);
   const timers = useRef(new Map());

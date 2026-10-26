@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, btnOutlineCls, focusField } from "../components/ui.jsx";
 import { useAuth, safeNext, PASSWORD_MIN, passwordPolicyError } from "../lib/auth.js";
 
 function Register() {
@@ -31,8 +31,8 @@ function Register() {
     e.preventDefault();
     setError(""); setNotice("");
     const policy = passwordPolicyError(password);
-    if (policy) { setError(policy); return; }
-    if (password !== confirm) { setError("The two passwords do not match."); return; }
+    if (policy) { setError(policy); focusField("#reg-password"); return; }
+    if (password !== confirm) { setError("The two passwords do not match."); focusField("#reg-password-confirm"); return; }
     setBusy(true);
     const { error: err, needsConfirm } = await signUp(name, email.trim(), password);
     setBusy(false);
