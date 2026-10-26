@@ -296,6 +296,7 @@ function GadgetDetail({ compare, onCompare }) {
   const submitReview = async () => {
     if (!requireAuth("write a review")) return;
     if (submitting) return; // one click, one review row
+    if (!text.trim()) { toast("Your review cannot be empty", "alert"); return; }
     setSubmitting(true);
     const res = await submitReviewRecord(uid, {
       gadget_id: g.id,
@@ -872,16 +873,6 @@ function GadgetDetail({ compare, onCompare }) {
               Rating
             </label>
             <StarPicker id="rv-rating" value={rating} onChange={setRating} label="Star rating" />
-          </div>
-          <div>
-            <label className={fieldLabelCls} htmlFor="rv-usage">
-              Usage context (optional)
-            </label>
-            <input
-              id="rv-usage"
-              className={fieldInputCls}
-              placeholder="e.g., Programming + Online class · 8 months"
-            />
           </div>
           <div>
             <label className={fieldLabelCls} htmlFor="rv-text">

@@ -169,7 +169,7 @@ export default function App() {
   // Sign-out is consequential: confirm first, await the real result, and only
   // then leave. A failed logout must NOT look like a successful one.
   const [confirmOut, setConfirmOut] = useState(false);
-  const { toast, node: toastNode } = useToast();
+  const [toast, toastNode] = useToast();
   const [outBusy, setOutBusy] = useState(false);
   const [outError, setOutError] = useState(null);
   const doSignOut = async () => {
@@ -464,7 +464,7 @@ export default function App() {
           <Route path="/gadgets" element={<Catalog compare={compare} onCompare={onCompareWithFeedback} catalogLoading={catalogLoading} catalogError={catalogError} catalogEmpty={catalogEmpty} />} />
           <Route path="/g/:id" element={<GadgetDetail compare={compare} onCompare={onCompareWithFeedback} />} />
           <Route path="/compare" element={<Compare compare={compare} onCompare={onCompareWithFeedback} />} />
-          <Route path="/recommend" element={<Quiz />} />
+          <Route path="/recommend" element={<Quiz compare={compare} onCompare={onCompareWithFeedback} />} />
           <Route path="/wishlist" element={<Wishlist compare={compare} onCompare={onCompareWithFeedback} />} />
           <Route path="/compare-history" element={<ComparisonHistory compare={compare} onCompare={onCompareWithFeedback} />} />
           <Route path="/profile" element={<Profile compare={compare} onCompare={onCompareWithFeedback} />} />
@@ -483,6 +483,16 @@ export default function App() {
               ) : (
                 <Navigate to="/" replace />
               )
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <section className="section mx-auto max-w-[560px] text-center">
+                <h1>Page not found</h1>
+                <p className="mt-2 text-ink2">That address doesn&apos;t match any page on GadgetWise.</p>
+                <Link to="/" className={btnPrimaryCls + " mt-5 inline-flex"}>Go home</Link>
+              </section>
             }
           />
         </Routes>

@@ -63,10 +63,28 @@ import {
 const CACHE = new Map();
 const TTL_MS = 10 * 60 * 1000;
 
+// ponytail: per-instance token bucket, same ceiling as the cache: it blunts
+// burst abuse of the quota-metered provider but a serious attacker needs an
+// edge-level limiter (Vercel WAF) or KV-backed counting.
+const HITS = new Map();
+function rateLimited(ip) {
+  const now = Date.now();
+  const win = HITS.get(ip) || { n: 0, t: now };
+  if (now - win.t > 60_000) { win.n = 0; win.t = now; }
+  win.n += 1;
+  HITS.set(ip, win);
+  return win.n > 20; // 20 searches a minute per IP
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: { code: "method_not_allowed", message: "Use GET." } });
+  }
+  const ip = String(req.headers["x-forwarded-for"] || "local").split(",")[0].trim();
+  if (rateLimited(ip)) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({ error: { code: "rate_limited", message: "Too many searches — try again in a minute." } });
   }
 
   const keys = await getLazadaKeys(); // admin key first, then authorized env keys

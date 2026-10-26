@@ -143,7 +143,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [history, setHistory] = useState(readCompareHistory);
   const wish = useWishlist();
-  const { toast, node: toastNode } = useToast();
+  const [toast, toastNode] = useToast();
 
   // The selection is authoritative here. A ?ids= link owns it; otherwise the
   // compare tray drives it; otherwise the last selection this browser made

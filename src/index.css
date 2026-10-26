@@ -303,7 +303,7 @@ html.reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
 }
 @keyframes tray-in { from { transform: translateY(100%); } to { transform: none; } }
 /* keep page content clear of the fixed bar */
-body:has(.compare-tray) { padding-bottom: 84px; }
+body:has(.compare-tray) { padding-bottom: 120px; }
 .tray-inner {
   display: flex; align-items: center; flex-wrap: wrap; gap: 12px 18px;
   padding: 14px 1.5rem;
@@ -311,7 +311,9 @@ body:has(.compare-tray) { padding-bottom: 84px; }
 .tray-label { font-weight: 700; font-size: 0.88rem; letter-spacing: 0.04em; white-space: nowrap; }
 .tray-items { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; min-width: 0; }
 .tray-item {
-  display: inline-flex; align-items: center; gap: 8px; max-width: 260px;
+  display: inline-flex; align-items: center; gap: 8px;
+  /* never wider than the phone: the × button must stay reachable */
+  max-width: min(260px, calc(100vw - 5.5rem));
   background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.28);
   padding: 6px 8px 6px 12px; border-radius: 8px; font-size: 0.84rem;
 }
