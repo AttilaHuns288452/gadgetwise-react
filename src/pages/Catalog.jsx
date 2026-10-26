@@ -298,7 +298,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
         {/* Results */}
         <div className="min-w-0" ref={resultsRef}>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full min-w-0 sm:w-auto sm:max-w-[420px] sm:flex-1">
+            <div className="relative w-full min-w-0 sm:flex-1">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
