@@ -18,6 +18,7 @@ import {
   btnOutlineCls,
   fieldLabelCls,
   fieldInputCls,
+  HeartIcon, ScaleIcon,
 } from "../components/ui.jsx";
 
 const fmtDate = (d) =>
@@ -355,17 +356,19 @@ function GadgetDetail({ compare, onCompare }) {
                 else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
               }}
               aria-pressed={wish.has(g.id)}
-              className={wish.has(g.id) ? btnPrimaryCls : btnOutlineCls}
+              className={(wish.has(g.id) ? btnPrimaryCls : btnOutlineCls) + " inline-flex items-center gap-2"}
             >
+              <HeartIcon className="h-4 w-4" />
               {wish.has(g.id) ? "In your Wishlist" : "Add to Wishlist"}
             </button>
             <button
               type="button"
               onClick={() => onCompare(g.id)}
               aria-pressed={compare.has(g.id)}
-              className={compare.has(g.id) ? btnPrimaryCls : btnOutlineCls}
+              className={(compare.has(g.id) ? btnPrimaryCls : btnOutlineCls) + " inline-flex items-center gap-2"}
             >
-              Add to Compare
+              <ScaleIcon className="h-4 w-4" />
+              {compare.has(g.id) ? "In Compare" : "Add to Compare"}
             </button>
             <button type="button" onClick={() => requireAuth("write a review") && setReviewOpen(true)} className={btnPrimaryCls}>
               Write Review

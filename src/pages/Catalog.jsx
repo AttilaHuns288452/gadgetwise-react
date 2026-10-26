@@ -381,9 +381,10 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
             </div>
           ) : (
             <>
-              {// keyed on the real controls so a result change replays the entrance — by
-// identity, not count (swapping a feature used to skip the replay), and minus
-// the search box so typing doesn't re-animate per keystroke}
+              {/* keyed on the real controls so a result change replays the
+                  entrance — by identity, not count (swapping a feature used to
+                  skip the replay), and minus the search box so typing doesn't
+                  re-animate per keystroke */}
               <div
                 key={`${cat}|${sort}|${[...feats].sort().join(",")}|${[...brands].sort().join(",")}|${minPrice}|${maxPrice}`}
                 className="stagger mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"

@@ -6,7 +6,7 @@ import { useAuth } from "../lib/auth.js";
 import { Link, useNavigate } from "react-router-dom";
 import { GW, money, FACTOR_META, recommend, customBudget } from "../lib.js";
 import { Img } from "../components/ui.jsx";
-import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls, stag } from "../components/ui.jsx";
+import { Bar, useToast, useWishlist, btnPrimaryCls, btnOutlineCls, stag, HeartIcon, ScaleIcon } from "../components/ui.jsx";
 import { saveRecommendation } from "../lib/store.js";
 
 const CATS = [
@@ -558,7 +558,8 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                               : "chip cursor-pointer border border-line-strong bg-white text-ink2 transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                           }
                         >
-                          Compare this gadget
+                          <ScaleIcon className="h-4 w-4" />
+                          {compare.has(g.id) ? "In compare" : "Compare this gadget"}
                         </button>
                         <div className="flex items-center gap-5">
                           <button
@@ -570,8 +571,9 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                               if (res && res.ok === false) toast("Saved on this device, but could not sync to your account.", "alert");
                               else toast(wasSaved ? "Removed from wishlist" : "Added to wishlist");
                             }}
-                            className={`text-sm font-semibold ${wish.has(g.id) ? "text-primary" : "text-ink2 hover:text-primary"}`}
+                            className={`inline-flex items-center gap-1.5 text-sm font-semibold ${wish.has(g.id) ? "text-primary" : "text-ink2 hover:text-primary"}`}
                           >
+                            <HeartIcon className="h-4 w-4" />
                             {wish.has(g.id) ? "Saved" : "Save to wishlist"}
                           </button>
                           <Link to={`/g/${g.id}`} className="text-sm font-semibold text-primary hover:underline">
