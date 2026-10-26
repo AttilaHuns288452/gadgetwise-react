@@ -316,20 +316,20 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search gadgets, brands, features…"
                 aria-label="Filter gadgets in catalog"
-                className="field rounded-lg py-2.5 pl-10 pr-4"
+                className="field rounded-lg pl-10"
               />
             </div>
             {/* ponytail: on phones the sort select fills the row instead of
                 hugging its label and leaving half the width empty */}
             <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
-              <label htmlFor="catalog-sort" className="shrink-0 text-sm text-ink3">
+              <label htmlFor="catalog-sort" className="shrink-0 text-sm font-medium text-ink2">
                 Sort
               </label>
               <select
                 id="catalog-sort"
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="min-w-0 flex-1 rounded-sm border border-line-strong bg-white px-3 py-2.5 text-sm text-ink sm:flex-none"
+                className="field rounded-lg min-w-0 flex-1 sm:w-auto sm:flex-none"
               >
                 {SORTS.map(([v, label]) => (
                   <option key={v} value={v}>
