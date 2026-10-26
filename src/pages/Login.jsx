@@ -54,7 +54,7 @@ function Login() {
         <div>
           <label className={fieldLabelCls} htmlFor="login-email">Email</label>
           <input id="login-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@student.edu" className={fieldInputCls} />
+            placeholder="you@student.edu" className={fieldInputCls} aria-invalid={error ? "true" : undefined} />
         </div>
         <div>
           <div className="flex items-center justify-between">
@@ -63,7 +63,7 @@ function Login() {
                 this tab. */}
             <Link to="/reset-password" className="text-xs font-semibold text-primary hover:text-primary-dark">Forgot password?</Link>
           </div>
-          <PasswordField id="login-password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          <PasswordField id="login-password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" invalid={!!error} />
         </div>
         <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
           {busy ? "Signing in…" : "Log in"}

@@ -179,10 +179,16 @@
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 /* one consistent keyboard ring across the app */
-/* validation state: driven by aria-invalid so every form gets it for free */
-input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] {
+/* validation state: driven by aria-invalid so every form gets it for free.
+   :focus variants included: the error flow focuses the field, and the focus
+   styles must not paint over the red */
+input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"],
+input[aria-invalid="true"]:focus, textarea[aria-invalid="true"]:focus, select[aria-invalid="true"]:focus {
   border-color: var(--color-danger, #b3372e);
   box-shadow: 0 0 0 3px rgba(179, 55, 46, 0.12);
+}
+input[aria-invalid="true"]:focus-visible, textarea[aria-invalid="true"]:focus-visible, select[aria-invalid="true"]:focus-visible {
+  outline-color: var(--color-danger, #b3372e);
 }
 
 :where(a, button, input, select, textarea, [role="button"], [role="tab"]):focus-visible {
