@@ -20,7 +20,7 @@ import Home from "./pages/Home.jsx";
 import { useAuth, recoveryFlowActive } from "./lib/auth.js";
 import { loadCatalog, loadCurated } from "./lib/catalog.js";
 import { loadMyProfile } from "./lib/store.js";
-import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal, ConfirmDialog, ErrorBoundary, useToast } from "./components/ui.jsx";
+import { Logo, btnPrimaryCls, AuthPromptHost, CatalogErrorCard, useReveal, ConfirmDialog, ErrorBoundary, useToast, HeartIcon, ScaleIcon } from "./components/ui.jsx";
 import { createPortal } from "react-dom";
 
 const NAV = [
