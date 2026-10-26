@@ -94,30 +94,32 @@ export default function LiveSearch({ query }) {
     }
   };
 
+  // the whole block only exists while a search is happening: an idle heading
+  // with nothing under it was just a slab of dead space on the catalog page
+  const active = String(q || "").trim().length >= 2 || state.status !== "idle";
+  if (!active) return null;
+
   return (
-    <section className="mt-8" aria-label="Live marketplace results">
-      <div className="flex flex-wrap items-baseline gap-2">
-        <h2 className="text-2xl">Live marketplace results</h2>
-        <span className="text-sm text-ink3">real-time from Lazada · opens GadgetWise detail</span>
+    <section className="mt-6" aria-label="Live marketplace results">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <h2 className="text-base font-semibold text-ink">Live marketplace results</h2>
+        <span className="text-xs text-ink3">independent of the filters above · opens GadgetWise detail</span>
+        {state.status === "ready" && state.items.length > 0 && (
+          <span className="text-xs font-semibold text-ink2">{state.items.length} found</span>
+        )}
       </div>
 
-      {/* independent of the catalog filters above, with its own count */}
-      <p className="mt-1 text-sm text-ink2">
-        Independent marketplace search — the catalog filters above do not apply here.
-        {state.status === "ready" && ` ${state.items.length} live listing${state.items.length === 1 ? "" : "s"} found.`}
-      </p>
-
       {state.status === "loading" && (
-        <div className="mt-3 text-sm text-ink2 [overflow-wrap:anywhere]">Searching Lazada for “{q}”…</div>
+        <div className="mt-2 text-sm text-ink2 [overflow-wrap:anywhere]">Searching Lazada for “{q}”…</div>
       )}
 
       {state.status === "error" && (
-        <div className="mt-3 rounded-lg border border-[#E5E7EB] bg-white p-4 text-sm text-ink2">
+        <div className="mt-2 rounded-lg border border-[#E5E7EB] bg-white p-3 text-sm text-ink2">
           <p className="[overflow-wrap:anywhere]">{state.error}</p>
           <button
             type="button"
             onClick={() => run(state.loadedQuery || q)}
-            className="mt-3 rounded-sm border border-[#C7C7CC] bg-white px-3 py-1.5 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB]"
+            className="mt-2 rounded-sm border border-[#C7C7CC] bg-white px-3 py-1.5 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB]"
           >
             Retry search
           </button>
@@ -125,7 +127,7 @@ export default function LiveSearch({ query }) {
       )}
 
       {state.status === "ready" && state.items.length === 0 && (
-        <div className="mt-3 text-sm text-ink2 [overflow-wrap:anywhere]">No live listings found for “{q}”.</div>
+        <div className="mt-2 text-sm text-ink2 [overflow-wrap:anywhere]">No live listings found for “{q}”.</div>
       )}
 
       {state.items.length > 0 && (

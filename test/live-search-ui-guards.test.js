@@ -53,14 +53,12 @@ test("GW-11: the live search no longer auto-fetches a fixed number of pages", ()
 
 
 test("GW-12: the live section says it is independent of the catalog filters", () => {
-  assert.match(live, /Independent marketplace search/,
+  assert.match(live, /independent of the filters above/,
     "the live section is labelled as an independent search");
-  assert.match(live, /catalog filters above do not apply here/,
-    "the section states that the catalog filters do not apply");
 });
 
 test("GW-12: the live section shows its own result count", () => {
-  assert.match(live, /live listing\$\{state\.items\.length === 1 \? "" : "s"\} found/,
+  assert.match(live, /\{state\.items\.length\} found/,
     "the live section reports how many listings it found");
 });
 
