@@ -175,9 +175,9 @@ function Stats() {
   const avg = rated.length
     ? (rated.reduce((s, g) => s + g.rating, 0) / rated.length).toFixed(1)
     : null;
-  // Only categories that actually hold products count. An admin-created
-  // empty category ("qwert") is not a category the site covers.
-  const covered = GW.categories.filter((c) => GW.gadgetsInCategory(c.id).length > 0).length;
+  // every configured category counts — the list is admin-managed, so a
+  // category the admin added shows up even before its products load
+  const covered = GW.categories.length;
   const cells = [
     [String(n), 'gadgets tracked'],
     [reviews ? `${reviews.toLocaleString('en-US')}+` : 'No reviews', 'marketplace reviews'],
@@ -298,11 +298,9 @@ const CAT_ICONS = {
 };
 
 function Categories({ hideCounts = false }) {
-  // Only categories that actually hold products are navigation targets. An
-  // admin-created empty category ("qwert / 0 gadgets") is not one of them.
-  // When the catalog failed to load the counts are unknown, so every category
-  // stays reachable.
-  const usable = GW.categories.filter((c) => hideCounts || GW.gadgetsInCategory(c.id).length > 0);
+  // every configured category is shown (the admin manages the list; counts
+  // stay honest at 0 until products arrive for a new one)
+  const usable = GW.categories;
   return (
     <section className="mx-auto max-w-none px-6 lg:px-12 2xl:px-16 py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">

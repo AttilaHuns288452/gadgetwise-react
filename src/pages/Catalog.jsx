@@ -20,7 +20,7 @@ const FEATURE_LABELS = [
 ];
 // filters follow the same category list the catalog fetches (admin-editable)
 const CATS = [["", "All"]];
-const catOptions = () => [...CATS, ...GW.categories.filter((c) => GW.gadgets.some((g) => g.category === c.id)).map((c) => [c.id, c.name])];
+const catOptions = () => [...CATS, ...GW.categories.map((c) => [c.id, c.name])];
 const SORTS = [
   ["featured", "Featured"],
   ["price-asc", "Price: low to high"],

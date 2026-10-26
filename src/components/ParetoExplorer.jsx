@@ -137,7 +137,7 @@ export default function ParetoExplorer() {
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Category
           <select value={cat} onChange={(e) => setCat(e.target.value)} className="field min-w-0 !w-auto max-w-[9rem] !py-1.5">
             <option value="all">All</option>
-            {GW.categories.filter((c) => GW.gadgets.some((g) => g.category === c.id)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {GW.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
         <label className="flex min-w-0 items-center gap-2 text-sm text-ink2">Brand

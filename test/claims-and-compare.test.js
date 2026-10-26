@@ -77,12 +77,12 @@ test("removing a url-seeded id updates the authoritative selection", () => {
     "remove also rewrites the ?ids= link from the SAME list, so the id cannot come back");
 });
 
-// --- GW-22: counts come from categories that actually have products ---
-test("home counts only categories that hold products", () => {
-  assert.match(home, /GW\.categories\.filter\(\(c\) => GW\.gadgetsInCategory\(c\.id\)\.length > 0\)\.length/,
-    "the 'categories covered' stat counts only product-bearing categories");
-  assert.match(home, /const usable = GW\.categories\.filter\(\(c\) => hideCounts \|\| GW\.gadgetsInCategory\(c\.id\)\.length > 0\)/,
-    "the category tiles only render categories that hold products");
+// --- the category list is admin-managed and shown whole ---
+test("home shows every configured category", () => {
+  assert.match(home, /const covered = GW\.categories\.length/,
+    "the 'categories covered' stat counts every configured category");
+  assert.match(home, /const usable = GW\.categories;/,
+    "the category tiles render the admin-managed list as-is");
 });
 
 // --- GW-32: the register form shows the whole password policy up front ---
