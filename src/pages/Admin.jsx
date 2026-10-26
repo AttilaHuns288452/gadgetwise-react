@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
+import { loadAllReviews, editReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -161,20 +161,15 @@ function Dashboard({ tab, stats, pendingRows }) {
     ["Products tracked", s.total, { text: `${s.categories.length} categories`, neutral: true }, {}],
     ["Avg list price", money(s.avgPrice), { text: "across live catalog", neutral: true }, {}],
     ["Rated products", s.withRating, { text: s.withRating ? `${s.avgRating} avg rating` : "No ratings yet", neutral: !s.withRating }, {}],
-    ["Pending reviews", pendingRows.length,
-      pendingRows.length ? { text: "needs moderation", down: true } : { text: "queue is clear", neutral: true },
-      pendingRows.length ? { tone: "amber" } : {}],
   ];
-  const preview = pendingRows.slice(0, 4);
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Dashboard</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog and moderation queues. Product figures are counted live from the marketplace catalog; no traffic metrics are invented.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">Catalog management. Product figures are counted live from the marketplace catalog; no traffic metrics are invented.</p>
         </div>
         <div className="flex gap-3">
-          <button className={btnSecondary} onClick={() => tab("reviews")}>Moderation queue</button>
           <button className={btnPrimary} onClick={() => tab("gadgets")}><Ico n="cube" size={16} /> View catalog</button>
         </div>
       </div>
@@ -197,18 +192,6 @@ function Dashboard({ tab, stats, pendingRows }) {
         </Panel>
         <Panel title="Product views — last 4 weeks">
           <MiniBars data={views.weeklyViews.map((n) => n || 0)} labels={["4 wks", "3 wks", "2 wks", "This week"]} />
-        </Panel>
-        <Panel title="Moderation queue preview">
-          <ul className="space-y-3">
-            {preview.map((r) => (
-              <li key={r.id} className="flex items-center gap-3">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-[#D9A441]" />
-                <span className="min-w-0 flex-1 truncate text-[15px] text-[#111827]">{r.gadget} · {r.rating}★</span>
-                <span className="shrink-0 text-[13px] text-[#6B7280]">{r.user} · {r.date}</span>
-              </li>
-            ))}
-          </ul>
-          <button className={`${btnOutline} mt-5 w-full`} onClick={() => tab("reviews")}>Open moderation queue</button>
         </Panel>
       </div>
 
@@ -658,48 +641,24 @@ function Integrations({ toast }) {
 }
 
 function Reviews({ rows, setRows, loaded, reload, toast }) {
-  const [filter, setFilter] = useState("all");
   const [edit, setEdit] = useState(null);
   const [busy, setBusy] = useState(null);
-  const pending = rows.filter((r) => r.status === "pending").length;
-  const shown = rows.filter((r) => filter === "all" || r.status === filter);
-  // Real DB write. Only report success after the database confirms — never
-  // flip local state and claim success on a failed write.
-  const setStatus = async (id, status) => {
-    setBusy(id);
-    const res = await setReviewStatus(id, status);
-    setBusy(null);
-    if (!res.ok) {
-      toast(`Could not update review: ${res.error}`, "alert");
-      return;
-    }
-    setRows(rows.map((r) => (r.id === id ? { ...r, status } : r)));
-    toast(status === "approved" ? "Review approved — now visible on the gadget page" : "Review rejected — hidden from the public site",
-      status === "approved" ? "checkCircle" : "x");
-  };
+  // reviews publish on their own; the only gate is the forbidden-words list,
+  // so this page is for editing content, not deciding who gets heard
+  const shown = rows;
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-[30px] font-bold text-[#111827]">Review Moderation</h1>
-        <span className="rounded-full bg-[#FCF3E4] px-3 py-1 text-[13px] font-semibold text-[#8A6520]">{pending} pending</span>
+        <h1 className="text-[30px] font-bold text-[#111827]">Community reviews</h1>
       </div>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Approve, reject, edit, or delete community reviews before they appear on product pages.</p>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {["all", "pending", "approved", "rejected"].map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-2 text-[14px] font-semibold capitalize ${filter === f ? "bg-[#2260D4] text-white" : "border border-[#D9DEE7] bg-white text-[#344054] hover:bg-[#F5F8FF]"}`}>
-            {f}
-          </button>
-        ))}
-      </div>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Reviews publish automatically. The only rule enforced is the forbidden-words list — this page exists to edit content that crosses it.</p>
 
       <div className="mt-5 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-[#EAECF0]">
               <th className={headCls}>Gadget · Reviewer</th><th className={headCls}>Rating</th><th className={headCls}>Review</th>
-              <th className={headCls}>Status</th><th className={`${headCls} text-right`}>Actions</th>
+              <th className={`${headCls} text-right`}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -713,26 +672,21 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
                 <td className={`${cellCls} max-w-md`}>
                   <span className={r.status === "pending" ? "line-clamp-2 text-[#344054]" : "text-[#344054]"}>{r.text}</span>
                 </td>
-                <td className={cellCls}><Pill kind={r.status}>{r.status}</Pill></td>
                 <td className={cellCls}>
                   <div className="flex justify-end gap-2">
-                    <button className="rounded-md bg-[#111827] px-3 py-1.5 text-[13px] font-semibold text-white disabled:bg-[#D0D5DD] disabled:text-[#98A2B3]"
-                      disabled={busy === r.id || r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
-                    <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7] disabled:opacity-50"
-                      disabled={busy === r.id} onClick={() => setStatus(r.id, "rejected")}>Reject</button>
-          <button className={iconBtn} title="Edit" aria-label={`Edit review of ${r.gadget}`} onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
+                    <button className={iconBtn} title="Edit" aria-label={`Edit review of ${r.gadget}`} onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
                   </div>
                 </td>
               </tr>
             ))}
             {shown.length === 0 && (
-              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={5}>No reviews in this state.</td></tr>
+              <tr><td className={`${cellCls} text-[#6B7280]`} colSpan={4}>No reviews yet.</td></tr>
             )}
           </tbody>
         </table>
       </div>
       <p className="mt-5 text-[13px] text-[#6B7280]">
-        Showing {shown.length} reviews from the catalog dataset. Approved reviews appear on public product pages after the next data refresh.
+        Showing {shown.length} reviews from the catalog dataset. Reviews appear on public product pages right away.
       </p>
 
       {edit && (

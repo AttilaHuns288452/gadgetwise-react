@@ -99,9 +99,6 @@ function ReviewHistory() {
               </div>
               <Stars rating={r.rating} />
               {r.body ? <p className="mt-3 text-sm text-ink2">{r.body}</p> : null}
-              {r.status && r.status !== "approved" && (
-                <p className="mt-2 text-xs font-semibold text-ink3">Status: {r.status}</p>
-              )}
               <div className="mt-4 flex items-center gap-2 border-t border-line pt-3">
                 <button type="button" className="rounded-lg border border-line-strong px-3 py-1.5 text-sm font-semibold text-ink2 transition-colors hover:border-primary hover:text-primary"
                   onClick={() => setEdit({ id: r.id, rating: r.rating, body: r.body || "" })}>

@@ -162,11 +162,6 @@ export async function loadAllReviews() {
   return { ok: true, rows: data || [] };
 }
 
-export async function setReviewStatus(id, status) {
-  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
-  const { error } = await supabase.from("reviews").update({ status }).eq("id", id);
-  return error ? { ok: false, error: error.message } : { ok: true };
-}
 
 export async function editReview(id, { rating, body }) {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
