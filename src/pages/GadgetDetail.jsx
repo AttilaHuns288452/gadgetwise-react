@@ -271,7 +271,7 @@ function GadgetDetail({ compare, onCompare }) {
     .filter(Boolean)
     .join(" ");
 
-  // Ownership cost numbers (same 36-month formula everywhere).
+  // Ownership cost numbers (same 24-month formula everywhere).
   const over1 = monthly == null ? "N/A" : money(monthly * 12);
   const over3 = priceKnown ? money(g.price) : "Unavailable";
   const coverPct = wYears == null ? null : Math.round((wYears / (GW.MONTHS_WINDOW / 12)) * 100);
@@ -297,7 +297,6 @@ function GadgetDetail({ compare, onCompare }) {
   const submitReview = async () => {
     if (!requireAuth("write a review")) return;
     if (submitting) return; // one click, one review row
-    if (!text.trim()) { setRvErr("Your review cannot be empty."); focusField("#rv-text"); return; }
     setSubmitting(true);
     const res = await submitReviewRecord(uid, {
       gadget_id: g.id,
@@ -402,7 +401,7 @@ function GadgetDetail({ compare, onCompare }) {
           </div>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
             <h1 className="text-3xl sm:text-4xl">{g.model}</h1>
-            <div className="sm:text-right">
+            <div>
               <div className="mono text-3xl font-semibold text-primary-dark sm:text-4xl">
                 {priceKnown ? money(g.price) : "Price unavailable"}
               </div>
@@ -412,7 +411,7 @@ function GadgetDetail({ compare, onCompare }) {
             </div>
           </div>
           <p className="mt-1 text-xs text-ink3">
-            Price spread over a 36-month window. Not a selling price.
+            Price spread over a 24-month window. Not a selling price.
           </p>
           <p className="mt-4 text-ink2">{desc}</p>
           <div className="mt-4">
@@ -450,7 +449,7 @@ function GadgetDetail({ compare, onCompare }) {
               </span>
             </div>
             <p className="mt-2 text-xs text-ink3">
-              Estimate only. Price spread over a fixed 36-month usage window. The same assumption for every gadget, so numbers stay comparable.
+              Estimate only. Price spread over a fixed 24-month usage window. The same assumption for every gadget, so numbers stay comparable.
             </p>
           </div>
 
@@ -459,12 +458,12 @@ function GadgetDetail({ compare, onCompare }) {
             <Disclose title="How this estimate is calculated" open>
               <div className="rounded-sm border border-dashed border-line-strong bg-surface2 p-4 text-center text-xs break-words sm:text-sm">
                 <div className="text-ink2">Cost per month =</div>
-                <div className="mono mt-1 text-ink">Product Price ÷ 36-month usage window</div>
+                <div className="mono mt-1 text-ink">Product Price ÷ 24-month usage window</div>
                 {monthly == null ? (
                   <div className="mono mt-1 text-ink">Price unavailable. This listing has no price</div>
                 ) : (
                   <>
-                    <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36 =</div>
+                    <div className="mono mt-1 text-ink">{money(g.price)} ÷ 24 =</div>
                     <div className="mono mt-1 font-semibold text-primary-dark">
                       ≈ {money(monthly)} per month
                     </div>
@@ -689,12 +688,12 @@ function GadgetDetail({ compare, onCompare }) {
             <div className="card p-6">
               <h2 className="text-xl font-semibold">Cost per month</h2>
               <div className="mt-4 rounded-sm border border-dashed border-line-strong p-4 text-center text-xs break-words sm:text-sm">
-                <div className="text-ink2">Price ÷ 36-month window</div>
+                <div className="text-ink2">Price ÷ 24-month window</div>
                 {monthly == null ? (
                   <div className="mono mt-1 text-ink">Price unavailable</div>
                 ) : (
                   <>
-                    <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36</div>
+                    <div className="mono mt-1 text-ink">{money(g.price)} ÷ 24</div>
                     <div className="mono mt-1 font-semibold text-primary-dark">≈ {money(monthly)} / month</div>
                   </>
                 )}
@@ -856,7 +855,7 @@ function GadgetDetail({ compare, onCompare }) {
       {reviewOpen && (
         <Modal
           title="Write a review"
-          sub="Reviews go to the moderation queue before appearing publicly."
+          sub="A rating on its own is fine. Your review appears on this page right away."
           onClose={() => setReviewOpen(false)}
           actions={
             <>
@@ -864,7 +863,7 @@ function GadgetDetail({ compare, onCompare }) {
                 Cancel
               </button>
               <button type="button" className={btnPrimaryCls} onClick={submitReview} disabled={submitting}>
-                {submitting ? "Submitting…" : "Submit for moderation"}
+                {submitting ? "Posting…" : "Post review"}
               </button>
             </>
           }
@@ -877,7 +876,7 @@ function GadgetDetail({ compare, onCompare }) {
           </div>
           <div>
             <label className={fieldLabelCls} htmlFor="rv-text">
-              Your review
+              Your review (optional)
             </label>
             <textarea
               id="rv-text"
@@ -889,6 +888,7 @@ function GadgetDetail({ compare, onCompare }) {
               aria-invalid={rvErr ? "true" : undefined}
               aria-describedby={rvErr ? "rv-text-error" : undefined}
             />
+            <p className="mt-1.5 text-xs text-ink2">A rating on its own is fine. Words are optional.</p>
             {rvErr && <FieldError id="rv-text">{rvErr}</FieldError>}
           </div>
         </Modal>

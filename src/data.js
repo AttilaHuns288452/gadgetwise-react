@@ -78,12 +78,12 @@ GW.gadgetsInCategory = function (catId) { return GW.gadgets.filter(g => g.catego
 
 GW.gadgetsByIds = function (ids) { return ids.map(GW.getGadget).filter(Boolean); };
 
-/* Cost per month (spec 18): price spread over a 36-month usage window -
+/* Cost per month (spec 18): price spread over a 24-month usage window -
 
    a fixed, documented assumption for ALL gadgets (comparable within
    category), not a per-product lifespan invention. */
 
-GW.MONTHS_WINDOW = 36;
+GW.MONTHS_WINDOW = 24;
 
 GW.monthlyCost = function (g) {
   return g.price / GW.MONTHS_WINDOW;

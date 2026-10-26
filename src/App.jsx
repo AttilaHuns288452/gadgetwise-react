@@ -529,7 +529,7 @@ export default function App() {
               <Logo size={16} tone="light" showWordmark={false} />
               <span>GadgetWise. A student gadget comparison tool. Not a store; no products are sold here.</span>
             </span>
-            <span>Cost estimates use a fixed 36-month window so products stay comparable.</span>
+            <span>Cost estimates use a fixed 24-month window so products stay comparable.</span>
           </div>
         </div>
       </footer>

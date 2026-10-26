@@ -295,7 +295,7 @@ function reasons(gadget, breakdown, opts) {
     else out.push(`Fits your ${opts.budget.label} budget at ${money(gadget.price)}`);
   } else if (f.budget && f.budget.earned >= f.budget.max * 0.6) out.push(`Close to your budget at ${money(gadget.price)}`);
   if (f.academic && f.academic.earned >= f.academic.max * 0.7) out.push(`Strong fit for ${opts.useCase.label.toLowerCase()}`);
-  if (f.value && f.value.max >= 6 && f.value.earned >= f.value.max * 0.7) out.push(`Low cost per month (${money(GW.monthlyCost(gadget))}/month, 36-month window)`);
+  if (f.value && f.value.max >= 6 && f.value.earned >= f.value.max * 0.7) out.push(`Low cost per month (${money(GW.monthlyCost(gadget))}/month, 24-month window)`);
   if (f.performance && f.performance.earned >= f.performance.max * 0.75) out.push("Strong sustained performance for schoolwork");
   if (f.battery && f.battery.earned >= f.battery.max * 0.75) out.push("Battery comfortably lasts a full class day");
   if (f.display && f.display.earned >= f.display.max * 0.75) out.push("Display is easy on the eyes for long reading");
@@ -423,10 +423,10 @@ export function enrich(g) {
       status: "unavailable", reason: "No valid higher reference price from the listing" });
   }
 
-  // 3. Price per month - amortized allocation over a fixed 36-month window.
+  // 3. Price per month - amortized allocation over a fixed 24-month window.
   if (isNum(g.price) && g.price > 0) {
-    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: Math.round((g.price / 36) * 100) / 100, unit: "/month",
-      status: "estimated", method: "Price \u00f7 36 months (fixed allocation, not a lifespan or total-cost claim)" });
+    out.push({ id: "pricePerMonth", label: "Purchase price per month", value: Math.round((g.price / 24) * 100) / 100, unit: "/month",
+      status: "estimated", method: "Price \u00f7 24 months (fixed allocation, not a lifespan or total-cost claim)" });
   } else {
     out.push({ id: "pricePerMonth", label: "Purchase price per month", value: null, unit: "/month",
       status: "unavailable", reason: "No valid price" });

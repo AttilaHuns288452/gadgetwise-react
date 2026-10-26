@@ -399,7 +399,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                   (highestRated
                     ? `Marketplace ratings put ${GW.displayName(highestRated)} highest (${highestRated.rating.toFixed(1)}★ from ${highestRated.reviewCount} marketplace reviews). `
                     : "None of these listings has a marketplace rating yet. ") +
-                  `All monthly costs use the same fixed 36-month window, so the comparison stays apples-to-apples.`;
+                  `All monthly costs use the same fixed 24-month window, so the comparison stays apples-to-apples.`;
             const check = (
               <svg viewBox="0 0 16 16" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="m3 8.5 3 3 7-7" />
@@ -451,7 +451,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                 </div>
                 <p className="mt-4 text-sm text-ink2">
                   Highlighted cells mark a difference of at least 8%. Near-ties stay unmarked. Monthly cost uses a fixed
-                  36-month window. Ratings and review counts come from the marketplace, not from GadgetWise users.
+                  24-month window. Ratings and review counts come from the marketplace, not from GadgetWise users.
                 </p>
               </>
             );

@@ -231,7 +231,7 @@ function BudgetPicker() {
         <div className="min-w-0">
           <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">What does your budget actually get?</h2>
           <p className="mt-2 max-w-[52ch] text-base text-ink2">
-            Move the slider. These are real listings from the live catalog, with the same 36-month ownership math used everywhere else on GadgetWise.
+            Move the slider. These are real listings from the live catalog, with the same 24-month ownership math used everywhere else on GadgetWise.
           </p>
           <div className="mt-6">
             <div className="flex items-baseline justify-between gap-3">
@@ -332,7 +332,7 @@ function Categories({ hideCounts = false }) {
 }
 
 const MISS = [
-  ['₱ / month', 'Not just the sticker price', 'Price ÷ fixed 36-month window. The same math for every gadget, so numbers compare fairly.'],
+  ['₱ / month', 'Not just the sticker price', 'Price ÷ fixed 24-month window. The same math for every gadget, so numbers compare fairly.'],
   ['Repair path', 'What happens after something breaks', 'Where the listing provides one, the repair path is named. Standard upgradeable slots to authorized service only.'],
   ['Academic fit', 'What actually works for your course or workflow', 'Programming, design, online classes: the ranking adjusts to your use.'],
 ];

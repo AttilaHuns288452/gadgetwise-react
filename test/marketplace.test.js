@@ -152,7 +152,7 @@ test("GW.getGadget still returns null for unknown ids", () => {
 
 test("monthly cost formula works on real prices", () => {
   const g = toGadget(RAW);
-  assert.ok(Math.abs(GW.monthlyCost(g) - 86890 / 36) < 1e-9);
+  assert.ok(Math.abs(GW.monthlyCost(g) - 86890 / 24) < 1e-9);
 });
 
 test("isListingId distinguishes marketplace ids", () => {
