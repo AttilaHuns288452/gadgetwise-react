@@ -179,6 +179,12 @@
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 /* one consistent keyboard ring across the app */
+/* validation state: driven by aria-invalid so every form gets it for free */
+input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] {
+  border-color: var(--color-danger, #b3372e);
+  box-shadow: 0 0 0 3px rgba(179, 55, 46, 0.12);
+}
+
 :where(a, button, input, select, textarea, [role="button"], [role="tab"]):focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;

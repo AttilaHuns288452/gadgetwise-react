@@ -6,7 +6,7 @@ import { Logo } from "../components/ui.jsx";
 import { loadAllReviews, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
-import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName, focusField } from "../components/ui.jsx";
+import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName, focusField, FieldError } from "../components/ui.jsx";
 
 const ICONS = {
   dashboard: "M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z",
@@ -256,14 +256,16 @@ function Gadgets({ toast }) {
   const cats = GW.categories.map((c) => c.id);
   const reload = async () => { const r = await loadProducts(); if (r.ok) setRows(r.rows); };
   useEffect(() => { reload(); }, []);
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k, v) => { setErr(null); setForm((f) => ({ ...f, [k]: v })); };
+  const [err, setErr] = useState(null); // {field, msg}
+  const fail = (field, msg) => { setErr({ field, msg }); focusField("#" + field); };
   const save = async () => {
-    if (!form?.model?.trim()) { toast("Model name is required", "alert"); focusField("#adm-model"); return; }
+    if (!form?.model?.trim()) { fail("adm-model", "Model name is required."); return; }
     // trust-boundary validation: reject malformed prices before they reach the DB
     const price = form.price === "" || form.price == null ? null : Number(form.price);
     const orig = form.original_price === "" || form.original_price == null ? null : Number(form.original_price);
-    if (price != null && (!Number.isFinite(price) || price <= 0)) { toast("Price must be a number greater than zero", "alert"); focusField("#adm-price"); return; }
-    if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { toast("Original price must be a number greater than zero", "alert"); focusField("#adm-price"); return; }
+    if (price != null && (!Number.isFinite(price) || price <= 0)) { fail("adm-price", "Price must be a number greater than zero."); return; }
+    if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { fail("adm-orig-price", "Original price must be a number greater than zero."); return; }
     const res = await saveProduct(form.id || null, { ...form, price, original_price: orig });
     if (res.ok) { setForm(null); await reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
     else toast(res.error || "Could not save", "alert");
@@ -301,14 +303,20 @@ function Gadgets({ toast }) {
           <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit gadget" : "New gadget"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Brand"><input className={fieldInputCls} value={form.brand || ""} onChange={(e) => set("brand", e.target.value)} placeholder="e.g. Samsung" /></Field>
-            <Field label="Model"><input id="adm-model" className={fieldInputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Galaxy A55" /></Field>
+            <Field label="Model"><input id="adm-model" className={fieldInputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Galaxy A55"
+              aria-invalid={err?.field === "adm-model" ? "true" : undefined} aria-describedby={err?.field === "adm-model" ? "adm-model-error" : undefined} />
+              {err?.field === "adm-model" && <FieldError id="adm-model">{err.msg}</FieldError>}</Field>
             <Field label="Category">
               <select className={fieldInputCls} value={form.category || ""} onChange={(e) => set("category", e.target.value)}>
                 {cats.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </Field>
-            <Field label="Price (₱)"><input id="adm-price" type="number" className={fieldInputCls} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="0" /></Field>
-            <Field label="Original price (₱, optional)"><input type="number" className={fieldInputCls} value={form.original_price || ""} onChange={(e) => set("original_price", e.target.value)} /></Field>
+            <Field label="Price (₱)"><input id="adm-price" type="number" className={fieldInputCls} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="0"
+              aria-invalid={err?.field === "adm-price" ? "true" : undefined} aria-describedby={err?.field === "adm-price" ? "adm-price-error" : undefined} />
+              {err?.field === "adm-price" && <FieldError id="adm-price">{err.msg}</FieldError>}</Field>
+            <Field label="Original price (₱, optional)"><input id="adm-orig-price" type="number" className={fieldInputCls} value={form.original_price || ""} onChange={(e) => set("original_price", e.target.value)}
+              aria-invalid={err?.field === "adm-orig-price" ? "true" : undefined} aria-describedby={err?.field === "adm-orig-price" ? "adm-orig-price-error" : undefined} />
+              {err?.field === "adm-orig-price" && <FieldError id="adm-orig-price">{err.msg}</FieldError>}</Field>
             <Field label="Image URL"><input className={fieldInputCls} value={form.image || ""} onChange={(e) => set("image", e.target.value)} placeholder="https://…" /></Field>
             <div className="sm:col-span-2"><Field label="Description"><textarea rows="3" className={fieldInputCls} value={form.description || ""} onChange={(e) => set("description", e.target.value)} /></Field></div>
           </div>
@@ -397,11 +405,13 @@ function Gadgets({ toast }) {
 function Categories({ toast }) {
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(null); // {id?, name, blurb, sort_order}
+  const [err, setErr] = useState(null); // {field, msg}
+  const fail = (field, msg) => { setErr({ field, msg }); focusField("#" + field); };
   const reload = async () => { const r = await loadCategories(); if (r.ok) setRows(r.rows); };
   useEffect(() => { reload(); }, []);
   const categoryCounts = GW.gadgets.reduce((map, g) => map.set(g.category, (map.get(g.category) || 0) + 1), new Map());
   const save = async () => {
-    if (!form?.name?.trim()) { toast("Name is required", "alert"); focusField("#adm-cat-name"); return; }
+    if (!form?.name?.trim()) { fail("adm-cat-name", "Name is required."); return; }
     // the slug is the app's category id: derive it from the name once (creating),
     // never rename it afterwards (products and quiz cases reference it)
     const slug = form.slug || form.name;
@@ -448,7 +458,9 @@ function Categories({ toast }) {
         <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
           <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit category" : "New category"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Name"><input id="adm-cat-name" className={fieldInputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Smartphones" /></Field>
+            <Field label="Name"><input id="adm-cat-name" className={fieldInputCls} required value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setErr(null); }} placeholder="e.g. Smartphones"
+              aria-invalid={err?.field === "adm-cat-name" ? "true" : undefined} aria-describedby={err?.field === "adm-cat-name" ? "adm-cat-name-error" : undefined} />
+              {err?.field === "adm-cat-name" && <FieldError id="adm-cat-name">{err.msg}</FieldError>}</Field>
             <Field label="Sort order"><input type="number" className={fieldInputCls} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></Field>
             <div className="sm:col-span-2">
               <Field label="Marketplace search query">
@@ -1074,6 +1086,8 @@ function ForbiddenWords({ toast }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [form, setForm] = useState(null); // {id?, phrase, category, enabled}
+  const [err, setErr] = useState(null); // {field, msg}
+  const fail = (field, msg) => { setErr({ field, msg }); focusField("#" + field); };
   const [saving, setSaving] = useState(false);
   const [delTarget, setDelTarget] = useState(null);
   const [delBusy, setDelBusy] = useState(false);
@@ -1090,7 +1104,7 @@ function ForbiddenWords({ toast }) {
     setSaving(true);
     const res = await saveForbiddenWord(form);
     setSaving(false);
-    if (!res.ok) { toast(res.error, "alert"); focusField("#fw-phrase"); return; }
+    if (!res.ok) { fail("fw-phrase", res.error || "Could not save the entry."); return; }
     setForm(null);
     reload();
     toast(form.id ? "Entry updated" : "Entry added");
@@ -1142,7 +1156,10 @@ function ForbiddenWords({ toast }) {
           <div>
             <label className={fieldLabelCls} htmlFor="fw-phrase">Word or phrase</label>
             <input id="fw-phrase" className={fieldInputCls} value={form.phrase} maxLength={80}
-              onChange={(e) => setForm({ ...form, phrase: e.target.value })} placeholder="e.g. spam link" />
+              onChange={(e) => { setForm({ ...form, phrase: e.target.value }); setErr(null); }} placeholder="e.g. spam link"
+              aria-invalid={err?.field === "fw-phrase" ? "true" : undefined}
+              aria-describedby={err?.field === "fw-phrase" ? "fw-phrase-error" : undefined} />
+            {err?.field === "fw-phrase" && <FieldError id="fw-phrase">{err.msg}</FieldError>}
             <p className="mt-1 text-xs text-[#667085]">Case and punctuation are ignored when matching. Max 80 characters.</p>
           </div>
           <div>

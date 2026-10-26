@@ -3,7 +3,7 @@
 // refresh doesn't restart the flow.
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, focusField } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, focusField, FieldError } from "../components/ui.jsx";
 import {
   useAuth, maskEmail, sanitizeOtp, cooldownSeconds, liveSessionUserId,
   readRecoveryState, writeRecoveryState, clearRecoveryState, notifyRecoveryChanged, endRecoveryFlow,
@@ -43,6 +43,8 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [errField, setErrField] = useState("");
+  const fail = (field, msg) => { setError(msg); setErrField(field); focusField("#" + field); };
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -137,8 +139,8 @@ export default function ResetPassword() {
     setError("");
     setNotice("");
     const clean = email.trim();
-    if (!clean) { setError("Enter your email address."); focusField("#reset-email"); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) { setError("Enter a valid email address."); focusField("#reset-email"); return; }
+    if (!clean) { fail("reset-email", "Enter your email address."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) { fail("reset-email", "Enter a valid email address."); return; }
     setBusy(true);
     const { error: err } = await requestRecoveryCode(clean);
     setBusy(false);
@@ -168,20 +170,18 @@ export default function ResetPassword() {
     setNotice("");
     const digits = sanitizeOtp(code);
     if (digits.length !== OTP_LENGTH) {
-      setError(`Enter the ${OTP_LENGTH}-digit code from your email.`);
-      focusField("#reset-code");
+      fail("reset-code", `Enter the ${OTP_LENGTH}-digit code from your email.`);
       return;
     }
     setBusy(true);
     const { error: err, user: verified } = await verifyRecoveryCode(email.trim(), digits);
     setBusy(false);
     if (err) {
-      setError(
+      fail("reset-code",
         /expired|invalid/i.test(err.message || "")
           ? "That code is not valid or has expired. Check it, or request a new one."
           : err.message || "Could not verify the code. Try again."
       );
-      focusField("#reset-code");
       return;
     }
     setCode(""); // the code is spent; never keep it around
@@ -193,8 +193,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
     const policy = passwordPolicyError(password);
-    if (policy) { setError(policy); focusField("#new-pw"); return; }
-    if (password !== confirm) { setError("The two passwords do not match."); focusField("#new-pw-confirm"); return; }
+    if (policy) { fail("new-pw", policy); return; }
+    if (password !== confirm) { fail("new-pw-confirm", "The two passwords do not match."); return; }
     setBusy(true);
     const { error: err } = await setNewPassword(password);
     setBusy(false);
@@ -233,13 +233,16 @@ export default function ResetPassword() {
     >
       <div ref={bodyRef}>
         {stage === "email" && (
-          <form onSubmit={sendCode} noValidate className="space-y-5">
+          <form onSubmit={sendCode} noValidate onInput={() => { setError(""); setErrField(""); }} className="space-y-5">
             <div>
               <label className={fieldLabelCls} htmlFor="reset-email">Email</label>
               <input id="reset-email" type="email" required autoComplete="email" value={email}
-                onChange={(e) => setEmail(e.target.value)} placeholder="you@student.edu" className={fieldInputCls} />
+                onChange={(e) => setEmail(e.target.value)} placeholder="you@student.edu" className={fieldInputCls}
+                aria-invalid={errField === "reset-email" ? "true" : undefined}
+                aria-describedby={errField === "reset-email" ? "reset-email-error" : undefined} />
+              {errField === "reset-email" && <FieldError id="reset-email">{error}</FieldError>}
             </div>
-            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            {error && !errField && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
             <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
               {busy ? "Sending code…" : "Send recovery code"}
             </button>
@@ -259,7 +262,7 @@ export default function ResetPassword() {
               </p>
             </div>
             {notice && <p role="status" className="rounded-lg bg-[#FFF8E6] px-4 py-2.5 text-sm font-medium text-[#6B4E12]">{notice}</p>}
-            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            {error && !errField && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
             <button type="button" onClick={() => { setStage("otp"); setError(""); setNotice(""); }} className={btnPrimaryCls + " w-full"}>
               Enter verification code
             </button>
@@ -271,11 +274,13 @@ export default function ResetPassword() {
         )}
 
         {stage === "otp" && (
-          <form onSubmit={verify} noValidate className="space-y-5">
+          <form onSubmit={verify} noValidate onInput={() => { setError(""); setErrField(""); }} className="space-y-5">
             <div>
               <label className={fieldLabelCls} htmlFor="reset-code">Verification code</label>
               <input
                 id="reset-code"
+                aria-invalid={errField === "reset-code" ? "true" : undefined}
+                aria-describedby={(errField === "reset-code" ? "reset-code-error " : "") + "reset-code-help"}
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
@@ -298,7 +303,7 @@ export default function ResetPassword() {
                 {OTP_LENGTH} digits. Paste the code from the email if you like.
               </p>
             </div>
-            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            {error && !errField && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
             <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
               {busy ? "Verifying…" : "Verify code"}
             </button>
@@ -316,19 +321,21 @@ export default function ResetPassword() {
         )}
 
         {stage === "password" && (
-          <form onSubmit={savePassword} noValidate className="space-y-5">
+          <form onSubmit={savePassword} noValidate onInput={() => { setError(""); setErrField(""); }} className="space-y-5">
             <div>
               <label className={fieldLabelCls} htmlFor="new-pw">New password</label>
               <PasswordField id="new-pw" minLength={PASSWORD_MIN} autoComplete="new-password" value={password}
-                onChange={(e) => setPassword(e.target.value)} placeholder={`At least ${PASSWORD_MIN} characters`} />
+                onChange={(e) => setPassword(e.target.value)} placeholder={`At least ${PASSWORD_MIN} characters`} invalid={errField === "new-pw"} />
+              {errField === "new-pw" && <FieldError id="new-pw">{error}</FieldError>}
               <p className="mt-1.5 text-xs text-ink2">At least {PASSWORD_MIN} characters.</p>
             </div>
             <div>
               <label className={fieldLabelCls} htmlFor="new-pw-confirm">Confirm new password</label>
               <PasswordField id="new-pw-confirm" minLength={PASSWORD_MIN} autoComplete="new-password" value={confirm}
-                onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat it" />
+                onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat it" invalid={errField === "new-pw-confirm"} />
+              {errField === "new-pw-confirm" && <FieldError id="new-pw-confirm">{error}</FieldError>}
             </div>
-            {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+            {error && !errField && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
             <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
               {busy ? "Saving…" : "Set new password"}
             </button>

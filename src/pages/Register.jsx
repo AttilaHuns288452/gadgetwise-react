@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, btnOutlineCls, focusField } from "../components/ui.jsx";
+import { fieldLabelCls, fieldInputCls, PasswordField, AuthLayout, btnPrimaryCls, btnOutlineCls, focusField, FieldError } from "../components/ui.jsx";
 import { useAuth, safeNext, PASSWORD_MIN, passwordPolicyError } from "../lib/auth.js";
 
 function Register() {
@@ -18,6 +18,8 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [errField, setErrField] = useState("");
+  const fail = (field, msg) => { setError(msg); setErrField(field); focusField("#" + field); };
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -29,10 +31,10 @@ function Register() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(""); setNotice("");
+    setError(""); setErrField(""); setNotice("");
     const policy = passwordPolicyError(password);
-    if (policy) { setError(policy); focusField("#reg-password"); return; }
-    if (password !== confirm) { setError("The two passwords do not match."); focusField("#reg-password-confirm"); return; }
+    if (policy) { fail("reg-password", policy); return; }
+    if (password !== confirm) { fail("reg-password-confirm", "The two passwords do not match."); return; }
     setBusy(true);
     const { error: err, needsConfirm } = await signUp(name, email.trim(), password);
     setBusy(false);
@@ -52,7 +54,7 @@ function Register() {
         </Link>
       </>}
     >
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} onInput={() => { setError(""); setErrField(""); }} className="space-y-5">
         <div>
           <label className={fieldLabelCls} htmlFor="reg-name">Name</label>
           <input id="reg-name" type="text" required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)}
@@ -66,7 +68,8 @@ function Register() {
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password">Password</label>
           <PasswordField id="reg-password" minLength={PASSWORD_MIN} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder={`At least ${PASSWORD_MIN} characters`} />
+            placeholder={`At least ${PASSWORD_MIN} characters`} invalid={errField === "reg-password"} />
+          {errField === "reg-password" && <FieldError id="reg-password">{error}</FieldError>}
           {/* The full policy, up front: the form also requires a lowercase
               letter, an uppercase letter, a digit and a symbol. */}
           <ul className="mt-1.5 space-y-0.5 text-xs text-ink2">
@@ -80,7 +83,8 @@ function Register() {
         <div>
           <label className={fieldLabelCls} htmlFor="reg-password-confirm">Confirm password</label>
           <PasswordField id="reg-password-confirm" minLength={PASSWORD_MIN} autoComplete="new-password" value={confirm}
-            onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the password" />
+            onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat the password" invalid={errField === "reg-password-confirm"} />
+          {errField === "reg-password-confirm" && <FieldError id="reg-password-confirm">{error}</FieldError>}
         </div>
         <button type="submit" disabled={busy} className={btnPrimaryCls + " w-full disabled:opacity-60"}>
           {busy ? "Creating account…" : "Create account"}
@@ -97,7 +101,7 @@ function Register() {
           </svg>
           Continue with Google
         </button>
-        {error && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
+        {error && !errField && <p role="alert" className="rounded-lg bg-[#f9e9e7] px-4 py-2.5 text-sm font-medium text-[#b3372e]">{error}</p>}
         {notice && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">{notice}</p>}
         {!configured && (
           <p className="text-center text-xs text-ink2">Sign-in is unavailable: authentication is not configured for this build.</p>

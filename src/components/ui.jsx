@@ -401,8 +401,14 @@ export const btnDangerCls = btnCls + " bg-[#B3372E] text-white hover:bg-[#93291F
 export const fieldLabelCls = "block text-sm font-bold text-[#111827]";
 export const fieldInputCls = "mt-2.5 w-full rounded-[10px] border border-[#C7C7CC] px-5 py-3.5 text-base text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:outline-none";
 
+// inline validation message: lives under its input and is wired to it via
+// aria-describedby; the red border comes from the input's aria-invalid
+export function FieldError({ id, children }) {
+  return <p id={`${id}-error`} role="alert" className="mt-1.5 text-sm font-medium text-[#b3372e]">{children}</p>;
+}
+
 // password field with a real show/hide toggle, shared by every auth form
-export function PasswordField({ id, value, onChange, autoComplete, minLength, placeholder, required = true }) {
+export function PasswordField({ id, value, onChange, autoComplete, minLength, placeholder, required = true, invalid = false }) {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
@@ -415,7 +421,8 @@ export function PasswordField({ id, value, onChange, autoComplete, minLength, pl
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        aria-describedby={`${id}-toggle`}
+        aria-invalid={invalid || undefined}
+        aria-describedby={`${id}-toggle` + (invalid ? ` ${id}-error` : "")}
         className={fieldInputCls + " pr-20"}
       />
       <button

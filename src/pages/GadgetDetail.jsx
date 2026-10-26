@@ -18,7 +18,7 @@ import {
   btnOutlineCls,
   fieldLabelCls,
   fieldInputCls,
-  HeartIcon, ScaleIcon, focusField,
+  HeartIcon, ScaleIcon, focusField, FieldError,
 } from "../components/ui.jsx";
 
 const fmtDate = (d) =>
@@ -149,6 +149,7 @@ function GadgetDetail({ compare, onCompare }) {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [rvErr, setRvErr] = useState("");
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
   // the listing lookup has three honest states - found, not-found (the
@@ -296,7 +297,7 @@ function GadgetDetail({ compare, onCompare }) {
   const submitReview = async () => {
     if (!requireAuth("write a review")) return;
     if (submitting) return; // one click, one review row
-    if (!text.trim()) { toast("Your review cannot be empty", "alert"); focusField("#rv-text"); return; }
+    if (!text.trim()) { setRvErr("Your review cannot be empty."); focusField("#rv-text"); return; }
     setSubmitting(true);
     const res = await submitReviewRecord(uid, {
       gadget_id: g.id,
@@ -884,8 +885,11 @@ function GadgetDetail({ compare, onCompare }) {
               className={fieldInputCls}
               placeholder="How has it held up for schoolwork? Battery? Durability?"
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => { setText(e.target.value); setRvErr(""); }}
+              aria-invalid={rvErr ? "true" : undefined}
+              aria-describedby={rvErr ? "rv-text-error" : undefined}
             />
+            {rvErr && <FieldError id="rv-text">{rvErr}</FieldError>}
           </div>
         </Modal>
       )}
