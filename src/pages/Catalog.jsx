@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GW } from "../lib.js";
 import { parsePriceRange, priceSortValue, withinPriceRange } from "../lib/catalog.js";
-import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, StaleCatalogNote, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
+import { GadgetCard, CatalogLoadingCard, CatalogErrorCard, btnPrimaryCls, btnOutlineCls } from "../components/ui.jsx";
 import LiveSearch from "../components/LiveSearch.jsx";
 
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
@@ -341,7 +341,6 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
           </div>
 
           <p className="mt-3 text-sm text-ink3 [overflow-wrap:anywhere]">{meta}</p>
-          <StaleCatalogNote />
 
           <LiveSearch query={q} />
 
