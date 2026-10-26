@@ -364,7 +364,7 @@ export async function loadCurated() {
       sellerName: "GadgetWise",
       productUrl: null,
       marketplace: false,
-      tagline: p.description || p.model,
+      tagline: "",
       summary: p.description || "GadgetWise-curated product.",
       specs: {},
       specList: [],

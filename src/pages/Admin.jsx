@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
-import { catalogStats } from "../lib/catalog.js";
+import { catalogStats, loadCurated } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
 import { loadAllReviews, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
@@ -254,6 +254,9 @@ function Gadgets({ toast }) {
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(null);
   const cats = GW.categories.map((c) => c.id);
+  // brands present in the live catalog, for the brand dropdown
+  const brands = [...new Set(GW.gadgets.map((g) => String(g.brand || "").trim()).filter((b) => b && !/^(unknown|no brand|n\/a|none)$/i.test(b)))].sort((a, b) => a.localeCompare(b));
+  const [brandMode, setBrandMode] = useState("pick"); // "pick" = dropdown, "new" = typed brand
   const reload = async () => { const r = await loadProducts(); if (r.ok) setRows(r.rows); };
   useEffect(() => { reload(); }, []);
   const set = (k, v) => { setErr(null); setForm((f) => ({ ...f, [k]: v })); };
@@ -261,13 +264,16 @@ function Gadgets({ toast }) {
   const fail = (field, msg) => { setErr({ field, msg }); focusField("#" + field); };
   const save = async () => {
     if (!form?.model?.trim()) { fail("adm-model", "Model name is required."); return; }
+    const brand = String(form.brand || "").trim();
+    if (brandMode === "new" && !brand) { fail("adm-brand", "Enter the new brand name."); return; }
+    if (brand.length > 60) { fail("adm-brand", "Brand name must be 60 characters or fewer."); return; }
     // trust-boundary validation: reject malformed prices before they reach the DB
     const price = form.price === "" || form.price == null ? null : Number(form.price);
     const orig = form.original_price === "" || form.original_price == null ? null : Number(form.original_price);
-    if (price != null && (!Number.isFinite(price) || price <= 0)) { fail("adm-price", "Price must be a number greater than zero."); return; }
+    if (price == null || !Number.isFinite(price) || price <= 0) { fail("adm-price", "Enter a price greater than zero."); return; }
     if (orig != null && (!Number.isFinite(orig) || orig <= 0)) { fail("adm-orig-price", "Original price must be a number greater than zero."); return; }
-    const res = await saveProduct(form.id || null, { ...form, price, original_price: orig });
-    if (res.ok) { setForm(null); await reload(); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
+    const res = await saveProduct(form.id || null, { ...form, brand, price, original_price: orig });
+    if (res.ok) { setForm(null); await reload(); loadCurated().catch(() => {}); toast(form.id ? "Gadget updated" : "Gadget added to the catalog"); }
     else toast(res.error || "Could not save", "alert");
   };
   // Unsaved-changes guard: cancelling an edited form must not silently eat it.
@@ -275,7 +281,7 @@ function Gadgets({ toast }) {
   const [discardOpen, setDiscardOpen] = useState(false);
   const formDirty = !!form && !!pristine && JSON.stringify(form) !== JSON.stringify(pristine);
   const requestClose = () => (formDirty ? setDiscardOpen(true) : setForm(null));
-  const openForm = (f) => { setForm(f); setPristine(f); };
+  const openForm = (f) => { setForm(f); setPristine(f); setBrandMode(f.brand && !brands.includes(String(f.brand).trim()) ? "new" : "pick"); };
   const [delTarget, setDelTarget] = useState(null); // {id, name}
   const [delBusy, setDelBusy] = useState(false);
   const [delError, setDelError] = useState(null);
@@ -284,7 +290,7 @@ function Gadgets({ toast }) {
     setDelBusy(true); setDelError(null);
     const res = await deleteProduct(delTarget.id);
     if (!res.ok) { setDelError(res.error || "Could not delete"); setDelBusy(false); return; }
-    reload(); toast("Gadget deleted", "trash");
+    reload(); loadCurated().catch(() => {}); toast("Gadget deleted", "trash");
     setDelBusy(false); setDelTarget(null);
   };
   return (
@@ -302,7 +308,23 @@ function Gadgets({ toast }) {
         <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
           <h2 className="text-[19px] font-bold text-[#111827]">{form.id ? "Edit gadget" : "New gadget"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Brand"><input className={fieldInputCls} value={form.brand || ""} onChange={(e) => set("brand", e.target.value)} placeholder="e.g. Samsung" /></Field>
+            <Field label="Brand">
+              {brandMode === "pick" ? (
+                <select id="adm-brand" className={fieldInputCls} value={brands.includes(String(form.brand || "").trim()) ? form.brand : ""} onChange={(e) => { if (e.target.value === "__new") { setBrandMode("new"); set("brand", ""); } else set("brand", e.target.value); }}
+                  aria-invalid={err?.field === "adm-brand" ? "true" : undefined} aria-describedby={err?.field === "adm-brand" ? "adm-brand-error" : undefined}>
+                  <option value="">Select a brand…</option>
+                  {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+                  <option value="__new">Add new brand…</option>
+                </select>
+              ) : (
+                <>
+                  <input id="adm-brand" className={fieldInputCls} value={form.brand || ""} onChange={(e) => set("brand", e.target.value)} placeholder="e.g. Samsung" maxLength={60}
+                    aria-invalid={err?.field === "adm-brand" ? "true" : undefined} aria-describedby={err?.field === "adm-brand" ? "adm-brand-error" : undefined} />
+                  <button type="button" className="mt-1 text-xs font-semibold text-[#2260D4] hover:underline" onClick={() => setBrandMode("pick")}>Choose an existing brand instead</button>
+                </>
+              )}
+              {err?.field === "adm-brand" && <FieldError id="adm-brand">{err.msg}</FieldError>}
+            </Field>
             <Field label="Model"><input id="adm-model" className={fieldInputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Galaxy A55"
               aria-invalid={err?.field === "adm-model" ? "true" : undefined} aria-describedby={err?.field === "adm-model" ? "adm-model-error" : undefined} />
               {err?.field === "adm-model" && <FieldError id="adm-model">{err.msg}</FieldError>}</Field>
