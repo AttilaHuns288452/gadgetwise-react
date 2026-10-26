@@ -304,12 +304,14 @@ function GadgetDetail({ compare, onCompare }) {
     });
     setSubmitting(false);
     setReviewOpen(false);
-    setText("");
-    setRating(5);
     if (!res.ok) {
+      // keep the draft: a rejected review should be correctable, not retyped
+      setReviewOpen(true);
       toast("Could not save review: " + res.error, "alert");
       return;
     }
+    setText("");
+    setRating(5);
     toast(
       res.local
         ? "Review saved locally (sign in to sync across devices)."

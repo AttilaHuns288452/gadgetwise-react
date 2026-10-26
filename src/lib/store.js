@@ -42,11 +42,15 @@ export async function syncWishlist(userId, ids) {
 // reviews
 export async function submitReview(userId, { gadget_id, rating, body }) {
   if (!live(userId)) return { ok: true, local: true, pending: true };
-  const { error } = await supabase
-    .from("reviews")
-    .insert({ gadget_id, rating, body: body || null });
+  // the RPC validates against the forbidden-word list server-side and logs
+  // rejections; the DB trigger is the un-bypassable backstop behind it
+  const { data, error } = await supabase.rpc("submit_review", {
+    p_gadget_id: gadget_id,
+    p_rating: rating ?? 5,
+    p_body: body || null,
+  });
   if (error) return { ok: false, error: error.message };
-  return { ok: true, pending: true };
+  return data && data.ok ? { ok: true, pending: true } : { ok: false, error: (data && data.error) || "Could not save your review." };
 }
 
 export async function loadMyReviews(userId) {
@@ -166,14 +170,75 @@ export async function setReviewStatus(id, status) {
 
 export async function editReview(id, { rating, body }) {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
-  const { error } = await supabase.from("reviews").update({ rating, body }).eq("id", id);
-  return error ? { ok: false, error: error.message } : { ok: true };
+  const { data, error } = await supabase.rpc("edit_review_body", {
+    p_id: id,
+    p_rating: rating ?? 5,
+    p_body: body,
+  });
+  if (error) return { ok: false, error: error.message };
+  return data && data.ok ? { ok: true } : { ok: false, error: (data && data.error) || "Could not save your changes." };
 }
 
 export async function deleteReview(id) {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
   const { error } = await supabase.from("reviews").delete().eq("id", id);
   return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// forbidden words (admin-managed moderation list)
+export async function loadForbiddenWords() {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { data, error } = await supabase
+    .from("forbidden_words")
+    .select("id, phrase, category, enabled, created_at, updated_at")
+    .order("phrase");
+  return error ? { ok: false, error: error.message } : { ok: true, rows: data || [] };
+}
+
+export async function saveForbiddenWord({ id, phrase, category, enabled }) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const payload = {
+    phrase: String(phrase || "").trim(),
+    category: (category || "general").trim() || "general",
+    enabled: enabled !== false,
+  };
+  if (!payload.phrase) return { ok: false, error: "Enter a word or phrase." };
+  if (payload.phrase.length > 80) return { ok: false, error: "Keep the entry under 80 characters." };
+  const { data, error } = id
+    ? await supabase.from("forbidden_words").update(payload).eq("id", id).select("id").single()
+    : await supabase.from("forbidden_words").insert(payload).select("id").single();
+  if (error) {
+    return { ok: false, error: error.code === "23505" ? "That entry already exists." : error.message };
+  }
+  return { ok: true, id: data && data.id };
+}
+
+export async function setForbiddenWordEnabled(id, enabled) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("forbidden_words").update({ enabled: !!enabled }).eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteForbiddenWord(id) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("forbidden_words").delete().eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// activity log (admin read-only)
+export async function loadActivityLog({ q = "", result = "", action = "", limit = 25, offset = 0 } = {}) {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
+  let query = supabase
+    .from("activity_log")
+    .select("id, at, actor, action, entity_type, entity_id, result, reason, metadata", { count: "exact" })
+    .order("at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  const term = String(q || "").replace(/[,()]/g, " ").trim();
+  if (term) query = query.or(`actor.ilike.%${term}%,action.ilike.%${term}%,entity_id.ilike.%${term}%`);
+  if (result) query = query.eq("result", result);
+  if (action) query = query.ilike("action", `%${String(action).replace(/[,()]/g, "")}%`);
+  const { data, error, count } = await query;
+  return error ? { ok: false, error: error.message } : { ok: true, rows: data || [], total: count || 0 };
 }
 
 // comparison history

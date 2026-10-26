@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GW, money } from "../lib.js";
 import { catalogStats } from "../lib/catalog.js";
 import { Logo } from "../components/ui.jsx";
-import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole } from "../lib/store.js";
+import { loadAllReviews, setReviewStatus, editReview, deleteReview, loadCategories, saveCategory, deleteCategory, loadProducts, saveProduct, deleteProduct, loadViewStats, getPublicProfile, loadIntegrationStatus, loadIntegrationConfig, saveIntegrationKey, loadSiteSettings, saveSiteSetting, setUserRole, loadForbiddenWords, saveForbiddenWord, setForbiddenWordEnabled, deleteForbiddenWord, loadActivityLog } from "../lib/store.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.js";
 import { Modal, ConfirmDialog, useToast, btnPrimaryCls, btnOutlineCls, btnDangerCls, fieldLabelCls, fieldInputCls, displayName } from "../components/ui.jsx";
@@ -12,6 +12,8 @@ const ICONS = {
   dashboard: "M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z",
   reports: "M4 20V6M10 20V10M16 20V4M4 20h16",
   plug: "M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5",
+  shield: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z",
+  clock: "M12 3a9 9 0 100 18 9 9 0 000-18zm1 9V7h-2v7h6v-2h-4z",
   box: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12L4 7.5M12 12v9",
   layers: "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5",
   chat: "M4 5h16v10H8l-4 4z",
@@ -828,18 +830,8 @@ function Users() {
     };
   }, [reload]);
 
-  // Privilege grants are consequential: confirm first. Sign-out too.
+  // privilege grants are consequential: confirm first
   const [grantTarget, setGrantTarget] = useState(null);
-  const [confirmOut, setConfirmOut] = useState(false);
-  const [outBusy, setOutBusy] = useState(false);
-  const [outError, setOutError] = useState(null);
-  const doSignOut = async () => {
-    setOutBusy(true); setOutError(null);
-    const res = await signOut().catch((e) => ({ error: e }));
-    if (res && res.error) { setOutError("Could not sign out. Please try again."); setOutBusy(false); return; }
-    setOutBusy(false); setConfirmOut(false);
-    nav("/");
-  };
   const grantAdmin = async (u) => {
     setRoleBusy(true);
     const result = await setUserRole(u.id, true);
@@ -952,6 +944,16 @@ function Users() {
           </p>
         </Modal>
       )}
+      {grantTarget && (
+        <ConfirmDialog
+          title="Grant admin access?"
+          message={<span>Give <b>{grantTarget.email}</b> full admin access to the console? They will be able to manage products, categories, reviews and settings.</span>}
+          confirmLabel="Grant admin"
+          busy={roleBusy}
+          onConfirm={async () => { const u = grantTarget; setGrantTarget(null); await grantAdmin(u); }}
+          onClose={() => { if (!roleBusy) setGrantTarget(null); }}
+        />
+      )}
     </>
   );
 }
@@ -1033,9 +1035,9 @@ function Shell({ tabKey, tab, onOut, children }) {
   const groups = [
     ["overview", [["dashboard", "Dashboard", "dashboard"], ["reports", "Reports", "reports"]]],
     ["catalog", [["gadgets", "Gadgets", "box"], ["categories", "Categories", "layers"]]],
-    ["community", [["reviews", "Reviews", "chat"]]],
+    ["community", [["reviews", "Reviews", "chat"], ["forbidden", "Forbidden words", "shield"]]],
     ["people", [["users", "Users", "user"]]],
-    ["system", [["integrations", "Integrations", "plug"], ["site", "Site settings", "star"]]],
+    ["system", [["integrations", "Integrations", "plug"], ["site", "Site settings", "star"], ["logs", "Activity Logs", "clock"]]],
     ["session", [["public", "View public site", "home"], ["out", "Sign out", "exit"]]],
   ];
   return (
@@ -1081,10 +1083,21 @@ export default function Admin() {
   const [params, setParams] = useSearchParams();
   const { signOut } = useAuth();
   // unknown ?tab values used to render an empty shell; deep links fall back
-  const TAB_KEYS = ["dashboard", "reports", "gadgets", "categories", "reviews", "users", "integrations", "site"];
+  const TAB_KEYS = ["dashboard", "reports", "gadgets", "categories", "forbidden", "reviews", "users", "integrations", "site", "logs"];
   const rawTab = params.get("tab") || "dashboard";
   const tabKey = TAB_KEYS.includes(rawTab) ? rawTab : "dashboard";
   const tab = (t) => setParams({ tab: t });
+  // sign-out is consequential: confirm, await the real result, then leave
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [outBusy, setOutBusy] = useState(false);
+  const [outError, setOutError] = useState(null);
+  const doSignOut = async () => {
+    setOutBusy(true); setOutError(null);
+    const res = await signOut().catch((e) => ({ error: e }));
+    if (res && res.error) { setOutError("Could not sign out. Please try again."); setOutBusy(false); return; }
+    setOutBusy(false); setConfirmOut(false);
+    nav("/");
+  };
   // Real reviews from the database (never the fixture). Loaded on mount.
   const [reviews, setReviews] = useState([]);
   const [reviewsLoaded, setReviewsLoaded] = useState(false);
@@ -1139,16 +1152,6 @@ export default function Admin() {
           onClose={() => { if (!outBusy) { setConfirmOut(false); setOutError(null); } }}
         />
       )}
-      {grantTarget && (
-        <ConfirmDialog
-          title="Grant admin access?"
-          message={<span>Give <b>{grantTarget.email}</b> full admin access to the console? They will be able to manage products, categories, reviews and settings.</span>}
-          confirmLabel="Grant admin"
-          busy={roleBusy}
-          onConfirm={async () => { const u = grantTarget; setGrantTarget(null); await grantAdmin(u); }}
-          onClose={() => { if (!roleBusy) setGrantTarget(null); }}
-        />
-      )}
       {tabKey === "dashboard" && (
         <Dashboard tab={tab} stats={stats} pendingRows={reviews.filter((r) => r.status === "pending")} />
       )}
@@ -1159,9 +1162,298 @@ export default function Admin() {
         <Reviews rows={reviews} setRows={setReviews} loaded={reviewsLoaded} reload={reloadReviews} toast={toast} />
       )}
       {tabKey === "users" && <Users />}
+      {tabKey === "forbidden" && <ForbiddenWords toast={toast} />}
       {tabKey === "integrations" && <Integrations toast={toast} />}
       {tabKey === "site" && <SiteSettings toast={toast} />}
+      {tabKey === "logs" && <ActivityLogs />}
       {toastNode}
     </Shell>
+  );
+}
+
+// Forbidden words: the moderation list behind review validation. Edits are
+// live immediately — the DB trigger reads this table on every review write.
+function ForbiddenWords({ toast }) {
+  const [rows, setRows] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
+  const [form, setForm] = useState(null); // {id?, phrase, category, enabled}
+  const [saving, setSaving] = useState(false);
+  const [delTarget, setDelTarget] = useState(null);
+  const [delBusy, setDelBusy] = useState(false);
+  const [delError, setDelError] = useState(null);
+  const reload = async () => {
+    const r = await loadForbiddenWords();
+    if (r.ok) setRows(r.rows);
+    setLoaded(true);
+  };
+  useEffect(() => { reload(); }, []);
+
+  const save = async () => {
+    if (!form) return;
+    setSaving(true);
+    const res = await saveForbiddenWord(form);
+    setSaving(false);
+    if (!res.ok) { toast(res.error, "alert"); return; }
+    setForm(null);
+    reload();
+    toast(form.id ? "Entry updated" : "Entry added");
+  };
+
+  const shown = rows.filter((r) => {
+    if (status === "enabled" && !r.enabled) return false;
+    if (status === "disabled" && r.enabled) return false;
+    if (q && !(`${r.phrase} ${r.category}`.toLowerCase().includes(q.toLowerCase()))) return false;
+    return true;
+  });
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2260D4]">Moderation</p>
+          <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Forbidden words</h1>
+          <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
+            Reviews containing an enabled entry are rejected before they save. Matching is case-insensitive,
+            ignores punctuation and spacing differences, and only whole words count — a listed word never
+            blocks innocent words around it. Changes apply immediately.
+          </p>
+        </div>
+        <button className={btnPrimary} onClick={() => setForm({ phrase: "", category: "general", enabled: true })}>
+          <Ico n="plus" size={16} /> Add entry
+        </button>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <input className={fieldInputCls + " max-w-xs !py-2"} placeholder="Search entries…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search forbidden words" />
+        <select className={fieldInputCls + " max-w-[12rem] !py-2"} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
+          <option value="all">All entries</option>
+          <option value="enabled">Enabled</option>
+          <option value="disabled">Disabled</option>
+        </select>
+        <span className="text-sm text-[#667085]">{shown.length} of {rows.length}</span>
+      </div>
+
+      {form && (
+        <Modal
+          title={form.id ? "Edit entry" : "Add forbidden entry"}
+          onClose={() => setForm(null)}
+          actions={<>
+            <button className={btnOutlineCls} onClick={() => setForm(null)}>Cancel</button>
+            <button className={btnPrimary} onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+          </>}
+        >
+          <div>
+            <label className={fieldLabelCls} htmlFor="fw-phrase">Word or phrase</label>
+            <input id="fw-phrase" className={fieldInputCls} value={form.phrase} maxLength={80}
+              onChange={(e) => setForm({ ...form, phrase: e.target.value })} placeholder="e.g. spam link" />
+            <p className="mt-1 text-xs text-[#667085]">Case and punctuation are ignored when matching. Max 80 characters.</p>
+          </div>
+          <div>
+            <label className={fieldLabelCls} htmlFor="fw-cat">Category</label>
+            <select id="fw-cat" className={fieldInputCls} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+              <option value="general">General</option>
+              <option value="profanity">Profanity</option>
+              <option value="harassment">Harassment</option>
+              <option value="slurs">Slurs</option>
+              <option value="spam">Spam</option>
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-[#344054]">
+            <input type="checkbox" checked={form.enabled !== false} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+            Enabled (enforced on reviews)
+          </label>
+        </Modal>
+      )}
+
+      {delTarget && (
+        <ConfirmDialog
+          title="Delete this entry?"
+          message={<span>Remove <b>{delTarget.phrase}</b> from the moderation list? Reviews containing it will no longer be rejected.</span>}
+          confirmLabel="Delete"
+          danger
+          busy={delBusy}
+          error={delError}
+          onConfirm={async () => {
+            setDelBusy(true); setDelError(null);
+            const res = await deleteForbiddenWord(delTarget.id);
+            setDelBusy(false);
+            if (!res.ok) { setDelError(res.error || "Could not delete"); return; }
+            setDelTarget(null);
+            reload();
+            toast("Entry deleted", "trash");
+          }}
+          onClose={() => { if (!delBusy) { setDelTarget(null); setDelError(null); } }}
+        />
+      )}
+
+      {!loaded ? (
+        <p className="mt-8 text-[#667085]">Loading…</p>
+      ) : shown.length === 0 ? (
+        <div className="mt-8 rounded-xl border border-dashed border-[#B8C7DD] bg-[#F8FBFF] p-8 text-center">
+          <p className="text-[17px] font-semibold text-[#111827]">{rows.length ? "No entries match this filter" : "No forbidden words yet"}</p>
+          <p className="mt-1 text-[15px] text-[#475467]">Add a word or phrase to start moderating reviews.</p>
+        </div>
+      ) : (
+        <div className="mt-6 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white">
+          <table className="w-full text-left text-[14px]">
+            <thead><tr>
+              <th className={headCls}>Phrase</th>
+              <th className={headCls}>Category</th>
+              <th className={headCls}>Status</th>
+              <th className={headCls + " text-right"}>Actions</th>
+            </tr></thead>
+            <tbody>
+              {shown.map((r) => (
+                <tr key={r.id}>
+                  <td className={cellCls + " font-medium text-[#111827]"}>{r.phrase}</td>
+                  <td className={cellCls}><Pill kind="neutral">{r.category}</Pill></td>
+                  <td className={cellCls}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const res = await setForbiddenWordEnabled(r.id, !r.enabled);
+                        if (res.ok) { reload(); toast(r.enabled ? "Entry disabled" : "Entry enabled"); }
+                        else toast(res.error || "Could not update", "alert");
+                      }}
+                      className={r.enabled ? "chip-blue cursor-pointer border border-[#2260D4]" : "chip cursor-pointer border border-[#D9DEE7] text-[#98A2B3]"}
+                      aria-pressed={r.enabled}
+                    >
+                      {r.enabled ? "Enabled" : "Disabled"}
+                    </button>
+                  </td>
+                  <td className={cellCls}>
+                    <div className="flex justify-end gap-2">
+                      <button className={iconBtn} title="Edit" aria-label={`Edit ${r.phrase}`} onClick={() => setForm({ id: r.id, phrase: r.phrase, category: r.category, enabled: r.enabled })}><Ico n="pencil" /></button>
+                      <button className={iconBtn} title="Delete" aria-label={`Delete ${r.phrase}`} onClick={() => setDelTarget(r)}><Ico n="trash" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Activity log: append-only trail of privileged and moderation events.
+function ActivityLogs() {
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [q, setQ] = useState("");
+  const [result, setResult] = useState("");
+  const [action, setAction] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [state, setState] = useState("loading");
+  const [error, setError] = useState("");
+  const [detail, setDetail] = useState(null);
+  const limit = 25;
+
+  const reload = async (off = 0) => {
+    setState("loading");
+    setError("");
+    const r = await loadActivityLog({ q, result, action, limit, offset: off });
+    if (!r.ok) { setState("error"); setError(r.error || "Could not load the log"); return; }
+    setRows(r.rows);
+    setTotal(r.total);
+    setOffset(off);
+    setState("ready");
+  };
+  useEffect(() => { reload(0); }, []);
+
+  const resultColor = (res) =>
+    res === "success" ? "bg-[#E7F6EC] text-[#1E7A3C]"
+      : res === "rejected" ? "bg-[#FFF4E5] text-[#8A5A00]"
+        : "bg-[#FDECEC] text-[#B42318]";
+
+  return (
+    <div>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2260D4]">System</p>
+        <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Activity logs</h1>
+        <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
+          Append-only record of privileged actions and moderation outcomes. Entries are written by the
+          server with the real actor — they cannot be edited or deleted from the app.
+        </p>
+      </div>
+
+      <form className="mt-5 flex flex-wrap items-center gap-3" onSubmit={(e) => { e.preventDefault(); reload(0); }}>
+        <input className={fieldInputCls + " max-w-xs !py-2"} placeholder="Search actor, action, record id…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search activity log" />
+        <input className={fieldInputCls + " max-w-xs !py-2"} placeholder="Action (e.g. review, forbidden)" value={action} onChange={(e) => setAction(e.target.value)} aria-label="Filter by action" />
+        <select className={fieldInputCls + " max-w-[11rem] !py-2"} value={result} onChange={(e) => setResult(e.target.value)} aria-label="Filter by result">
+          <option value="">All results</option>
+          <option value="success">Success</option>
+          <option value="rejected">Rejected</option>
+          <option value="denied">Denied</option>
+          <option value="failure">Failure</option>
+        </select>
+        <button type="submit" className={btnPrimary}>Search</button>
+      </form>
+
+      {state === "loading" ? (
+        <p className="mt-8 text-[#667085]">Loading…</p>
+      ) : state === "error" ? (
+        <div className="mt-8 rounded-xl border border-[#F5C2C0] bg-[#FDF3F2] p-6">
+          <p className="text-[15px] text-[#B42318]">{error}</p>
+          <button className={btnOutlineCls + " mt-3"} onClick={() => reload(0)}>Try again</button>
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="mt-8 rounded-xl border border-dashed border-[#B8C7DD] bg-[#F8FBFF] p-8 text-center">
+          <p className="text-[17px] font-semibold text-[#111827]">No events found</p>
+          <p className="mt-1 text-[15px] text-[#475467]">Actions like review submissions and moderation changes appear here.</p>
+        </div>
+      ) : (
+        <>
+          <p className="mt-4 text-sm text-[#667085]">{total} event{total === 1 ? "" : "s"} · newest first</p>
+          <div className="mt-3 overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white">
+            <table className="w-full text-left text-[14px]">
+              <thead><tr>
+                <th className={headCls}>When</th>
+                <th className={headCls}>Actor</th>
+                <th className={headCls}>Action</th>
+                <th className={headCls}>Record</th>
+                <th className={headCls}>Result</th>
+                <th className={headCls}>Reason</th>
+              </tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="cursor-pointer hover:bg-[#F8FAFF]" onClick={() => setDetail(r)}>
+                    <td className={cellCls + " whitespace-nowrap"}>{new Date(r.at).toLocaleString()}</td>
+                    <td className={cellCls}>{r.actor || "system"}</td>
+                    <td className={cellCls + " font-medium text-[#111827]"}>{r.action}</td>
+                    <td className={cellCls}>{r.entity_type ? `${r.entity_type}${r.entity_id ? ` · ${r.entity_id.slice(0, 8)}` : ""}` : "—"}</td>
+                    <td className={cellCls}><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + resultColor(r.result)}>{r.result}</span></td>
+                    <td className={cellCls + " text-[#667085]"}>{r.reason || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <button className={btnOutlineCls} disabled={offset === 0} onClick={() => reload(Math.max(0, offset - limit))}>Previous</button>
+            <span className="text-sm text-[#667085]">{offset + 1}–{Math.min(offset + limit, total)} of {total}</span>
+            <button className={btnOutlineCls} disabled={offset + limit >= total} onClick={() => reload(offset + limit)}>Next</button>
+          </div>
+        </>
+      )}
+
+      {detail && (
+        <Modal title="Event details" onClose={() => setDetail(null)} actions={<button className={btnPrimary} onClick={() => setDetail(null)}>Close</button>}>
+          <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-[15px]">
+            <dt className="font-semibold text-[#344054]">When</dt><dd className="text-[#111827]">{new Date(detail.at).toLocaleString()}</dd>
+            <dt className="font-semibold text-[#344054]">Actor</dt><dd className="text-[#111827]">{detail.actor || "system"}</dd>
+            <dt className="font-semibold text-[#344054]">Action</dt><dd className="text-[#111827]">{detail.action}</dd>
+            <dt className="font-semibold text-[#344054]">Record</dt><dd className="text-[#111827]">{detail.entity_type || "—"} {detail.entity_id || ""}</dd>
+            <dt className="font-semibold text-[#344054]">Result</dt><dd className="text-[#111827]">{detail.result}</dd>
+            <dt className="font-semibold text-[#344054]">Reason</dt><dd className="text-[#111827]">{detail.reason || "—"}</dd>
+            <dt className="font-semibold text-[#344054]">Metadata</dt>
+            <dd className="text-[#111827]"><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(detail.metadata || {}, null, 2)}</pre></dd>
+          </dl>
+        </Modal>
+      )}
+    </div>
   );
 }
