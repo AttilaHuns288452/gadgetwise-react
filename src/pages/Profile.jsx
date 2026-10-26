@@ -292,7 +292,7 @@ export default function Profile({ compare, onCompare }) {
             <button
               type="button"
               onClick={() => setConfirmOut(true)}
-              className="mt-2 flex w-full items-center justify-center gap-2 text-sm font-semibold text-[#2563EB] hover:underline"
+              className="mt-2 flex w-full items-center justify-center gap-2 text-sm font-semibold text-[#B3372E] hover:text-[#8f2b23]"
             >
               <ExitIcon /> Sign out
             </button>

@@ -574,7 +574,7 @@ export function CatalogLoadingCard({ bare = false }) {
 export function CatalogErrorCard({ bare = false, variant = "error" }) {
   const empty = variant === "empty";
   const card = (
-      <div className="card max-w-xl p-8 text-center mx-auto">
+      <div className={"card max-w-xl p-8 text-center mx-auto" + (empty ? "" : " border-[#F0E2B8] bg-[#FFF8E6]")}>
         <h2 className="text-2xl">{empty ? "The catalog is empty right now" : "Couldn't load live products"}</h2>
         <p className="mt-3 text-ink2">
           {empty
@@ -637,6 +637,16 @@ const toastIco = {
   alert: <><circle cx="8" cy="8" r="6.5" /><path d="M8 5v3.5M8 11h.01" /></>,
   info: <><circle cx="8" cy="8" r="6.5" /><path d="M8 7.5v3.5M8 5h.01" /></>,
 };
+// semantic toast colors: green = done, amber = caution/failure, red = a
+// destructive action actually happened, blue = neutral info
+const toastTone = {
+  checkCircle: "text-[#5FB07B]",
+  alert: "text-[#E8B44A]",
+  trash: "text-[#E38578]",
+  x: "text-[#E38578]",
+  edit: "text-[#9CC3EE]",
+  info: "text-[#9CC3EE]",
+};
 
 // put the cursor where the fix goes: validation failures focus their field
 export function focusField(sel) {
@@ -678,7 +688,7 @@ export function useToast() {
     <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-[100] grid max-w-[min(24rem,calc(100vw-2rem))] gap-2.5 sm:right-6" role="status" aria-live="polite">
       {items.map((t) => (
         <div key={t.id} className={`${t.leaving ? "toast-out" : "toast-in"} flex min-w-0 items-start gap-2.5 rounded-2xl bg-[#0F1722] px-[18px] py-3 text-sm font-semibold text-white shadow-2xl`} role="alert">
-          <svg viewBox="0 0 16 16" className="mt-0.5 h-4 w-4 shrink-0 text-[#9CC3EE]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>
+          <svg viewBox="0 0 16 16" className={`mt-0.5 h-4 w-4 shrink-0 ${toastTone[t.icon] || "text-[#9CC3EE]"}`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">{toastIco[t.icon] || toastIco.checkCircle}</svg>
           <span className="min-w-0 break-words">{t.text}</span>
           <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss notification" className="ml-auto shrink-0 text-white/60 transition-colors hover:text-white">×</button>
         </div>

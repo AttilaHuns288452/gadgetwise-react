@@ -967,7 +967,7 @@ function Shell({ tabKey, tab, onOut, children }) {
                     <li key={key}>
                       <button
                         onClick={() => (key === "public" ? (window.location.hash = "#/") : out ? onOut() : tab(key))}
-                        className={`flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-[15px] font-medium ${active ? "bg-[#DCE8FA] text-[#2260D4]" : "text-[#D5DCE9] hover:bg-white/10"}`}
+                        className={`flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-[15px] font-medium ${active ? "bg-[#DCE8FA] text-[#2260D4]" : out ? "text-[#F0A9A2] hover:bg-white/10 hover:text-[#FFD3CE]" : "text-[#D5DCE9] hover:bg-white/10"}`}
                       >
                         <Ico n={icon} />
                         {label}

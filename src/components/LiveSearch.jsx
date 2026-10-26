@@ -114,7 +114,7 @@ export default function LiveSearch({ query }) {
       )}
 
       {state.status === "error" && (
-        <div className="mt-2 rounded-lg border border-[#E5E7EB] bg-white p-3 text-sm text-ink2">
+        <div className="mt-2 rounded-lg border border-[#F0E2B8] bg-[#FFF8E6] p-3 text-sm text-[#6B4E12]">
           <p className="[overflow-wrap:anywhere]">{state.error}</p>
           <button
             type="button"

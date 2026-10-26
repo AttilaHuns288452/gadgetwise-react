@@ -296,7 +296,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setConfirmOut(true)}
-                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink2 hover:text-[#2563EB]"
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#B3372E] hover:text-[#8f2b23]"
                 >
                   Sign out
                 </button>
