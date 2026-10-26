@@ -660,9 +660,6 @@ function Integrations({ toast }) {
 function Reviews({ rows, setRows, loaded, reload, toast }) {
   const [filter, setFilter] = useState("all");
   const [edit, setEdit] = useState(null);
-  const [del, setDel] = useState(null);
-  const [delBusy, setDelBusy] = useState(false);
-  const [delError, setDelError] = useState(null);
   const [busy, setBusy] = useState(null);
   const pending = rows.filter((r) => r.status === "pending").length;
   const shown = rows.filter((r) => filter === "all" || r.status === filter);
@@ -723,8 +720,7 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
                       disabled={busy === r.id || r.status === "approved"} onClick={() => setStatus(r.id, "approved")}>Approve</button>
                     <button className="rounded-md border border-[#D9DEE7] px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F4F5F7] disabled:opacity-50"
                       disabled={busy === r.id} onClick={() => setStatus(r.id, "rejected")}>Reject</button>
-                    <button className={iconBtn} title="Edit" aria-label={`Edit review of ${r.gadget}`} onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
-                    <button className={iconBtn} title="Delete" aria-label={`Delete review of ${r.gadget}`} onClick={() => setDel(r)}><Ico n="trash" /></button>
+          <button className={iconBtn} title="Edit" aria-label={`Edit review of ${r.gadget}`} onClick={() => setEdit({ id: r.id, text: r.text, rating: r.rating })}><Ico n="pencil" /></button>
                   </div>
                 </td>
               </tr>
@@ -769,26 +765,7 @@ function Reviews({ rows, setRows, loaded, reload, toast }) {
         </Modal>
       )}
 
-      {del && (
-        <ConfirmDialog
-          title="Delete review?"
-          message={<span>Permanently remove the review by <b>{del.user}</b>? This cannot be undone.</span>}
-          confirmLabel="Delete"
-          danger
-          busy={delBusy}
-          error={delError}
-          onConfirm={async () => {
-            setDelBusy(true); setDelError(null);
-            const res = await deleteReview(del.id);
-            if (!res.ok) { setDelError(`Could not delete review: ${res.error}`); setDelBusy(false); return; }
-            setRows(rows.filter((x) => x.id !== del.id));
-            setDelBusy(false);
-            setDel(null);
-            toast("Review deleted", "trash");
-          }}
-          onClose={() => { if (!delBusy) setDel(null); }}
-        />
-      )}
+      {/* reviews cannot be deleted by admins (only their authors can) */}
     </>
   );
 }

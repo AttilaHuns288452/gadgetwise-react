@@ -316,7 +316,7 @@ function GadgetDetail({ compare, onCompare }) {
     toast(
       res.local
         ? "Review saved locally (sign in to sync across devices)."
-        : "Review submitted — pending moderation."
+        : "Review published — it's live on this page."
     );
     // Refresh the list so the author sees their own review immediately.
     loadReviews(g.id).then((rows) => {
