@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { GW, money } from "./lib.js";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 // ponytail: Home eager (landing must paint immediately), every other route lazy
 const Catalog = lazy(() => import("./pages/Catalog.jsx"));
 const GadgetDetail = lazy(() => import("./pages/GadgetDetail.jsx"));
@@ -155,6 +155,19 @@ export default function App() {
   }, []);
   const [q, setQ] = useState("");
   const [showSuggest, setShowSuggest] = useState(false);
+  const searchRef = useRef(null);
+  // close the suggestions when a click/tap lands outside the search box; a
+  // blur-based hide raced real clicks and unmounted rows mid-click
+  useEffect(() => {
+    if (!showSuggest) return undefined;
+    const close = (e) => { if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggest(false); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("touchstart", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("touchstart", close);
+    };
+  }, [showSuggest]);
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
   // Auth and account routes need no product data - keep them reachable even if
@@ -360,10 +373,11 @@ export default function App() {
             className="order-4 flex w-full min-w-0 items-center lg:order-3 lg:w-auto lg:min-w-0 lg:flex-1"
             onSubmit={(e) => {
               e.preventDefault();
+              setShowSuggest(false);
               navigate(`/gadgets?q=${encodeURIComponent(q)}`);
             }}
           >
-            <div className="relative w-full min-w-0">
+            <div ref={searchRef} className="relative w-full min-w-0">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink3">
                 <SearchIcon />
               </span>
@@ -371,7 +385,7 @@ export default function App() {
                 type="search"
                 value={q}
                 onChange={(e) => { setQ(e.target.value); setShowSuggest(true); }}
-                onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+                onFocus={() => setShowSuggest(true)}
                 placeholder="Search gadgets…"
                 aria-label="Search gadgets"
                 autoComplete="off"
@@ -388,7 +402,7 @@ export default function App() {
                     {matches.map((g) => (
                       <li key={g.id}>
                         <Link to={`/g/${g.id}`} onClick={() => { setQ(""); setShowSuggest(false); }}
-                          className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface2">
+                          className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface2">
                           <span className="min-w-0 truncate text-ink">{g.brand} {g.model}</span>
                           <span className="mono shrink-0 text-ink2">{money(g.price)}</span>
                         </Link>
