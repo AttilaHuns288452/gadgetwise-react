@@ -435,6 +435,11 @@ export function PasswordField({ id, value, onChange, autoComplete, minLength, pl
 
 export function Modal({ title, sub, children, actions, onClose }) {
   const dialogRef = useRef(null);
+  // latest close handler without re-running the focus setup: inline onClose
+  // props change identity every render, and re-running this effect yanked
+  // focus back to the first field mid-typing (bio, reviews, every form)
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     // a modal must own focus: move it in, trap Tab inside, restore it on close
     const previous = document.activeElement;
@@ -444,7 +449,7 @@ export function Modal({ title, sub, children, actions, onClose }) {
         .filter((el) => el.offsetParent !== null) : [];
     (focusables()[0] || node)?.focus();
     const onKey = (e) => {
-      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Escape") { onCloseRef.current(); return; }
       if (e.key !== "Tab") return;
       const items = focusables();
       if (!items.length) return;
@@ -458,7 +463,7 @@ export function Modal({ title, sub, children, actions, onClose }) {
       window.removeEventListener("keydown", onKey);
       if (previous && previous.focus) previous.focus();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div className="anim-fade-in fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(28,33,38,0.5)] p-6" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={dialogRef} onClick={(e) => e.stopPropagation()} className="anim-scale-in max-h-[86vh] w-[min(520px,100%)] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
