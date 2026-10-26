@@ -1,6 +1,6 @@
 -- 0019: reviews publish immediately; only their authors can delete them.
 --
--- The forbidden-word guard (0017/0018) is the content gate — there is no
+-- The forbidden-word guard (0017/0018) is the content gate - there is no
 -- human approval queue. An explicit admin rejection still sticks (an edit
 -- never changes publication state on its own).
 

@@ -78,7 +78,7 @@ GW.gadgetsInCategory = function (catId) { return GW.gadgets.filter(g => g.catego
 
 GW.gadgetsByIds = function (ids) { return ids.map(GW.getGadget).filter(Boolean); };
 
-/* Cost per month (spec 18): price spread over a 36-month usage window —
+/* Cost per month (spec 18): price spread over a 36-month usage window -
 
    a fixed, documented assumption for ALL gadgets (comparable within
    category), not a per-product lifespan invention. */
@@ -96,12 +96,12 @@ GW.categoryMedianMonthly = function (catId) {
   return list.length % 2 ? list[mid] : (list[mid - 1] + list[mid]) / 2;
 };
 
-/* Some models already start with the brand ("Acer Aspire 5") — avoid "Acer Acer Aspire 5".
+/* Some models already start with the brand ("Acer Aspire 5") - avoid "Acer Acer Aspire 5".
 
    Canonical name builder: moderation rows and the UI both route through this. */
 
 // listing titles carry seller noise (promo stamps, doubled brands); display
-// cleanup only — the stored model string is never touched
+// cleanup only - the stored model string is never touched
 const PROMO_TAG = /\(\s*(new|hot|sale|promo|free|best|original|authentic|ready|stock|top|wow|limited|best\s*seller)[^)]*\)/gi;
 GW.cleanTitle = (s) => {
   const cleaned = String(s || "")

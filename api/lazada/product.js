@@ -1,4 +1,4 @@
-// GET /api/lazada/product — TMAPI item-detail proxy; the key stays server-side
+// GET /api/lazada/product - TMAPI item-detail proxy; the key stays server-side
 import { getLazadaKeys } from "../../lib/settings-crypto.js";
 import {
   isValidProductId,
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     // 417 from item_detail ("Get item detail error") is ambiguous upstream
     // flakiness: the same listing can answer 200 moments later. It survived the
     // transient retry here, so report a retryable lookup failure with accurate
-    // copy — never claim the listing is gone while it may still be live.
+    // copy - never claim the listing is gone while it may still be live.
     if (upstream.status === 417) {
       return res.status(502).json({
         error: { code: "product_lookup_failed", message: "The marketplace did not return this listing right now. Please try again." },

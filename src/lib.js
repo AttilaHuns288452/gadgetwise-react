@@ -1,4 +1,4 @@
-/* GadgetWise core logic — formulas ported 1:1 from the HTML prototype
+/* GadgetWise core logic - formulas ported 1:1 from the HTML prototype
    (js/app.js ownIndex/frontier, js/recommendations.js scoring engine). */
 import GW from "./data.js";
 
@@ -95,7 +95,7 @@ function budgetFit(price, min, max) {
 }
 
 // Academic fit: a weighted mean over the use-case criteria that have real
-// evidence. Returns null when NO criterion has evidence — an unmeasured fit is
+// evidence. Returns null when NO criterion has evidence - an unmeasured fit is
 // unknown, never a measured zero.
 function academicFit(gadget, useCase, pool) {
   const crit = useCase.criteria;
@@ -104,7 +104,7 @@ function academicFit(gadget, useCase, pool) {
     total += imp;
     const v = factor === "storage" ? gadget.scored?.storage : gadget.scored?.[factor];
     const n = normalize(v, pool[factor]);
-    if (n == null) continue; // unknown input excluded — never scored as 0
+    if (n == null) continue; // unknown input excluded. Never scored as 0
     sum += imp * n;
     weight += imp;
   }
@@ -114,7 +114,7 @@ function academicFit(gadget, useCase, pool) {
 
 // Unknown monthly cost (no price) is unknown, not the best possible value.
 // Cost per month has no meaningful absolute 0-10 scale, so it is always
-// normalized across the pool — a flat pool is neutral, not a perfect score.
+// normalized across the pool - a flat pool is neutral, not a perfect score.
 function ownershipValue(gadget, pool) {
   if (!isNum(gadget.price) || gadget.price <= 0) return null; // unknown price
   const cost = GW.monthlyCost(gadget);
@@ -155,7 +155,7 @@ export const FACTOR_META = {
 
 /* A custom budget is an EXACT ceiling, not a bracket: the amount the student
    typed is what ranks the products. An empty, zero, or non-numeric
-   amount is invalid and returns null — it must never be snapped to a band and
+   amount is invalid and returns null. It must never be snapped to a band and
    silently ranked against a budget the student did not choose. */
 export function customBudget(amount) {
   const n = typeof amount === "number" ? amount : Number(String(amount ?? "").replace(/[^0-9.]/g, ""));
@@ -187,7 +187,7 @@ function rebalance(priorities) {
   const dropped = Object.entries(priorities || {})
     .filter(([f, s]) => s === "low" && FACTOR_META[f])
     .map(([f]) => FACTOR_META[f].label);
-  if (dropped.length) notes.push(`${dropped.join(", ")} marked low priority — less weight assigned.`);
+  if (dropped.length) notes.push(`${dropped.join(", ")} marked low priority. Less weight assigned.`);
   return { weights, notes };
 }
 
@@ -196,8 +196,8 @@ function rebalance(priorities) {
 // }
 // Every factor is either MEASURED (it has evidence and contributes points) or
 // UNKNOWN (it carries weight but the catalog has no evidence for it). An
-// unknown factor is never scored as 0 — a missing measurement is not a bad
-// result — so it is excluded and reported, and the score carries its coverage
+// unknown factor is never scored as 0 - a missing measurement is not a bad
+// result - so it is excluded and reported, and the score carries its coverage
 // so the UI can say the score is partial instead of implying it is complete
 //. `supported` is how many of the nominal 100 points had evidence.
 function scoreGadget(gadget, opts, pools) {
@@ -264,7 +264,7 @@ function scoreGadget(gadget, opts, pools) {
   });
 
   // A rating of 0 means "no reviews yet" (the marketplace loader uses 0 for
-  // unknown), not "rated zero stars" — so it is unknown, never a measured 0.
+  // unknown), not "rated zero stars" - so it is unknown, never a measured 0.
   if (isNum(gadget.rating) && gadget.rating > 0) {
     const cr = clamp01((gadget.rating - 3.2) / 1.8);
     factors.push({
@@ -289,7 +289,7 @@ function scoreGadget(gadget, opts, pools) {
 function reasons(gadget, breakdown, opts) {
   const out = [];
   const f = Object.fromEntries(breakdown.factors.map((x) => [x.key, x]));
-  // A factor can be absent (unknown) — never claim a reason from missing data.
+  // A factor can be absent (unknown) - never claim a reason from missing data.
   if (f.budget && f.budget.earned >= f.budget.max * 0.85) {
     if (gadget.price < opts.budget.min) out.push(`Under your ${opts.budget.label} budget at ${money(gadget.price)}`);
     else out.push(`Fits your ${opts.budget.label} budget at ${money(gadget.price)}`);
@@ -301,7 +301,7 @@ function reasons(gadget, breakdown, opts) {
   if (f.display && f.display.earned >= f.display.max * 0.75) out.push("Display is easy on the eyes for long reading");
   if (f.portability && f.portability.max >= 6 && f.portability.earned >= f.portability.max * 0.75) out.push("Light enough for the daily commute");
   if (f.community && f.community.earned >= f.community.max * 0.8) out.push(`Highly rated by students (${gadget.rating.toFixed(1)}★)`);
-  if (f.budget && f.budget.earned < f.budget.max * 0.5) out.push("Stretches past your budget — consider the trade-off");
+  if (f.budget && f.budget.earned < f.budget.max * 0.5) out.push("Stretches past your budget. Consider the trade-off");
   return out.slice(0, 6);
 }
 
@@ -321,7 +321,7 @@ function strengthsWeaknesses(gadget, opts) {
 
 // stretch rule: gadgets far above the budget ceiling drop out of ranking
 // entirely. Tolerance follows the budget-discipline priority (high 5%, medium
-// 15%, else 35% over). A custom budget is exact — no bracket snapping.
+// 15%, else 35% over). A custom budget is exact - no bracket snapping.
 export function recommend(input) {
   const { budget, useCase, priorities } = input;
   const { weights, notes } = rebalance(priorities);
@@ -349,7 +349,7 @@ export function recommend(input) {
       );
     }
     if (!budget.exact && priorities && priorities.budget && priorities.budget !== "none") {
-      notes.push(`Budget discipline: ${priorities.budget} — stretch tolerance ${Math.round(stretch * 100)}%.`);
+      notes.push(`Budget discipline: ${priorities.budget}. Stretch tolerance ${Math.round(stretch * 100)}%.`);
     }
   }
 
@@ -374,7 +374,7 @@ export function recommend(input) {
 export { GW };
 
 
-// Metrics derived from real listing fields only — anything we can't verify
+// Metrics derived from real listing fields only - anything we can't verify
 // comes back as unavailable instead of a guessed number.
 export const ENRICH_VERSION = 1;
 
@@ -395,7 +395,7 @@ export function enrich(g) {
   const peers = GW.gadgetsInCategory(g.category).filter((x) => isNum(x.price) && x.price > 0);
   const n = peers.length;
 
-  // 1. Price competitiveness — where this price sits among category peers.
+  // 1. Price competitiveness - where this price sits among category peers.
   if (isNum(g.price) && g.price > 0 && n >= 3) {
     const cheaperOrEq = peers.filter((x) => x.price >= g.price).length;
     const pct = Math.round((cheaperOrEq / n) * 100); // % of peers priced at or above this
@@ -409,10 +409,10 @@ export function enrich(g) {
     });
   } else {
     out.push({ id: "priceCompetitiveness", label: "Price competitiveness", value: null, unit: "/100",
-      status: "unavailable", reason: n < 3 ? `Only ${n} comparable listing(s) — too small a sample` : "No valid price" });
+      status: "unavailable", reason: n < 3 ? `Only ${n} comparable listing(s). Too small a sample` : "No valid price" });
   }
 
-  // 2. Discount — only when both prices are valid and reference > current.
+  // 2. Discount - only when both prices are valid and reference > current.
   if (isNum(g.price) && g.price > 0 && isNum(g.originalPrice) && g.originalPrice > g.price) {
     const pct = ((g.originalPrice - g.price) / g.originalPrice) * 100;
     out.push({ id: "discount", label: "Discount vs listed reference", value: Math.round(pct), unit: "%",
@@ -423,7 +423,7 @@ export function enrich(g) {
       status: "unavailable", reason: "No valid higher reference price from the listing" });
   }
 
-  // 3. Price per month — amortized allocation over a fixed 36-month window.
+  // 3. Price per month - amortized allocation over a fixed 36-month window.
   if (isNum(g.price) && g.price > 0) {
     out.push({ id: "pricePerMonth", label: "Purchase price per month", value: Math.round((g.price / 36) * 100) / 100, unit: "/month",
       status: "estimated", method: "Price \u00f7 36 months (fixed allocation, not a lifespan or total-cost claim)" });
@@ -432,7 +432,7 @@ export function enrich(g) {
       status: "unavailable", reason: "No valid price" });
   }
 
-  // 4. Listing completeness — how much the listing actually tells us.
+  // 4. Listing completeness - how much the listing actually tells us.
   const fields = coreFields(g);
   const present = Object.values(fields).filter(Boolean).length;
   out.push({ id: "listingCompleteness", label: "Listing completeness", value: Math.round((present / Object.keys(fields).length) * 100), unit: "%",
@@ -449,7 +449,7 @@ export function enrich(g) {
     out.push({ id: "rating", label: "Marketplace rating", value: null, unit: "/5", status: "unavailable", reason: "Listing provides no rating" });
   }
 
-  // 6. Evidence coverage — how many scoring factors real data supports.
+  // 6. Evidence coverage - how many scoring factors real data supports.
   const cov = ownIndexCoverage(g);
   out.push({ id: "coverage", label: "Evidence coverage", value: cov, unit: "%",
     status: "calculated", method: "Share of scoring weight backed by real inputs (missing factors are excluded, never zeroed)",

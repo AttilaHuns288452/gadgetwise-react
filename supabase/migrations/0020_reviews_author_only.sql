@@ -1,4 +1,4 @@
--- 0020: reviews are author-only — admins can read but never edit or delete.
+-- 0020: reviews are author-only - admins can read but never edit or delete.
 
 create or replace function public.edit_review_body (p_id uuid, p_rating integer, p_body text) returns jsonb
 language plpgsql security definer set search_path = public

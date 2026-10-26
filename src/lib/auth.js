@@ -1,4 +1,4 @@
-// Real Supabase auth only — no demo or localStorage fallback identity. The
+// Real Supabase auth only - no demo or localStorage fallback identity. The
 // persisted session is restored on mount so a refresh doesn't flash signed-out.
 import { useEffect, useState, useCallback } from "react";
 import { supabase, supabaseConfigured } from "./supabase.js";
@@ -35,7 +35,7 @@ const RECOVERY_EVENT = "gw-recovery-changed";
 
 // A recovery session is live in this tab. Module-level (not hook state) so a
 // page that mounts AFTER the PASSWORD_RECOVERY event still knows a recovery
-// session exists — the link path navigates to the recovery page on that event.
+// session exists - the link path navigates to the recovery page on that event.
 let _recoveryActive = false;
 
 // stay on the recovery page while a recovery session is live OR the password
@@ -84,7 +84,7 @@ export function clearRecoveryState() {
   }
 }
 
-/** "j•••@student.edu" — recognisable, not a full address on screen. */
+/** "j•••@student.edu" - recognisable, not a full address on screen. */
 export function maskEmail(email) {
   const s = String(email || "").trim();
   const at = s.indexOf("@");
@@ -94,7 +94,7 @@ export function maskEmail(email) {
   return `${name.slice(0, 1)}${"•".repeat(Math.max(name.length - 1, 1))}@${domain}`;
 }
 
-/** Digits only, capped at `max` — what the user typed or pasted into the code box. */
+/** Digits only, capped at `max` - what the user typed or pasted into the code box. */
 export function sanitizeOtp(raw, max = OTP_LENGTH) {
   return String(raw || "").replace(/\D/g, "").slice(0, max);
 }
@@ -105,7 +105,7 @@ export function cooldownSeconds(now, until) {
   return left > 0 ? left : 0;
 }
 
-// user id straight from the session rather than React state — the recovery
+// user id straight from the session rather than React state - the recovery
 // flow needs to know right now whether a recovery session still exists
 export async function liveSessionUserId() {
   if (!supabaseConfigured) return null;
@@ -242,7 +242,7 @@ export function useAuth() {
     }
     if (!user) {
       setAdmin(false);
-      // "no user" only counts as checked once session restore has finished —
+      // "no user" only counts as checked once session restore has finished -
       // a cold load of /admin must not bounce a signed-in admin in that window.
       if (ready) setAdminChecked(true);
       return;
@@ -309,7 +309,7 @@ export function useAuth() {
   }, []);
 
   // Password recovery, step 1: ask Supabase to email a recovery code.
-  // The user never leaves this tab — the code arrives in the same email the
+  // The user never leaves this tab - the code arrives in the same email the
   // old reset link used to arrive in, and is entered on the next stage.
   const requestRecoveryCode = useCallback(async (email) => {
     if (!supabaseConfigured) return notConfigured();

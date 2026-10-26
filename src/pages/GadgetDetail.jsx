@@ -151,7 +151,7 @@ function GadgetDetail({ compare, onCompare }) {
   const [submitting, setSubmitting] = useState(false);
   const [toast, toastNode] = useToast();
   const wish = useWishlist();
-  // the listing lookup has three honest states — found, not-found (the
+  // the listing lookup has three honest states - found, not-found (the
   // listing is really gone) and error (the lookup failed and can be retried).
   // A failed lookup must never be reported as "not found".
   // every per-product value is stored WITH its id, and only used when
@@ -271,15 +271,15 @@ function GadgetDetail({ compare, onCompare }) {
     .join(" ");
 
   // Ownership cost numbers (same 36-month formula everywhere).
-  const over1 = monthly == null ? "—" : money(monthly * 12);
+  const over1 = monthly == null ? "N/A" : Money(monthly * 12);
   const over3 = priceKnown ? money(g.price) : "Unavailable";
   const coverPct = wYears == null ? null : Math.round((wYears / (GW.MONTHS_WINDOW / 12)) * 100);
   const costScore = (() => {
-    if (monthly == null) return "—";
+    if (monthly == null) return "N/A";
     const ms = GW.gadgetsInCategory(g.category)
       .map((x) => (typeof x.price === "number" && Number.isFinite(x.price) ? x.price / GW.MONTHS_WINDOW : null))
       .filter((v) => v != null);
-    if (!ms.length) return "—";
+    if (!ms.length) return "N/A";
     const lo = Math.min(...ms);
     const hi = Math.max(...ms);
     return hi === lo ? "10.0" : (10 * (1 - (monthly - lo) / (hi - lo))).toFixed(1);
@@ -316,7 +316,7 @@ function GadgetDetail({ compare, onCompare }) {
     toast(
       res.local
         ? "Review saved locally (sign in to sync across devices)."
-        : "Review published — it's live on this page."
+        : "Review published. It's live on this page."
     );
     // Refresh the list so the author sees their own review immediately.
     loadReviews(g.id).then((rows) => {
@@ -449,7 +449,7 @@ function GadgetDetail({ compare, onCompare }) {
               </span>
             </div>
             <p className="mt-2 text-xs text-ink3">
-              Estimate only. Price spread over a fixed 36-month usage window — the same assumption for every gadget, so numbers stay comparable.
+              Estimate only. Price spread over a fixed 36-month usage window. The same assumption for every gadget, so numbers stay comparable.
             </p>
           </div>
 
@@ -460,7 +460,7 @@ function GadgetDetail({ compare, onCompare }) {
                 <div className="text-ink2">Cost per month =</div>
                 <div className="mono mt-1 text-ink">Product Price ÷ 36-month usage window</div>
                 {monthly == null ? (
-                  <div className="mono mt-1 text-ink">Price unavailable — this listing has no price</div>
+                  <div className="mono mt-1 text-ink">Price unavailable. This listing has no price</div>
                 ) : (
                   <>
                     <div className="mono mt-1 text-ink">{money(g.price)} ÷ 36 =</div>
@@ -471,7 +471,7 @@ function GadgetDetail({ compare, onCompare }) {
                 )}
               </div>
               <p className="mt-3 text-sm text-ink2">
-                A single transparent formula— the same one used across every gadget, so numbers can be compared fairly. The production system may extend this with electricity, insurance, or repair-cost data.
+                A single transparent formula: the same one used across every gadget, so numbers can be compared fairly. The production system may extend this with electricity, insurance, or repair-cost data.
               </p>
             </Disclose>
           </div>
@@ -508,7 +508,7 @@ function GadgetDetail({ compare, onCompare }) {
               <h2 className="text-xl font-semibold">Not ideal for</h2>
               <ul className="mt-3 space-y-2 text-sm text-ink2">
                 {(g.notIdeal || []).map((x) => (
-                  <li key={x}>— {x}</li>
+                  <li key={x}>• {x}</li>
                 ))}
               </ul>
             </div>
@@ -555,11 +555,11 @@ function GadgetDetail({ compare, onCompare }) {
               ))}
             </div>
             <p className="mt-4 text-xs text-ink3">
-              Derived from catalog specs — the full formula is in the README.
+              Derived from catalog specs. The full formula is in the README.
             </p>
           </div>
 
-          {/* Evidence-backed metrics — derived from the listing's real fields,
+          {/* Evidence-backed metrics - derived from the listing's real fields,
               each labeled with provenance. No value is invented. */}
           <div className="card mt-8 p-6">
             <h2 className="text-xl font-semibold">Evidence-backed metrics</h2>
@@ -575,7 +575,7 @@ function GadgetDetail({ compare, onCompare }) {
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="mono text-lg font-semibold text-ink">
-                      {m.value == null ? "—" : `${m.value}${m.unit === "%" ? "%" : m.unit === "/5" ? "/5" : m.unit === "/100" ? "/100" : ` ${m.unit}`}`}
+                      {m.value == null ? "N/A" : `${m.value}${m.unit === "%" ? "%" : m.unit === "/5" ? "/5" : M.unit === "/100" ? "/100" : ` ${m.unit}`}`}
                     </div>
                     <span className={
                       "mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium " +
@@ -602,7 +602,7 @@ function GadgetDetail({ compare, onCompare }) {
         </div>
       </div>
 
-      {/* Tab bar — only the active panel renders (frame default: Ownership Cost). */}
+      {/* Tab bar - only the active panel renders (frame default: Ownership Cost). */}
       <nav
         className="mt-12 flex flex-wrap gap-1 border-y border-line py-2"
         role="tablist"
@@ -650,19 +650,19 @@ function GadgetDetail({ compare, onCompare }) {
               <dl className="mt-4">
                 <div className={rowCls}>
                   <dt className="text-ink2">Performance</dt>
-                  <dd className="mono font-semibold text-ink">{g.scored.performance == null ? "—" : `${g.scored.performance.toFixed(1)}/10`}</dd>
+                  <dd className="mono font-semibold text-ink">{g.scored.performance == null ? "N/A" : `${g.scored.performance.toFixed(1)}/10`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Battery</dt>
-                  <dd className="mono font-semibold text-ink">{g.scored.battery == null ? "—" : `${g.scored.battery.toFixed(1)}/10`}</dd>
+                  <dd className="mono font-semibold text-ink">{g.scored.battery == null ? "N/A" : `${g.scored.battery.toFixed(1)}/10`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Portability</dt>
-                  <dd className="mono font-semibold text-ink">{g.scored.portability == null ? "—" : `${g.scored.portability.toFixed(1)}/10`}</dd>
+                  <dd className="mono font-semibold text-ink">{g.scored.portability == null ? "N/A" : `${g.scored.portability.toFixed(1)}/10`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Warranty</dt>
-                  <dd className="font-semibold text-ink">{wYears == null ? "—" : `${wYears} yr`}</dd>
+                  <dd className="font-semibold text-ink">{wYears == null ? "N/A" : `${wYears} yr`}</dd>
                 </div>
                 <div className={rowCls}>
                   <dt className="text-ink2">Cost per month</dt>
@@ -677,7 +677,7 @@ function GadgetDetail({ compare, onCompare }) {
               <h2 className="text-xl font-semibold">Category context</h2>
               <h3 className="mt-5 font-semibold">Why these numbers?</h3>
               <p className="mt-2 text-sm text-ink2">
-                Performance, battery, and portability are GadgetWise catalog ratings normalized within the category; warranty is a catalog fact; student rating comes from GadgetWise users. Cost per month and the Performance to Cost index are deterministic formulas over these values — no metric here is inferred beyond the published formulas.
+                Performance, battery, and portability are GadgetWise catalog ratings normalized within the category; warranty is a catalog fact; student rating comes from GadgetWise users. Cost per month and the Performance to Cost index are deterministic formulas over these values. No metric here is inferred beyond the published formulas.
               </p>
             </div>
           </div>
@@ -710,7 +710,7 @@ function GadgetDetail({ compare, onCompare }) {
                 <div className={rowCls}>
                   <dt className="text-ink2">Warranty coverage</dt>
                   <dd className="font-semibold text-ink">
-                    {wYears == null ? "Not specified for marketplace listings" : `${wYears} yr — ${coverPct}% of the window`}
+                    {wYears == null ? "Not specified for marketplace listings" : `${wYears} yr. ${coverPct}% of the window`}
                   </dd>
                 </div>
               </dl>
@@ -741,7 +741,7 @@ function GadgetDetail({ compare, onCompare }) {
                   <>
                     <div className="card p-6">
                       <div className="mono text-4xl font-semibold text-primary-dark">
-                        {avg == null ? "—" : avg.toFixed(1)}
+                        {avg == null ? "N/A" : avg.toFixed(1)}
                       </div>
                       <div className="mt-2 text-ink2">
                         {n} student review{n === 1 ? "" : "s"}
@@ -756,7 +756,7 @@ function GadgetDetail({ compare, onCompare }) {
                         {dist.map((d) => (
                           <li key={d.star} className="flex items-baseline justify-between text-sm">
                             <span className="text-ink2">{d.star}★</span>
-                            <span className="mono font-semibold text-ink">{n ? `${d.count} · ${d.pct}%` : "—"}</span>
+                            <span className="mono font-semibold text-ink">{n ? `${d.count} · ${d.pct}%` : "N/A"}</span>
                           </li>
                         ))}
                       </ul>

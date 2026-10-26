@@ -152,14 +152,14 @@ export function Stars({ rating, count }) {
           );
         })}
       </span>
-      <span className="mono tabular-nums text-ink2">{rating == null ? "—" : Number(rating).toFixed(1)}</span>
+      <span className="mono tabular-nums text-ink2">{rating == null ? "N/A" : Number(rating).toFixed(1)}</span>
       {count != null && <span className="tabular-nums text-ink3">({count.toLocaleString()})</span>}
     </span>
   );
 }
 
 export function Oidx({ g, size = "md", compact = false, className = "" }) {
-  const tip = "Performance to Cost — battery 25 + student rating 25 + value 30 (price vs category median) + warranty 20";
+  const tip = "Performance to Cost. Battery 25 + student rating 25 + value 30 (price vs category median) + warranty 20";
   if (compact) {
     const score = ownIndex(g);
     return (
@@ -220,7 +220,7 @@ const _wishKey = (uid) => `gw_wishlist:${uid || "guest"}`;
 let _wishLocalSeq = 0;
 let _wishLoadedUid = null; // first uid whose list was fetched this session
 function _wishRead(key) {
-  // Real wishlist only: whatever the user actually saved. No seeded demo items —
+  // Real wishlist only: whatever the user actually saved. No seeded demo items -
   // a fresh account starts empty instead of showing gadgets they never saved.
   try {
     const raw = localStorage.getItem(key);
@@ -561,7 +561,7 @@ export function CatalogLoadingCard({ bare = false }) {
 }
 
 /* Honest "products unavailable" card. Shown when the live marketplace can't be
-   reached — never replaced by fake product data.
+   reached. Never replaced by fake product data.
    variant="empty" is the other honest state: the fetch SUCCEEDED and the
    catalog really has zero products (not a filter miss). */
 export function CatalogErrorCard({ bare = false, variant = "error" }) {
@@ -571,7 +571,7 @@ export function CatalogErrorCard({ bare = false, variant = "error" }) {
         <h2 className="text-2xl">{empty ? "The catalog is empty right now" : "Couldn't load live products"}</h2>
         <p className="mt-3 text-ink2">
           {empty
-            ? "The catalog loaded successfully but there are no products in it yet. Nothing is being faked — try again in a moment."
+            ? "The catalog loaded successfully but there are no products in it yet. Nothing is being faked. Try again in a moment."
             : "GadgetWise pulls real listings from the marketplace and it looks like that request failed. Nothing here is being faked. Try again in a moment."}
         </p>
         <button
@@ -720,7 +720,7 @@ export function useReveal() {
 
     // Position-truthful reveals. An IntersectionObserver reports its INITIAL
     // intersection state when it starts observing, and at mount the page is
-    // still short (catalog sections arrive later) — so a section could be
+    // still short (catalog sections arrive later) - so a section could be
     // revealed while briefly "in view", then pushed thousands of pixels down
     // and never animate when actually scrolled to. Checking live positions on
     // scroll + a slow tick is correct by construction and also picks up
@@ -730,7 +730,7 @@ export function useReveal() {
       // During initial load the page is still short (catalog sections arrive
       // later), so a section can sit inside the viewport and then be pushed
       // thousands of pixels down. Revealing it at that moment meant it never
-      // animated when scrolled to — so anything the layout growth moved clearly
+      // animated when scrolled to - so anything the layout growth moved clearly
       // off-screen is re-armed while the reader has not scrolled yet.
       for (const e of document.querySelectorAll(".reveal")) {
         const r = e.getBoundingClientRect();
@@ -740,7 +740,7 @@ export function useReveal() {
       }
       // Entrance wave: start each pending item as it arrives on screen, and
       // index it within the batch that arrived together. Reads are collected
-      // first and writes applied after — interleaving them reflows once per
+      // first and writes applied after - interleaving them reflows once per
       // card when a 240-card grid mounts.
       const batch = [];
       for (const e of document.querySelectorAll(".stagger > *:not(.is-live)")) {
@@ -761,7 +761,7 @@ export function useReveal() {
     };
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
-    // grids mount when data arrives, long after first paint — their wave must
+    // grids mount when data arrives, long after first paint - their wave must
     // start the frame they appear, not up to a second later
     const mo = new MutationObserver(schedule);
     mo.observe(document.body, { childList: true, subtree: true });

@@ -1,9 +1,9 @@
 -- 0006: admin catalog management with real persistence.
 -- The old admin had fake gadget/category CRUD (React state) and fabricated
 -- analytics. This restores those features backed by real tables:
---   categories      — GadgetWise-owned catalog categories (admin CRUD)
---   products        — GadgetWise-curated products (admin CRUD, shown in catalog)
---   product_views   — real view tracking so analytics are counted, not invented
+--   categories      - GadgetWise-owned catalog categories (admin CRUD)
+--   products        - GadgetWise-curated products (admin CRUD, shown in catalog)
+--   product_views   - real view tracking so analytics are counted, not invented
 -- Writes are admin-only (is_admin(), security-definer). Reads are public for
 -- categories/products (they appear on public pages); view rows are insert-only
 -- for anyone (to count views) and admin-readable.

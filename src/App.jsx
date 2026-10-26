@@ -30,7 +30,7 @@ const NAV = [
   ["/recommend", "Recommendations"],
 ];
 
-// footer link columns — strings verbatim from the frame spec
+// footer link columns - strings verbatim from the frame spec
 const CATEGORIES = [
   ["All Gadgets", "/gadgets"],
   ["Smartphones", "/gadgets?cat=smartphones"],
@@ -55,7 +55,7 @@ const ACCOUNT = [
 const THIS_PROJECT = [
   "Compare real gadgets side by side",
   "Every score shows its math",
-  "Not a store — nothing is sold here",
+  "Not a store. Nothing is sold here",
 ];
 
 // scroll back to the top whenever the route changes
@@ -120,7 +120,7 @@ export default function App() {
   const [, setCatalogReady] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
   // The catalog settled but has zero products. That is NOT a filter miss and
-  // NOT a load failure — it is its own state, and saying "no gadgets match
+  // NOT a load failure - it is its own state, and saying "no gadgets match
   // your filters" for it is a lie (the user set no filters).
   const [catalogEmpty, setCatalogEmpty] = useState(false);
   // true until the live catalog has settled: pages must show "loading", never a
@@ -157,7 +157,7 @@ export default function App() {
   const [showSuggest, setShowSuggest] = useState(false);
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
-  // Auth and account routes need no product data — keep them reachable even if
+  // Auth and account routes need no product data - keep them reachable even if
   // the marketplace is down, so a visitor can always sign in. Only the
   // product-discovery routes show the catalog error state.
   // /admin is excluded too: the admin console must always render (its route
@@ -231,7 +231,7 @@ export default function App() {
   // still guards against double-click staleness.
   const onCompareWithFeedback = (id) => {
     if (!compare.has(id) && compare.size >= 4) {
-      toast("Compare holds 4 gadgets — remove one to add another.", "alert");
+      toast("Compare holds 4 gadgets. Remove one to add another.", "alert");
       return;
     }
     onCompare(id);
@@ -407,7 +407,7 @@ export default function App() {
         </div>
         {toastNode}
         {/* Prototype-style compare tray: named chips with × remove, Compare now.
-            Hidden on /compare itself (you are already there) — portaled to the
+            Hidden on /compare itself (you are already there). Portaled to the
             body so a fixed bar never inherits header/animation containing
             blocks. */}
         {compare.size > 0 && pathname !== "/compare" && createPortal(
@@ -527,7 +527,7 @@ export default function App() {
           <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-on-hero2">
             <span className="flex items-center gap-2.5">
               <Logo size={16} tone="light" showWordmark={false} />
-              <span>GadgetWise — a student gadget comparison tool. Not a store; no products are sold here.</span>
+              <span>GadgetWise. A student gadget comparison tool. Not a store; no products are sold here.</span>
             </span>
             <span>Cost estimates use a fixed 36-month window so products stay comparable.</span>
           </div>

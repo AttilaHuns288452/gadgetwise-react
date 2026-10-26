@@ -24,7 +24,7 @@ function ReviewHistory() {
   const [busy, setBusy] = useState(false);
 
   // Real reviews only: the signed-in user's rows from the database. Guests see
-  // an honest empty state — never fabricated sample reviews.
+  // an honest empty state - never fabricated sample reviews.
   useEffect(() => {
     let alive = true;
     const uid = user?.id || user?.email || null;
@@ -81,7 +81,7 @@ function ReviewHistory() {
         <div className="card mt-8 p-8 text-center">
           <p className="font-semibold text-ink">You haven't written any reviews yet.</p>
           <p className="mt-1 text-sm text-ink2">
-            Open a gadget and share your experience — your reviews will appear here.
+            Open a gadget and share your experience. Your reviews will appear here.
           </p>
           <Link to="/gadgets" className={btnPrimaryCls + " mt-4 inline-flex"}>Browse gadgets</Link>
         </div>

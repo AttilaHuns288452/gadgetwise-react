@@ -18,7 +18,7 @@ function Wishlist() {
       </p>
       {unresolved.length > 0 && (
         <p className="mt-2 rounded-lg border border-line bg-surface2 px-3.5 py-2.5 text-sm text-ink2">
-          {unresolved.length} saved item{unresolved.length === 1 ? "" : "s"} came from live marketplace search and can&apos;t be shown here yet — they stay in your saved list.
+          {unresolved.length} saved item{unresolved.length === 1 ? "" : "s"} came from live marketplace search and can&apos;t be shown here yet. They stay in your saved list.
         </p>
       )}
 

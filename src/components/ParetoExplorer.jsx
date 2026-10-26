@@ -214,13 +214,13 @@ export default function ParetoExplorer() {
 
           {/* points: dominated first so frontier draws on top */}
           {pts.filter((p) => !frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)} — ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)}. ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onMouseLeave={() => setHov(null)}>
               <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={4} fill="#14213a" fillOpacity="0.32" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
             </Link>
           ))}
           {pts.filter((p) => frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)} — ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: p.g.id, vx: p.x, vy: p.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)}. ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onMouseLeave={() => setHov(null)}>
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="#c2872f" fillOpacity="0.16" />
               <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={8} fill="#c2872f" stroke="#fff" strokeWidth="2" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
@@ -255,7 +255,7 @@ export default function ParetoExplorer() {
         <span className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-sm bg-[#dcfce7]" />Better half on both axes (median split)</span>
       </div>
       <p className="mt-1.5 max-w-[70ch] text-sm text-ink3">
-        A product is on the <b>Pareto frontier</b> when no other in-scope product is at least as good on both axes and strictly better on one. The green quadrant is simply the better half on each axis — a hint, not a ranking. Products missing either value are excluded rather than guessed.
+        A product is on the <b>Pareto frontier</b> when no other in-scope product is at least as good on both axes and strictly better on one. The green quadrant is simply the better half on each axis. A hint, not a ranking. Products missing either value are excluded rather than guessed.
       </p>
 
       {/* frontier shortlist */}

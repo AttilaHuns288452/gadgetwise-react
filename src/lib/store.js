@@ -1,5 +1,5 @@
 // The one persistence seam: signed-in users go to Supabase (RLS-backed),
-// guests to localStorage. Writes return the real result — no fake success.
+// guests to localStorage. Writes return the real result - no fake success.
 import { supabase, supabaseConfigured } from "./supabase.js";
 
 const live = (userId) => Boolean(supabaseConfigured && userId);
@@ -150,7 +150,7 @@ export async function voteReview(reviewId, value) {
 // ---------- reviews: admin moderation ----------
 // These hit the real `reviews` table. RLS lets any signed-in user read all
 // reviews and an admin (is_admin()) update/delete any. Approve/reject writes a
-// real `status` column (migration 0004) — never React-state-only.
+// real `status` column (migration 0004) - never React-state-only.
 
 export async function loadAllReviews() {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
@@ -423,7 +423,7 @@ export async function loadCategories() {
 export async function saveCategory(id, { name, blurb, sort_order = 0, slug, query }) {
   if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
   // slug is the app's category id (filters, product.category) and query is the
-  // marketplace keyword that fills the category — both shape the public site
+  // marketplace keyword that fills the category - both shape the public site
   const payload = {
     name,
     blurb,

@@ -58,7 +58,7 @@ export default async function handler(req, res) {
   const users = [];
   let page = 1;
   try {
-    // Page through auth users (bounded — cap to avoid unbounded fan-out).
+    // Page through auth users (bounded - cap to avoid unbounded fan-out).
     for (;;) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
       if (error) break;

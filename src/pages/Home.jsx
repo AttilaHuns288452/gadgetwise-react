@@ -25,7 +25,7 @@ function AnnouncementBanner() {
 
 /** Loading stand-in for the hero's featured card block. Same frame as the real
  *  card + companion rows, so the first screen never shifts when the catalog
- *  lands — and the hero sequence has something to carry at its 680ms beat. */
+ *  lands - and the hero sequence has something to carry at its 680ms beat. */
 function HeroSkeleton() {
   return (
     <>
@@ -65,7 +65,7 @@ function HeroSkeleton() {
 function Hero({ loading, failed }) {
   // Real catalog: feature the top-rated real product with an image. Falls back
   // to any product, and renders nothing if the catalog is still empty.
-  // Only listings that actually carry a rating can be "top rated" — an
+  // Only listings that actually carry a rating can be "top rated" - an
   // unrated listing never wins this pick.
   const rated = [...GW.gadgets].filter((x) => (x.rating || 0) > 0);
   const g =
@@ -87,7 +87,7 @@ function Hero({ loading, failed }) {
             Find the right gadget for <span className="text-star">school.</span>
           </h1>
           <p className="anim-fade-up mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2" style={{ animationDelay: "380ms" }}>
-            Compare <strong className="font-semibold text-white">marketplace prices, monthly costs, and real listing ratings</strong> before you buy — with recommendations whose scoring you can actually read.
+            Compare <strong className="font-semibold text-white">marketplace prices, monthly costs, and real listing ratings</strong> before you buy. With recommendations whose scoring you can actually read.
           </p>
           <div className="anim-fade-up mt-7 flex flex-wrap gap-3" style={{ animationDelay: "540ms" }}>
             <Link to="/recommend" className={btnPrimaryCls}>Find my gadget</Link>
@@ -132,7 +132,7 @@ function Hero({ loading, failed }) {
               </div>
               <div className="mt-3 flex items-center gap-3 bg-primary-wash px-5 py-3">
                 <span className="mono text-2xl font-bold text-hero">
-                  {Number.isFinite(ownIndex(g)) ? ownIndex(g) : "—"}<span className="text-sm text-ink3">/100</span>
+                  {Number.isFinite(ownIndex(g)) ? ownIndex(g) : "N/A"}<span className="text-sm text-ink3">/100</span>
                 </span>
                 <span className="text-sm font-medium text-ink2">Value score</span>
               </div>
@@ -175,7 +175,7 @@ function Stats() {
   const avg = rated.length
     ? (rated.reduce((s, g) => s + g.rating, 0) / rated.length).toFixed(1)
     : null;
-  // every configured category counts — the list is admin-managed, so a
+  // every configured category counts - the list is admin-managed, so a
   // category the admin added shows up even before its products load
   const covered = GW.categories.length;
   const cells = [
@@ -198,7 +198,7 @@ function Stats() {
   );
 }
 
-// budget preview over the live catalog — a real filter, not a staged demo
+// budget preview over the live catalog - a real filter, not a staged demo
 function BudgetPicker() {
   const prices = GW.gadgets.map((g) => g.price).filter((p) => Number.isFinite(p) && p > 0);
   const lo = prices.length ? Math.max(1, Math.min(...prices)) : 0;
@@ -214,11 +214,11 @@ function BudgetPicker() {
   const median = sorted[Math.floor(sorted.length / 2)];
   const [pos, setPos] = useState(() => (hi > lo ? toPos(median) : 0));
   const budget = hi > lo ? toPrice(pos) : Math.round(hi / 100) * 100;
-  // A listing with an unknown price is not "under budget" — it has no price
+  // A listing with an unknown price is not "under budget" - it has no price
   // to compare, so it is left out of the fit set entirely.
   const fits = GW.gadgets.filter((g) => knownPrice(g) != null && g.price <= budget);
   // review count breaks rating ties, or "highest rated" reads as an arbitrary pick
-  // Only listings that carry a rating can be "highest rated" — an unrated
+  // Only listings that carry a rating can be "highest rated" - an unrated
   // listing has no rating to rank by.
   const picks = [...fits]
     .filter((g) => (g.rating || 0) > 0)
@@ -332,8 +332,8 @@ function Categories({ hideCounts = false }) {
 }
 
 const MISS = [
-  ['₱ / month', 'Not just the sticker price', 'Price ÷ fixed 36-month window — the same math for every gadget, so numbers compare fairly.'],
-  ['Repair path', 'What happens after something breaks', 'Where the listing provides one, the repair path is named — standard upgradeable slots to authorized service only.'],
+  ['₱ / month', 'Not just the sticker price', 'Price ÷ fixed 36-month window. The same math for every gadget, so numbers compare fairly.'],
+  ['Repair path', 'What happens after something breaks', 'Where the listing provides one, the repair path is named. Standard upgradeable slots to authorized service only.'],
   ['Academic fit', 'What actually works for your course or workflow', 'Programming, design, online classes: the ranking adjusts to your use.'],
 ];
 
@@ -378,7 +378,7 @@ function TopRated({ compare, onCompare }) {
 }
 
 function Cheapest() {
-  // A listing with no known price cannot be ranked by cost — it would sort
+  // A listing with no known price cannot be ranked by cost - it would sort
   // first as "₱0" and that is a false claim.
   const rows = [...GW.gadgets]
     .filter((g) => knownPrice(g) != null)
@@ -390,7 +390,7 @@ function Cheapest() {
         <div>
           <h2 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Cheapest to own</h2>
           <p className="mt-2 text-base text-ink2">The three cheapest gadgets to own per month.</p>
-          <p className="mono mt-1 text-sm text-ink3">Ranked by monthly cost — lowest first.</p>
+          <p className="mono mt-1 text-sm text-ink3">Ranked by monthly cost. Lowest first.</p>
         </div>
         <ul>
         {rows.map((g) => (

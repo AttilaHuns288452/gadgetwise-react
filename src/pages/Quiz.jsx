@@ -1,6 +1,6 @@
-// Quiz — /recommend · "Get Recommendations"
+// Quiz - /recommend · "Get Recommendations"
 // 5-step flow: category → budget → academic use → priorities → ranked results.
-// Scoring engine is recommend() in lib.js — this file is UI + copy only.
+// Scoring engine is recommend() in lib.js - this file is UI + copy only.
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../lib/auth.js";
 import { Link, useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ const CUSTOM_CHIPS = [
   [15000, "₱15,000"], [20000, "₱20,000"], [30000, "₱30,000"], [45000, "₱45,000"], [60000, "₱60,000+"],
 ];
 
-const LEVELS = [["none", "—"], ["low", "Low"], ["medium", "Med"], ["high", "High"]];
+const LEVELS = [["none", "N/A"], ["low", "Low"], ["medium", "Med"], ["high", "High"]];
 
 const FIXED_CHIPS = ["Budget fit · 20 pts fixed", "Academic fit · 25 pts fixed", "Community · 5 pts fixed"];
 
@@ -75,7 +75,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
   useEffect(() => {
     if (import.meta.env?.DEV && (!compareProp || !onCompareProp)) {
       console.warn(
-        "[Quiz] compare/onCompare props are missing — the compare tray will not see these picks. " +
+        "[Quiz] compare/onCompare props are missing. The compare tray will not see these picks. " +
           "Pass compare={compare} onCompare={onCompare} from App.jsx.",
       );
     }
@@ -112,7 +112,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
 
   useEffect(() => {
     if (step === 5 && engine && results.length) {
-      toast(`Shortlist ready — showing the top ${results.length} of ${engine.results.length}`);
+      toast(`Shortlist ready. Showing the top ${results.length} of ${engine.results.length}`);
       if (user && !savedRun) {
         saveRecommendation(user.id, {
           category: cat,
@@ -148,7 +148,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
       </p>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">
-        {/* LEFT — numbered steps */}
+        {/* LEFT - numbered steps */}
         <nav aria-label="Quiz steps" className="order-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
           <ol>
             {TITLES.map((t, i) => {
@@ -181,13 +181,13 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
           </ol>
         </nav>
 
-        {/* RIGHT — current step */}
+        {/* RIGHT - current step */}
         <section className="order-1 min-w-0 lg:order-2">
           {step === 1 && (
             <div>
               <h2 className="text-2xl font-extrabold">What are you looking for?</h2>
               <p className="mt-1.5 text-ink2">
-                Only that category gets ranked — a laptop is never compared against a power bank.
+                Only that category gets ranked. A laptop is never compared against a power bank.
               </p>
               <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
                 {CATS.map((c) => (
@@ -259,7 +259,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                     {band ? (
                       <>
                         Exact ceiling{" "}
-                        <span className="mono font-semibold text-ink">{money(band.max)}</span> — products above it are not ranked.
+                        <span className="mono font-semibold text-ink">{money(band.max)}</span>. Products above it are not ranked.
                       </>
                     ) : (
                       <span className="font-semibold text-[#B3372E]">
@@ -318,7 +318,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
             <div>
               <h2 className="text-2xl font-extrabold">What matters most to you?</h2>
               <p className="mt-1.5 text-ink2">
-                Your picks shift scoring weight. Leave everything on “—” for a balanced score.
+                Your picks shift scoring weight. Leave everything as it is for a balanced score.
               </p>
               <p className="mt-4 rounded-xl bg-surface2 px-4 py-3 text-sm text-ink2">
                 50 of the 100 points are redistributed by these priorities. Budget fit (20), academic suitability (25),
@@ -381,7 +381,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {/* the real engine weights for THIS run, not the
-                      module-level defaults — the chips used to ignore the
+                      module-level defaults. The chips used to ignore the
                       user's priorities entirely. */}
                   {[...FIXED_CHIPS, ...adjChips].map((c) => (
                     <span key={c} className="chip">
@@ -458,7 +458,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                               instead of implying a full 100-point measurement. */}
                           {r.breakdown.coverage < 1 && (
                             <div className="mt-1 text-xs text-ink2">
-                              Partial — {Math.round(r.breakdown.coverage * 100)}% of the points have data
+                              Partial. {Math.round(r.breakdown.coverage * 100)}% of the points have data
                             </div>
                           )}
                         </div>
@@ -495,14 +495,14 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                             <ul className="grid gap-2">
                               {r.strengths.slice(0, 3).map((s, j) => (
                                 <li key={j} className="text-sm text-ink2">
-                                  — {s}
+                                 . {s}
                                 </li>
                               ))}
                             </ul>
                             <ul className="grid gap-2">
                               {r.weaknesses.slice(0, 3).map((s, j) => (
                                 <li key={j} className="text-sm text-ink2">
-                                  — {s}
+                                 . {s}
                                 </li>
                               ))}
                             </ul>
@@ -520,7 +520,7 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         <div className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                           {r.breakdown.factors.map((f) => (
                             <div key={f.key}>
-                              {/* earned / max points — the contribution this
+                              {/* earned / max points - the contribution this
                                   factor made to the score */}
                               <Bar v={f.earned} max={f.max} label={f.label} />
                               {f.note && <p className="mt-0.5 text-xs text-ink2">{f.note}</p>}
@@ -530,12 +530,12 @@ export default function Quiz({ compare: compareProp, onCompare: onCompareProp })
                         {r.breakdown.unknown.length > 0 && (
                           <div className="mt-4 rounded-xl bg-surface2 px-4 py-3">
                             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink2">
-                              Not scored — no data
+                              Not scored. No data
                             </div>
                             <ul className="mt-2 grid gap-1">
                               {r.breakdown.unknown.map((u) => (
                                 <li key={u.key} className="text-sm text-ink2">
-                                  — {u.label} ({u.max} pts): {u.note}
+                                 . {u.label} ({u.max} pts): {u.note}
                                 </li>
                               ))}
                             </ul>

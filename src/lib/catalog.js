@@ -27,7 +27,7 @@ const CATEGORY_QUERIES = [
 
 // admin-managed categories override the built-ins by slug; rows merge over the
 // defaults so one admin edit never deletes the rest
-// merge admin rows over the defaults — pure, and a row with no query still
+// merge admin rows over the defaults - pure, and a row with no query still
 // counts as a category
 export function mergeCategoryPlan(base, rows) {
   const byId = new Map(base.map((c) => [c.id, { ...c }]));
@@ -72,7 +72,7 @@ export function planHash(list = []) {
     .map((c) => `${c.id}|${c.name || ""}|${c.query || ""}`)
     .sort()
     .join(";");
-  // FNV-1a (32-bit) — a cache key only needs to be stable and collision-light.
+  // FNV-1a (32-bit) - a cache key only needs to be stable and collision-light.
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -109,7 +109,7 @@ async function fetchCategory(catId, query) {
     }
     for (const p of d.products || []) out.items.push({ ...p, _cat: catId });
     // the handler serves a real snapshot when the provider is unavailable and
-    // marks it stale — surface that so cached rows are never sold as live
+    // marks it stale - surface that so cached rows are never sold as live
     if (d.stale) { out.stale = true; out.staleFrom = d.staleFrom || out.staleFrom; }
   }
   return out;
@@ -142,7 +142,7 @@ export function parsePriceRange(minRaw, maxRaw) {
   return { min: lo.value, max: hi.value, error: null };
 }
 
-// unknown price can't satisfy a bound — excluded, not counted as ₱0
+// unknown price can't satisfy a bound - excluded, not counted as ₱0
 export function withinPriceRange(price, min, max) {
   if (typeof price !== "number" || !Number.isFinite(price)) return false;
   if (min != null && price < min) return false;
@@ -274,7 +274,7 @@ export async function loadCatalog() {
       const { items, ok, error, stale, staleFrom } = r.value;
       if (!ok) {
         // keep the older rows for this category, report the failure,
-        // and do NOT refresh its timestamp — it is retried on the next load.
+        // and do NOT refresh its timestamp - it is retried on the next load.
         results.push({ id: cat, ok: false, error, fallback: prev?.rows || [], fetchedAt: prev?.fetchedAt || null });
         continue;
       }
@@ -288,7 +288,7 @@ export async function loadCatalog() {
   // stale = upstream served an old snapshot OR we are serving expired rows
   const servingExpired = results.some((r) => !r.ok && (r.fallback || []).length);
   const stale = Boolean(merged.stale || servingExpired);
-  // "as of" is the OLDEST served row — the whole set is only as fresh as
+  // "as of" is the OLDEST served row - the whole set is only as fresh as
   // its stalest member. A live fetch is now; a cached category is its own
   // timestamp.
   const stamps = results.map((r) => r.fetchedAt).filter((t) => typeof t === "number");

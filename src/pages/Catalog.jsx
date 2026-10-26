@@ -8,7 +8,7 @@ import LiveSearch from "../components/LiveSearch.jsx";
 /* Filter behavior ported 1:1 from the prototype (js/catalog.js FEATURES/apply). */
 const FEATURES = {
   long: (g) => /([8-9]\d*|\d{2,})\s*(h|hr|hour)/i.test(g.specs.Battery || ""),
-  // A listing with an UNKNOWN price cannot be claimed to be "under ₱15,000" —
+  // A listing with an UNKNOWN price cannot be claimed to be "under ₱15,000" -
   // null < 15000 is true, which would be a lie.
   budget: (g) => withinPriceRange(g.price, null, 15000),
   durable: (g) => typeof g.scored.durability === "number" && g.scored.durability >= 7,
@@ -77,7 +77,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
   const brandList = [...new Set(scope.map((g) => g.brand))].filter((b) => b && b !== "Unknown").sort();
 
   // every finite, non-negative ceiling is applied. An empty input means
-  // "no ceiling" and is NOT the same as a number — the old code skipped any
+  // "no ceiling" and is NOT the same as a number - the old code skipped any
   // max >= 100000, so a ₱120,000 ceiling was silently ignored.
   const range = parsePriceRange(minPrice, maxPrice);
   const { min, max } = range;
@@ -113,7 +113,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
     ...(q ? [`matching “${q}”`] : []),
   ].join(" · ");
 
-  // ponytail: sizing overrides on .btn/.field are plain utilities — utilities layer beats components layer in v4, no ! needed
+  // ponytail: sizing overrides on .btn/.field are plain utilities - utilities layer beats components layer in v4, no ! needed
   const groupCls = "mt-4 border-t border-line pt-4";
   const headCls = "mb-3 text-xs font-bold uppercase tracking-[0.05em] text-ink";
   const rowCls = "flex cursor-pointer items-center gap-2.5 py-1 text-sm text-ink2 hover:text-ink";
@@ -137,7 +137,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
-        {/* Filters. On phones the whole panel collapses behind one toggle —
+        {/* Filters. On phones the whole panel collapses behind one toggle -
             stacked open it pushed the first product card ~3100px down. From lg
             up the sidebar is always visible, exactly as before. */}
         <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto" aria-label="Filters">
@@ -281,7 +281,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
             </div>
 
             {/* ponytail: on phones the panel is the whole screen, so it needs
-                its own way out — the results sit below the fold otherwise */}
+                its own way out. The results sit below the fold otherwise */}
             <button
               type="button"
               onClick={() => {
@@ -345,7 +345,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
           <LiveSearch query={q} />
 
           {/* ponytail: on phones the chips become one horizontally scrollable
-              rail — wrapped chips raggedly into 3 rows and ate the fold */}
+              rail. Wrapped chips raggedly into 3 rows and ate the fold */}
           <div className="scroll-fade mt-4 -mx-6 flex gap-2 overflow-x-auto px-6 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
             {catOptions().map(([id, label]) => (
               <button
@@ -381,7 +381,7 @@ export default function Catalog({ compare, onCompare, catalogLoading, catalogErr
           ) : (
             <>
               {/* keyed on the real controls so a result change replays the
-                  entrance — by identity, not count (swapping a feature used to
+                  entrance. By identity, not count (swapping a feature used to
                   skip the replay), and minus the search box so typing doesn't
                   re-animate per keystroke */}
               <div

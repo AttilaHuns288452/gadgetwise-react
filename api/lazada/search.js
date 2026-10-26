@@ -1,11 +1,11 @@
-// GET /api/lazada/search — TMAPI search proxy; the key stays server-side.
+// GET /api/lazada/search - TMAPI search proxy; the key stays server-side.
 // Returns normalized products plus an explicit freshness marker.
 import { createClient } from "@supabase/supabase-js";
 import { getLazadaKeys } from "../../lib/settings-crypto.js";
 
 // Shared snapshot cache: the provider is quota-metered, so a successful fetch is
 // persisted and later served (marked stale) when the provider is unavailable.
-// Real marketplace rows with a timestamp — never invented products.
+// Real marketplace rows with a timestamp - never invented products.
 function snapshotClient() {
   const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
   const ip = String(req.headers["x-forwarded-for"] || "local").split(",")[0].trim();
   if (rateLimited(ip)) {
     res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: { code: "rate_limited", message: "Too many searches — try again in a minute." } });
+    return res.status(429).json({ error: { code: "rate_limited", message: "Too many searches. Try again in a minute." } });
   }
 
   const keys = await getLazadaKeys(); // admin key first, then authorized env keys

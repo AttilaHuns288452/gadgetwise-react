@@ -1,6 +1,6 @@
 // Real Lazada listings mapped into the gadget shape so they open OUR detail
 // page. Fields the marketplace doesn't send stay neutral and are flagged
-// marketplace: true — nothing invented to make a listing look better.
+// marketplace: true - nothing invented to make a listing look better.
 
 import GW from "../data.js";
 
@@ -43,7 +43,7 @@ export function toGadget(p) {
   const category = inferCategory(p.title);
 
   // Unknown for marketplace listings: the upstream sends no battery, warranty,
-  // or curated sub-scores. Set them to null (unavailable) — never fabricated.
+  // or curated sub-scores. Set them to null (unavailable) - never fabricated.
   // The scoring engine excludes null inputs and renormalizes (see lib.js).
   const g = {
     id,
@@ -79,7 +79,7 @@ export function toGadget(p) {
       storage: null,
       repairability: null,
     },
-    battery: null, // unknown — excluded from scoring, never fabricated
+    battery: null, // unknown. Excluded from scoring, never fabricated
     value: {
       warrantyYears: null, // unknown for marketplace listings
       lifespanYears: null,
@@ -120,7 +120,7 @@ export function isListingId(id) {
 }
 
 // fetch-on-miss by id (the registry is in-memory, so a deep link would 404).
-// returns found | not-found | error — a failed lookup is never "gone"
+// returns found | not-found | error - a failed lookup is never "gone"
 export async function fetchListing(id) {
   if (!isListingId(id)) return { status: "not-found", gadget: null, error: null };
   const existing = REGISTRY.get(id);

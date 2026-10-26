@@ -9,7 +9,7 @@ const KEY = "gw_compare_history";
 
 export function readCompareHistory() {
   // Real history only: whatever this browser has actually compared. No seeded
-  // demo sessions — a fresh account starts empty instead of showing fiction.
+  // demo sessions - a fresh account starts empty instead of showing fiction.
   try {
     const raw = localStorage.getItem(KEY);
     if (raw === null) return [];

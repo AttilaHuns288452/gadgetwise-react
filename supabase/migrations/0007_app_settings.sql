@@ -7,7 +7,7 @@
 -- Writes require is_admin() (security-definer). Reads are admin-only too.
 --
 -- Threat note: this protects the value at rest in the DB. The master key lives
--- in the deployment env, so full protection still depends on env secrecy — the
+-- in the deployment env, so full protection still depends on env secrecy - the
 -- same boundary as a plain env var, plus encryption at rest.
 
 create table if not exists public.app_settings (

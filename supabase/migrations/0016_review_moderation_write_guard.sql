@@ -1,4 +1,4 @@
--- 0016: review write-path guard — pending on insert, re-moderation on edit.
+-- 0016: review write-path guard - pending on insert, re-moderation on edit.
 --
 -- 0004 made moderation a real DB write, but its trigger guarded UPDATE only,
 -- and the INSERT policy ("reviews owner write", inherited from 0001) checked
@@ -8,7 +8,7 @@
 -- approved review kept it approved.
 --
 -- This migration closes both in the database:
---   1. a non-admin INSERT always lands as 'pending' — status, moderated_by and
+--   1. a non-admin INSERT always lands as 'pending' - status, moderated_by and
 --      moderated_at are server-owned, and the INSERT policy demands
 --      status = 'pending' from everyone who is not an admin;
 --   2. a non-admin who changes the body or the rating of a moderated review

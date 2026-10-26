@@ -81,7 +81,7 @@ export default function Profile({ compare, onCompare }) {
   };
 
   useEffect(() => {
-    document.title = "GadgetWise — Profile";
+    document.title = "GadgetWise: Profile";
   }, []);
 
   useEffect(() => {
@@ -189,7 +189,7 @@ export default function Profile({ compare, onCompare }) {
   const initials = (email || displayName).slice(0, 2).toUpperCase();
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })
-    : "—";
+    : "N/A";
 
   const saved = GW.gadgetsByIds([...wish.ids]);
   const compareCount = readCompareHistory().length;
@@ -423,7 +423,7 @@ export default function Profile({ compare, onCompare }) {
               </div>
             </div>
             <p className="mt-1 text-xs text-ink2">
-              PNG, JPEG, WebP or GIF up to 5 MB. {photo ? "Preview only — the photo uploads when you save." : ""}
+              PNG, JPEG, WebP or GIF up to 5 MB. {photo ? "Preview only. The photo uploads when you save." : ""}
             </p>
           </div>
         </Modal>

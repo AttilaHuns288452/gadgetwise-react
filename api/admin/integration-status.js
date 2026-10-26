@@ -78,7 +78,7 @@ export default async function handler(req, res) {
       status.message = `Connected. Test search returned ${items.length} items.`;
     } else if (r.status === 429) {
       status.connection = "quota_exhausted";
-      status.message = "Provider returned 429 — monthly quota or rate limit reached for this key.";
+      status.message = "Provider returned 429. Monthly quota or rate limit reached for this key.";
     } else if (r.status === 401 || r.status === 403) {
       status.connection = "invalid_credentials";
       status.message = `Provider rejected the key (${r.status}).`;

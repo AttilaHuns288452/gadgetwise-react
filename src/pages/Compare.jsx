@@ -1,4 +1,4 @@
-// Compare — /compare · "Compare Gadgets"
+// Compare - /compare · "Compare Gadgets"
 // Ported from the prototype's js/comparison.js: a row model with a per-row
 // "better" direction (low/high/null), winner highlighting only when the gap
 // is meaningful (>=8% relative spread, so near-ties stay quiet), category-
@@ -32,7 +32,7 @@ const SPEC_ROWS = {
 const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const score = (v) => (v == null ? NA : `${v.toFixed(1)}/10`);
 
-// A rating of 0 (or none) means unrated — no winner, no fake 0.0 stars.
+// A rating of 0 (or none) means unrated - no winner, no fake 0.0 stars.
 const hasRating = (g) => num(g?.rating) != null && g.rating > 0;
 const ratingText = (g) => (hasRating(g) ? `${g.rating.toFixed(1)}★ (${g.reviewCount})` : "Not available");
 
@@ -92,7 +92,7 @@ function rowsFor(gadgets) {
     });
   }
   // Repair path: the curated plain-language label when one exists
-  // ("Hard — authorized service only"); a listing with no repair
+  // ("Hard - authorized service only"); a listing with no repair
   // assessment degrades to "Not available" like every other missing value.
   add("Repair path", null, null, null, (g) => {
     const label = g.value?.repairabilityLabel;
@@ -103,7 +103,7 @@ function rowsFor(gadgets) {
 
 /* Indices of the cells that win this row. A row only highlights when every
    value is numeric, the spread is non-zero, and the gap is meaningful
-   (>=8% relative) — near-ties stay quiet. Ties at the winning edge all
+   (>=8% relative). Near-ties stay quiet. Ties at the winning edge all
    get marked. */
 function bestIndices(row, list) {
   if (!row.better || !row.get || list.length < 2) return [];
@@ -192,7 +192,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
 
   const remove = (id) => {
     // Drop it from the authoritative selection. A ?ids= comparison lives in
-    // the URL, so the link itself has to change — otherwise the id comes back
+    // the URL, so the link itself has to change - otherwise the id comes back
     // on the next click or refresh. Both are set from the SAME list, so the
     // URL and the selection can never disagree.
     const next = picked.filter((x) => x !== id);
@@ -212,7 +212,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
     <section className="mx-auto w-full max-w-none px-6 lg:px-12 2xl:px-16 pb-24 pt-10">
       <h1>Compare Gadgets</h1>
       <p className="mt-2 max-w-[640px] text-ink2">
-        Two to four gadgets side by side. Meaningful differences are highlighted — near-ties stay quiet, so the table
+        Two to four gadgets side by side. Meaningful differences are highlighted. Near-ties stay quiet, so the table
         tells you what actually matters.
       </p>
 
@@ -234,7 +234,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
         <>
           {missing.length > 0 && (
             <p role="status" className="mt-6 rounded-lg bg-[#FFF8E6] px-4 py-2.5 text-sm font-medium text-[#6B4E12]">
-              {missing.length} of {picked.length} selected listings could not be loaded — the rest of the comparison is
+              {missing.length} of {picked.length} selected listings could not be loaded. The rest of the comparison is
               still live.
             </p>
           )}
@@ -367,12 +367,12 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
           {/* At a glance */}
           {(() => {
             if (!list.length) return null;
-            // A listing with no known price is not "cheapest" — its price is
+            // A listing with no known price is not "cheapest" - its price is
             // unknown, so it never wins a price comparison.
             const priced = list.filter((g) => typeof g.price === "number" && g.price > 0);
             const lowestPrice = [...priced].sort((a, b) => a.price - b.price)[0] || null;
             const cheapest = [...priced].sort((a, b) => GW.monthlyCost(a) - GW.monthlyCost(b))[0] || null;
-            // A product with no marketplace rating is not "rated 0.0" — it is
+            // A product with no marketplace rating is not "rated 0.0" - it is
             // unrated, so it never wins a rating comparison.
             const rated = list.filter(hasRating).sort((a, b) => b.rating - a.rating);
             const highestRated = rated[0] || null;
@@ -384,7 +384,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
             const topScore = ranked.length ? ownIndex(ranked[0]) : null;
             const spread = ranked.length > 1 ? topScore - ownIndex(ranked[ranked.length - 1]) : 0;
             // The Performance to Cost index is a VALUE score (battery + rating +
-            // price vs category + warranty), so its winner is a value winner —
+            // price vs category + warranty), so its winner is a value winner -
             // it is not the highest rated product.
             const line =
               !ranked.length
@@ -418,7 +418,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                             Lowest price: <strong>{GW.displayName(lowestPrice)}</strong> at {money(lowestPrice.price)}
                           </>
                         ) : (
-                          <>Lowest price: <strong>Not available</strong> — no listing here has a known price</>
+                          <>Lowest price: <strong>Not available</strong>. No listing here has a known price</>
                         )}
                       </span>
                     </li>
@@ -430,7 +430,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                             Cheapest long-term: <strong>{GW.displayName(cheapest)}</strong> at ≈ {money(GW.monthlyCost(cheapest))}/month
                           </>
                         ) : (
-                          <>Cheapest long-term: <strong>Not available</strong> — no listing here has a known price</>
+                          <>Cheapest long-term: <strong>Not available</strong>. No listing here has a known price</>
                         )}
                       </span>
                     </li>
@@ -442,7 +442,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                             Highest marketplace rating: <strong>{GW.displayName(highestRated)}</strong> at {highestRated.rating.toFixed(1)}★
                           </>
                         ) : (
-                          <>Highest marketplace rating: <strong>Not available</strong> — no listing here has a rating yet</>
+                          <>Highest marketplace rating: <strong>Not available</strong>. No listing here has a rating yet</>
                         )}
                       </span>
                     </li>
@@ -450,7 +450,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                   <p className="mt-4 text-sm text-ink2">{line}</p>
                 </div>
                 <p className="mt-4 text-sm text-ink2">
-                  Highlighted cells mark a difference of at least 8% — near-ties stay unmarked. Monthly cost uses a fixed
+                  Highlighted cells mark a difference of at least 8%. Near-ties stay unmarked. Monthly cost uses a fixed
                   36-month window. Ratings and review counts come from the marketplace, not from GadgetWise users.
                 </p>
               </>

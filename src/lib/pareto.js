@@ -70,7 +70,7 @@ export function paretoFrontier(items, objKeys) {
   };
 }
 
-/** Independent naive reference (no early break, matrix style) — for tests. */
+/** Independent naive reference (no early break, matrix style) - for tests. */
 export function bruteForceFrontier(items, objKeys) {
   const objs = objKeys.map((k) => OBJECTIVES[k]).filter(Boolean);
   const rows = items

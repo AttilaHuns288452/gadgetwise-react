@@ -190,7 +190,7 @@ function Dashboard({ tab, stats, pendingRows }) {
             ? <BarList rows={views.topViewed.map((v) => [GW.getGadget(v.id) ? GW.displayName(GW.getGadget(v.id)) : v.id.slice(0, 18), v.views])} />
             : <p className="text-[15px] text-[#6B7280]">No product views recorded yet. Views are counted live as people open product pages.</p>}
         </Panel>
-        <Panel title="Product views — last 4 weeks">
+        <Panel title="Product views. Last 4 weeks">
           <MiniBars data={views.weeklyViews.map((n) => n || 0)} labels={["4 wks", "3 wks", "2 wks", "This week"]} />
         </Panel>
       </div>
@@ -199,7 +199,7 @@ function Dashboard({ tab, stats, pendingRows }) {
         <Panel title="Data sources">
           <p className="text-[15px] leading-relaxed text-[#4B5563]">
             Product counts and prices are counted live from the marketplace catalog. Review
-            counts and page views come from the database (product_views) — these analytics are
+            counts and page views come from the database (product_views). These analytics are
             counted for real, never estimated or fabricated.
           </p>
         </Panel>
@@ -223,7 +223,7 @@ function Reports({ stats }) {
       <h1 className="text-[30px] font-bold text-[#111827]">Reports</h1>
       <p className="mt-1 text-[15px] text-[#6B7280]">
         Catalog composition counted live from {stats.total} real marketplace products.
-        No traffic, page-view, or engagement metrics are shown because none are collected —
+        No traffic, page-view, or engagement metrics are shown because none are collected:
         presenting invented numbers here would be misleading.
       </p>
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
@@ -290,7 +290,7 @@ function Gadgets({ toast }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-bold text-[#111827]">Gadgets</h1>
-          <p className="mt-1 text-[15px] text-[#6B7280]">GadgetWise-curated products. Add, edit, or remove them — saved to the database and shown in the catalog.</p>
+          <p className="mt-1 text-[15px] text-[#6B7280]">GadgetWise-curated products. Add, edit, or remove them. Saved to the database and shown in the catalog.</p>
           <p className="mt-2 text-[13px] text-[#B42318]">Remove any propagation-test or placeholder rows before publishing a product.</p>
         </div>
         <button className={btnPrimary} onClick={() => openForm({ model: "", brand: "", category: "smartphones", price: "", image: "" })}><Ico n="plus" size={16} /> Add gadget</button>
@@ -354,8 +354,8 @@ function Gadgets({ toast }) {
                     <div><div className="font-medium text-[#111827]">{[g.brand, g.model].filter(Boolean).join(" ")}</div></div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-[#4B5563]">{g.category ? g.category.charAt(0).toUpperCase() + g.category.slice(1) : "—"}</td>
-                <td className="px-4 py-3 mono text-[#111827]">{g.price != null ? money(g.price) : "—"}</td>
+                <td className="px-4 py-3 text-[#4B5563]">{g.category ? g.category.charAt(0).toUpperCase() + g.category.slice(1) : "N/A"}</td>
+                <td className="px-4 py-3 mono text-[#111827]">{g.price != null ? money(g.price) : "N/A"}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <button className={iconBtn} title="Edit" aria-label={`Edit ${[g.brand, g.model].filter(Boolean).join(" ") || "gadget"}`} onClick={() => openForm({ ...g })}><Ico n="pencil" /></button>
@@ -569,7 +569,7 @@ function Integrations({ toast }) {
       <div className="mt-6 rounded-xl border border-[#E4E7EC] bg-white p-6">
         <h2 className="text-[19px] font-bold text-[#111827]">API key</h2>
         <p className="mt-1 text-[15px] text-[#6B7280]">
-          Save the Lazada API key here. It is encrypted (AES-256-GCM) and stored server-side — never shown back in full and never shipped to the browser.
+          Save the Lazada API key here. It is encrypted (AES-256-GCM) and stored server-side. Never shown back in full and never shipped to the browser.
           A new key is used by product searches immediately, no redeploy needed.
         </p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
@@ -614,10 +614,10 @@ function Integrations({ toast }) {
             <span className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${connBadge(status.connection)}`}>{(status.connection || "unknown").replaceAll("_", " ")}</span>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <Field label="Connection"><div className="text-[15px] text-[#111827]">{status.message || "—"}</div></Field>
+            <Field label="Connection"><div className="text-[15px] text-[#111827]">{status.message || "N/A"}</div></Field>
             <Field label="API host"><div className="text-[15px] text-[#111827]">{status.apiHost}</div></Field>
             <Field label="Key configured"><div className="text-[15px] text-[#111827]">{status.configured ? `Yes (${status.keyFingerprint})` : "No"}</div></Field>
-            <Field label="Requests remaining"><div className="text-[15px] text-[#111827]">{status.requestsRemaining != null ? status.requestsRemaining.toLocaleString() : "—"}</div></Field>
+            <Field label="Requests remaining"><div className="text-[15px] text-[#111827]">{status.requestsRemaining != null ? status.requestsRemaining.toLocaleString() : "N/A"}</div></Field>
           </div>
           <div className="mt-5">
             <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#667085]">Environment variables</div>
@@ -649,7 +649,7 @@ function Reviews({ rows, loaded }) {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-[30px] font-bold text-[#111827]">Community reviews</h1>
       </div>
-      <p className="mt-1 text-[15px] text-[#6B7280]">Reviews publish automatically. The only rule enforced is the forbidden-words list (see the Forbidden words tab) — this page is a read-only view of what members are saying.</p>
+      <p className="mt-1 text-[15px] text-[#6B7280]">Reviews publish automatically. The only rule enforced is the forbidden-words list (see the Forbidden words tab). This page is a read-only view of what members are saying.</p>
 
       <div className="mt-5 scroll-fade overflow-x-auto rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
         <table className="w-full min-w-[900px]">
@@ -746,7 +746,7 @@ function Users() {
     toast(`${revokeTarget.email} is no longer an admin`);
   };
 
-  const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—");
+  const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "N/A");
   const initials = (email) => (email || "?").slice(0, 2).toUpperCase();
   const shown = users.filter((u) => `${u.email} ${u.id}`.toLowerCase().includes(q.toLowerCase()));
   return (
@@ -873,7 +873,7 @@ function SiteSettings({ toast }) {
     setSaving(false);
     if (!second.ok) { toast(second.error || "Could not save", "alert"); return; }
     setDirty(false);
-    toast("Site settings saved — they show on the homepage the next time it loads");
+    toast("Site settings saved. They show on the homepage the next time it loads");
   };
   return (
     <>
@@ -882,7 +882,7 @@ function SiteSettings({ toast }) {
         <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Site settings</h1>
         <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
           A short homepage announcement shown to every visitor. Saved to the database and shown on the
-          public homepage the next time it loads — no redeploy needed.
+          public homepage the next time it loads. No redeploy needed.
         </p>
       </div>
 
@@ -1067,7 +1067,7 @@ export default function Admin() {
 }
 
 // Forbidden words: the moderation list behind review validation. Edits are
-// live immediately — the DB trigger reads this table on every review write.
+// live immediately - the DB trigger reads this table on every review write.
 function ForbiddenWords({ toast }) {
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -1111,7 +1111,7 @@ function ForbiddenWords({ toast }) {
           <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Forbidden words</h1>
           <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
             Reviews containing an enabled entry are rejected before they save. Matching is case-insensitive,
-            ignores punctuation and spacing differences, and only whole words count — a listed word never
+            ignores punctuation and spacing differences, and only whole words count. A listed word never
             blocks innocent words around it. Changes apply immediately.
           </p>
         </div>
@@ -1271,7 +1271,7 @@ function ActivityLogs() {
         <h1 className="mt-2 text-[30px] font-bold text-[#111827]">Activity logs</h1>
         <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-[#475467]">
           Append-only record of privileged actions and moderation outcomes. Entries are written by the
-          server with the real actor — they cannot be edited or deleted from the app.
+          server with the real actor. They cannot be edited or deleted from the app.
         </p>
       </div>
 
@@ -1319,9 +1319,9 @@ function ActivityLogs() {
                     <td className={cellCls + " whitespace-nowrap"}>{new Date(r.at).toLocaleString()}</td>
                     <td className={cellCls}>{r.actor || "system"}</td>
                     <td className={cellCls + " font-medium text-[#111827]"}>{r.action}</td>
-                    <td className={cellCls}>{r.entity_type ? `${r.entity_type}${r.entity_id ? ` · ${r.entity_id.slice(0, 8)}` : ""}` : "—"}</td>
+                    <td className={cellCls}>{r.entity_type ? `${r.entity_type}${r.entity_id ? ` · ${r.entity_id.slice(0, 8)}` : ""}` : "N/A"}</td>
                     <td className={cellCls}><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + resultColor(r.result)}>{r.result}</span></td>
-                    <td className={cellCls + " text-[#667085]"}>{r.reason || "—"}</td>
+                    <td className={cellCls + " text-[#667085]"}>{r.reason || "N/A"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1341,9 +1341,9 @@ function ActivityLogs() {
             <dt className="font-semibold text-[#344054]">When</dt><dd className="text-[#111827]">{new Date(detail.at).toLocaleString()}</dd>
             <dt className="font-semibold text-[#344054]">Actor</dt><dd className="text-[#111827]">{detail.actor || "system"}</dd>
             <dt className="font-semibold text-[#344054]">Action</dt><dd className="text-[#111827]">{detail.action}</dd>
-            <dt className="font-semibold text-[#344054]">Record</dt><dd className="text-[#111827]">{detail.entity_type || "—"} {detail.entity_id || ""}</dd>
+            <dt className="font-semibold text-[#344054]">Record</dt><dd className="text-[#111827]">{detail.entity_type || "N/A"} {detail.entity_id || ""}</dd>
             <dt className="font-semibold text-[#344054]">Result</dt><dd className="text-[#111827]">{detail.result}</dd>
-            <dt className="font-semibold text-[#344054]">Reason</dt><dd className="text-[#111827]">{detail.reason || "—"}</dd>
+            <dt className="font-semibold text-[#344054]">Reason</dt><dd className="text-[#111827]">{detail.reason || "N/A"}</dd>
             <dt className="font-semibold text-[#344054]">Metadata</dt>
             <dd className="text-[#111827]"><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(detail.metadata || {}, null, 2)}</pre></dd>
           </dl>
