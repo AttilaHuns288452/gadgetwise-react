@@ -83,7 +83,7 @@ function Hero({ loading, failed }) {
     <section className="bg-hero text-on-hero">
       <div className="mx-auto grid max-w-none items-stretch gap-10 px-6 lg:px-12 2xl:px-16 py-12 md:py-14 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="flex min-w-0 flex-col">
-          <h1 className="anim-fade-up font-display text-[clamp(2.5rem,4.2vw,3.75rem)] font-bold leading-[1.03] tracking-tight" style={{ animationDelay: "220ms" }}>
+          <h1 className="anim-fade-up mt-auto font-display text-[clamp(2.5rem,4.2vw,3.75rem)] font-bold leading-[1.03] tracking-tight" style={{ animationDelay: "220ms" }}>
             Find the right gadget for <span className="text-star">school.</span>
           </h1>
           <p className="anim-fade-up mt-6 max-w-[54ch] text-xl leading-relaxed text-on-hero2" style={{ animationDelay: "380ms" }}>
