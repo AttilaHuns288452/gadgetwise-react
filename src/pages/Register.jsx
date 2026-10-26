@@ -37,7 +37,7 @@ function Register() {
     const { error: err, needsConfirm } = await signUp(name, email.trim(), password);
     setBusy(false);
     if (err) { setError(err.message || "Could not create your account. Try again."); return; }
-    if (needsConfirm) { setNotice("Check your email to confirm your account, then sign in."); return; }
+    if (needsConfirm) { setNotice("Check your email to confirm your account, then sign in. Already have an account? Use Log in instead."); return; }
     navigate(next);
   };
 

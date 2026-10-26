@@ -155,6 +155,10 @@ export function useAuthPrompt() {
 export const friendlyAuthError = (error) => {
   if (!error) return error;
   const m = error.message || "";
+  // a duplicate sign-up is a nudge toward the login form, not a failure
+  if (error.code === "user_already_exists" || /already (registered|exists)/i.test(m)) {
+    return { ...error, code: "email_taken", message: "An account with this email already exists. Use Log in instead." };
+  }
   if (/rate limit|over_email_send/i.test(m)) {
     return { ...error, message: "Too many emails requested. Wait about a minute, then try again." };
   }
