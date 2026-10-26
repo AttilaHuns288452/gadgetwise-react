@@ -239,7 +239,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
             </p>
           )}
           <div className="card mt-8 overflow-x-auto">
-            <table className="w-full min-w-[680px] border-collapse text-sm">
+            <table className="table-fixed w-full min-w-[680px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-line align-bottom">
                   <th className="sticky left-0 z-10 w-[150px] bg-surface px-5 pb-4 text-left align-bottom text-xs font-semibold text-ink2">
@@ -248,7 +248,7 @@ export default function Compare({ compare = new Set(), onCompare = () => {} }) {
                   {slots.map((slot) =>
                     slot.g ? (
                       <th key={slot.id} className="min-w-[190px] px-5 pb-4 text-left align-bottom font-normal">
-                        <Img gadget={slot.g} className="rounded-lg" frame="4 / 3" />
+                        <Img gadget={slot.g} className="rounded-lg !bg-white !p-0" frame="4 / 3" fit="contain" />
                         <div className="mt-3 text-xs font-normal text-ink2">
                           {slot.g.brand && slot.g.brand !== "Unknown" && !slot.g.model.startsWith(slot.g.brand) ? slot.g.brand : ""}
                         </div>

@@ -9,7 +9,7 @@ import { loadWishlist, syncWishlist, voteReview } from "../lib/store.js";
 export const displayName = (g) => GW.displayName(g);
 
 /* Image with a never-blank fallback (Wikimedia hotlinks can fail) */
-export function Img({ gadget, className = "", imgClass = "", eager = false, frame = "4 / 3" }) {
+export function Img({ gadget, className = "", imgClass = "", eager = false, frame = "4 / 3", fit = "auto" }) {
   // every frame keeps its caller's aspect so grid rows stay aligned;
   // portrait product shots fit height (cover would cut the product's top and bottom)
   const [ar, setAr] = useState(null);
@@ -45,7 +45,7 @@ export function Img({ gadget, className = "", imgClass = "", eager = false, fram
         onError={(e) => {
           if (e.currentTarget.src !== ph) e.currentTarget.src = ph;
         }}
-        className={`h-full w-full rounded-md ${ar != null && ar < 1 ? "object-contain" : "object-cover"} ${imgClass}`}
+        className={`h-full w-full rounded-md ${fit === "contain" || (fit === "auto" && ar != null && ar < 1) ? "object-contain" : "object-cover"} ${imgClass}`}
       />
     </div>
   );
