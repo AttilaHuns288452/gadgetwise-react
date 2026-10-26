@@ -272,7 +272,7 @@ function GadgetDetail({ compare, onCompare }) {
     .join(" ");
 
   // Ownership cost numbers (same 36-month formula everywhere).
-  const over1 = monthly == null ? "N/A" : Money(monthly * 12);
+  const over1 = monthly == null ? "N/A" : money(monthly * 12);
   const over3 = priceKnown ? money(g.price) : "Unavailable";
   const coverPct = wYears == null ? null : Math.round((wYears / (GW.MONTHS_WINDOW / 12)) * 100);
   const costScore = (() => {
@@ -576,7 +576,7 @@ function GadgetDetail({ compare, onCompare }) {
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="mono text-lg font-semibold text-ink">
-                      {m.value == null ? "N/A" : `${m.value}${m.unit === "%" ? "%" : m.unit === "/5" ? "/5" : M.unit === "/100" ? "/100" : ` ${m.unit}`}`}
+                      {m.value == null ? "N/A" : `${m.value}${m.unit === "%" ? "%" : m.unit === "/5" ? "/5" : m.unit === "/100" ? "/100" : ` ${m.unit}`}`}
                     </div>
                     <span className={
                       "mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium " +

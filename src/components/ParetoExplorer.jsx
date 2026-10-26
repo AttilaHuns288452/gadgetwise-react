@@ -214,13 +214,13 @@ export default function ParetoExplorer() {
 
           {/* points: dominated first so frontier draws on top */}
           {pts.filter((p) => !frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)}. ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onMouseLeave={() => setHov(null)}>
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)}. ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: sx(p.x), y: sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
               <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={4} fill="#14213a" fillOpacity="0.32" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
             </Link>
           ))}
           {pts.filter((p) => frontierIds.has(p.g.id)).map((p) => (
-            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)}. ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: Sx(p.x), y: Sy(p.y) })} onMouseLeave={() => setHov(null)}>
+            <Link key={p.g.id} className="pareto-g" to={`/g/${p.g.id}`} aria-label={`${GW.displayName(p.g)}. ${fmt(xKey, p.x)}, ${fmt(yKey, p.y)}`} onFocus={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: sx(p.x), y: sy(p.y) })} onBlur={() => setHov(null)} onMouseEnter={() => setHov({ id: P.g.id, vx: P.x, vy: P.y, x: sx(p.x), y: sy(p.y) })} onMouseLeave={() => setHov(null)}>
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="#c2872f" fillOpacity="0.16" />
               <circle className="pareto-dot" cx={sx(p.x)} cy={sy(p.y)} r={8} fill="#c2872f" stroke="#fff" strokeWidth="2" />
               <circle cx={sx(p.x)} cy={sy(p.y)} r={13} fill="transparent" />
