@@ -251,10 +251,15 @@ export function useAuth() {
     }
     let cancelled = false;
     setAdminChecked(false);
-    supabase
-      .rpc("is_admin")
+    // The RPC must see the restored session: sent before the client commits
+    // it, auth.uid() is null server-side and every admin reads as false.
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => (session ? supabase.rpc("is_admin") : Promise.resolve({ data: null })))
       .then(({ data }) => {
-        _adminCache.set(user.id, data === true);
+        // never cache a false: it may just mean "session not in place yet",
+        // and caching it would lock an admin out of /admin until a reload
+        if (data === true) _adminCache.set(user.id, true);
         if (!cancelled) { setAdmin(data === true); setAdminChecked(true); }
       })
       .catch(() => {
